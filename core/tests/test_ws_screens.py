@@ -58,3 +58,19 @@ def test_screen_ws_command_off_network_refused(app, users, garage):
         ws.send_json({"id": 1, "type": "command", "entity_id": "cover.garage_door", "command": "open", "args": {}})
         assert ws.receive_json()["success"] is False
     assert garage.calls == []
+
+
+def test_networks_change_applies_to_open_socket(app, users, garage):
+    from cave.access import netconfig
+
+    c = screen_client(app, "garage", approved_screen(app.state.db, "garage"))
+    with connect_screen(c) as ws:
+        ws.send_json({"id": 1, "type": "command", "entity_id": "cover.garage_door", "command": "open", "args": {}})
+        assert ws.receive_json()["success"] is True
+        netconfig.save(app.state.db, "test", ["10.0.0.0/8"], [])
+        app.state.bus.publish({"type": "access_changed"})
+        ping(ws)  # handles the queued access change before the next command
+        assert ws.receive_json()["type"] == "pong"
+        ws.send_json({"id": 2, "type": "command", "entity_id": "cover.garage_door", "command": "open", "args": {}})
+        assert ws.receive_json() == {"id": 2, "type": "result", "success": False,
+                                     "error": "You don't have access to this control."}

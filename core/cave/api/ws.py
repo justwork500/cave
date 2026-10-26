@@ -53,6 +53,10 @@ class _Socket:
     def refresh(self) -> bool:
         """Re-read the principal after an access change. False if it may no longer connect."""
         self._can.clear()
+        # Networks may have changed too: drop the request-scoped cache and re-resolve the client address
+        self.ws.scope.pop("cave.net", None)
+        self.ip = client_ip(self.ws)
+        self.local_ranges = net(self.ws).local_ranges
         db = get_db(self.ws)
         if self.p.kind == "screen":
             screen = get_screen(db, self.p.id)
