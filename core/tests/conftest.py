@@ -1,5 +1,5 @@
-from datetime import UTC, datetime
 from collections.abc import Iterator
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
