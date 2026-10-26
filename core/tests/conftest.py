@@ -57,9 +57,13 @@ def users(app: FastAPI) -> Users:
     )
 
 
+def lan_client(app: FastAPI, ip: str = "192.168.1.5") -> TestClient:
+    return TestClient(app, base_url="https://testserver", client=(ip, 50000))
+
+
 @pytest.fixture
 def client(app: FastAPI) -> TestClient:
-    return TestClient(app, base_url="https://testserver")
+    return lan_client(app)
 
 
 def sign_in(client: TestClient, username: str, password: str, totp: pyotp.TOTP | None = None) -> TestClient:

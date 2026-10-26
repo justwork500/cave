@@ -139,3 +139,55 @@ def verify_second_factor(db: Database, user_id: str, code: str) -> bool:
         (datetime.now(UTC).isoformat(), user_id, _hash_code(code)),
     )
     return cur.rowcount == 1
+
+
+class LastAdminError(Exception):
+    pass
+
+
+def list_users(db: Database) -> list[User]:
+    return [_to_user(r) for r in db.execute("SELECT * FROM users ORDER BY username").fetchall()]
+
+
+def update_user(
+    db: Database,
+    actor: str,
+    user_id: str,
+    *,
+    display_name: str | None = None,
+    role: Role | None = None,
+    enabled: bool | None = None,
+    expires_at: datetime | None = None,
+) -> User:
+    """Change a user. Refuses to leave CAVE without an enabled Admin."""
+    old = get_user(db, user_id)
+    if old is None:
+        raise KeyError(user_id)
+    new_role = role or old.role
+    new_enabled = old.enabled if enabled is None else enabled
+    new_expiry = expires_at or old.expires_at  # shortcut: no way to clear an expiry yet; add when the UI needs it
+    with db.transaction() as conn:
+        if old.role == "admin" and old.enabled and (new_role != "admin" or not new_enabled):
+            others = conn.execute(
+                "SELECT count(*) FROM users WHERE role='admin' AND enabled=1 AND id<>?", (user_id,)
+            ).fetchone()[0]
+            if others == 0:
+                raise LastAdminError("CAVE needs at least one enabled Admin.")
+        conn.execute(
+            "UPDATE users SET display_name=?, role=?, enabled=?, expires_at=? WHERE id=?",
+            (
+                old.display_name if display_name is None else display_name,
+                new_role,
+                int(new_enabled),
+                new_expiry.isoformat() if new_expiry else None,
+                user_id,
+            ),
+        )
+    new = get_user(db, user_id)
+    assert new is not None
+    fields = ("display_name", "role", "enabled", "expires_at")
+    audit.record(
+        db, actor, "user.update", f"user:{user_id}",
+        {f: str(getattr(old, f)) for f in fields}, {f: str(getattr(new, f)) for f in fields},
+    )
+    return new

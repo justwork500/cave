@@ -64,3 +64,15 @@ def test_save_guard_allows_what_you_control(app, users, garage):
 def test_admin_can_save_anything(app, users, garage):
     admin = principal_for_user(app.state.db, users.admin, T0)
     assert_can_save(app.state.db, admin, ["cover.garage_door"], WAN, LOCAL)
+
+
+def test_command_from_wan_refused_on_local_item(app, users, garage):
+    from tests.conftest import lan_client
+
+    admin = lan_client(app)
+    sign_in(admin, "admin", "pw-admin-1234", users.admin_totp)
+    admin.put("/api/v1/items/dashboard:garage/assignments", json=[{"kind": "user", "id": users.sam.id}])
+    assert sign_in(lan_client(app), "sam", "pw-sam-1234").post(
+        "/api/v1/entities/cover.garage_door/commands/open", json={}).status_code == 202
+    assert sign_in(lan_client(app, "203.0.113.9"), "sam", "pw-sam-1234").post(
+        "/api/v1/entities/cover.garage_door/commands/open", json={}).status_code == 403
