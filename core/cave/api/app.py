@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 
 from cave.access import netconfig
 from cave.access.items import seed_builtins
-from cave.api import admin, auth, entities, system, ws
+from cave.api import admin, auth, entities, screens, system, ws
 from cave.db import Database
 from cave.settings import Settings
 from cave.state import EventBus, StateMachine
@@ -32,6 +32,10 @@ def create_app(settings: Settings) -> FastAPI:
     def spike() -> FileResponse:
         return FileResponse(WEB / "spike.html")
 
+    @app.get("/enroll", include_in_schema=False)
+    def enroll_page() -> FileResponse:
+        return FileResponse(WEB / "enroll.html")
+
     app.mount("/static", StaticFiles(directory=WEB, html=False), name="static")
 
     app.include_router(auth.router)
@@ -39,4 +43,5 @@ def create_app(settings: Settings) -> FastAPI:
     app.include_router(ws.router)
     app.include_router(admin.router)
     app.include_router(system.router)
+    app.include_router(screens.router)
     return app

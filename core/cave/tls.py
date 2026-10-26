@@ -47,10 +47,15 @@ def ensure_certificate(directory: Path, hostnames: list[str], ips: list[str]) ->
     return cert_path, key_path
 
 
+def format_fingerprint(digest: bytes) -> str:
+    """Uppercase hex pairs joined by colons, as browsers show certificate fingerprints."""
+    h = digest.hex().upper()
+    return ":".join(h[i : i + 2] for i in range(0, len(h), 2))
+
+
 def fingerprint(cert_path: Path) -> str:
     der = x509.load_pem_x509_certificate(cert_path.read_bytes()).public_bytes(serialization.Encoding.DER)
-    digest = hashlib.sha256(der).hexdigest().upper()
-    return ":".join(digest[i : i + 2] for i in range(0, len(digest), 2))
+    return format_fingerprint(hashlib.sha256(der).digest())
 
 
 def not_after(cert_path: Path) -> datetime:
