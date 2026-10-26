@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from cave.api import auth
+from cave.api import auth, entities
 from cave.db import Database
 from cave.settings import Settings
 from cave.state import EventBus, StateMachine
@@ -19,4 +19,5 @@ def create_app(settings: Settings) -> FastAPI:
         return {"status": "ok"}
 
     app.include_router(auth.router)
+    app.include_router(entities.router)
     return app

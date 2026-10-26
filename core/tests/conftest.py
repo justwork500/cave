@@ -69,3 +69,39 @@ def sign_in(client: TestClient, username: str, password: str, totp: pyotp.TOTP |
         assert totp is not None
         assert client.post("/api/v1/auth/mfa", json={"code": totp.now()}).status_code == 200
     return client
+
+
+@dataclass
+class Scenario:
+    calls: list[tuple[str, str, dict[str, object]]]
+    kids_group: str
+
+
+@pytest.fixture
+def garage(app: FastAPI, users: Users) -> Scenario:
+    """The spec's garage scenario: garage dashboard only on the garage tablet, on the LAN; sam is in Kids."""
+    from cave.access.items import set_assignments, set_item_entities, upsert_item
+    from cave.access.model import Item
+    from cave.state import Entity
+
+    db, states = app.state.db, app.state.states
+    states.register(Entity("cover.garage_door", "Garage door", "garage", "cover"))
+    states.register(Entity("light.kids_room", "Kids' room light", "kids", "light"))
+    states.set("cover.garage_door", "closed")
+    states.set("light.kids_room", "off")
+    calls: list[tuple[str, str, dict[str, object]]] = []
+
+    async def handler(entity_id: str, command: str, args: dict[str, object]) -> None:
+        calls.append((entity_id, command, args))
+
+    states.set_command_handler("cover", handler)
+    states.set_command_handler("light", handler)
+    db.execute("INSERT INTO user_groups (id, name) VALUES ('kids', 'Kids')")
+    db.execute("INSERT INTO group_members (group_id, user_id) VALUES ('kids', ?)", (users.sam.id,))
+    upsert_item(db, "test", Item("dashboard:garage", "dashboard", "Garage Door Control", network="local"))
+    set_assignments(db, "test", "dashboard:garage", [("screen", "garage")])
+    set_item_entities(db, "dashboard:garage", ["cover.garage_door"])
+    upsert_item(db, "test", Item("dashboard:kids", "dashboard", "Kids"))
+    set_assignments(db, "test", "dashboard:kids", [("group", "kids")])
+    set_item_entities(db, "dashboard:kids", ["light.kids_room"])
+    return Scenario(calls=calls, kids_group="kids")

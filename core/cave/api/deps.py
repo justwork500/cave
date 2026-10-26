@@ -2,6 +2,8 @@ from datetime import UTC, datetime, timedelta
 
 from fastapi import HTTPException, Request
 
+from cave.access.model import Principal
+from cave.access.network import IPAddress, resolve_client_ip
 from cave.auth import sessions
 from cave.auth.users import User, get_user, is_active
 from cave.db import Database
@@ -41,3 +43,24 @@ def current_user(request: Request) -> User:
     if user is None:
         raise HTTPException(401, "Sign in to continue.")
     return user
+
+
+def principal_for_user(db: Database, user: User, at: datetime) -> Principal:
+    groups = db.execute("SELECT group_id FROM group_members WHERE user_id=?", (user.id,)).fetchall()
+    return Principal(
+        kind="user",
+        id=user.id,
+        user_id=user.id,
+        role=user.role,
+        group_ids=frozenset(r["group_id"] for r in groups),
+        active=is_active(user, at),
+    )
+
+
+def current_principal(request: Request) -> Principal:
+    return principal_for_user(get_db(request), current_user(request), now())
+
+
+def client_ip(request: Request) -> IPAddress:
+    peer = request.client.host if request.client else ""
+    return resolve_client_ip(peer, request.headers.get("x-forwarded-for"), get_settings(request).trusted_proxies)
