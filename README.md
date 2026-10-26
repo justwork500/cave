@@ -24,7 +24,7 @@ python -m venv .venv
 cd core && ../.venv/bin/pytest
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md). Wall tablets: [docs/install/tablets.md](docs/install/tablets.md).
 
 ## License
 
