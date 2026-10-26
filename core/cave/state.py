@@ -18,6 +18,7 @@ CAPABILITIES = frozenset({
 })
 _ENTITY_ID = re.compile(r"^([a-z_]+)\.([a-z0-9_]+)$")
 QUEUE_SIZE = 1000
+OVERFLOW: Event = {"type": "overflow"}
 
 
 @dataclass(frozen=True)
@@ -71,8 +72,12 @@ def _put(q: "asyncio.Queue[Event]", event: Event) -> None:
     try:
         q.put_nowait(event)
     except asyncio.QueueFull:
-        # shortcut: a subscriber 1000 events behind loses events; resync-on-overflow when clients need it
-        log.warning("event queue full; dropping %s", event.get("type"))
+        # A subscriber this far behind can't be trusted to see access changes; replace its backlog with a
+        # marker so it resyncs (the WebSocket closes and the client reconnects with fresh access).
+        log.warning("event queue full; subscriber must resync")
+        while not q.empty():
+            q.get_nowait()
+        q.put_nowait(OVERFLOW)
 
 
 @dataclass

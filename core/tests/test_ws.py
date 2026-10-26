@@ -58,8 +58,7 @@ def test_entity_removed_from_item_stops_events(app, client, users, garage):  # R
         subscribe(ws)
         app.state.states.set("light.kids_room", "on")
         assert ws.receive_json()["event"]["new"] == "on"
-        set_item_entities(app.state.db, "dashboard:kids", [])
-        app.state.bus.publish({"type": "access_changed"})
+        set_item_entities(app.state.db, "dashboard:kids", [], bus=app.state.bus)
         app.state.states.set("light.kids_room", "off")
         ping(ws)
         assert ws.receive_json() == {"id": 99, "type": "pong"}

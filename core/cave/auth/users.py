@@ -17,6 +17,7 @@ Role = Literal["admin", "operator", "household", "guest", "auditor"]
 LOCKOUT_ATTEMPTS = 5
 LOCKOUT_WINDOW = timedelta(minutes=15)
 RECOVERY_CODE_COUNT = 10
+SUCCEEDED, FAILED, BLOCKED = 1, 0, -1
 
 
 @dataclass(frozen=True)
@@ -84,23 +85,27 @@ def _recent_failures(db: Database, username: str, now: datetime) -> int:
 
 
 def check_password(db: Database, username: str, password: str, ip: str, now: datetime) -> User:
-    def log(ok: bool) -> None:
-        db.execute(
-            "INSERT INTO login_attempts (username, at, ok, ip) VALUES (?, ?, ?, ?)",
-            (username, now.isoformat(), int(ok), ip),
-        )
+    def log(ok: int) -> None:
+        record_attempt(db, username, ip, now, ok)
 
     if _recent_failures(db, username, now) >= LOCKOUT_ATTEMPTS:
-        log(False)
+        log(BLOCKED)  # logged, but not counted: attempts while locked must not extend the lockout
         raise LoginError("Too many attempts. Try again in 15 minutes.")
     row = db.execute("SELECT * FROM users WHERE username=?", (username,)).fetchone()
     ok = verify_password(row["password_hash"] if row else DUMMY_HASH, password)
     user = _to_user(row) if row else None
     if not ok or user is None or not is_active(user, now):
-        log(False)
+        log(FAILED)
         raise LoginError("Wrong username or password.")
-    log(True)
+    log(SUCCEEDED)
     return user
+
+
+def record_attempt(db: Database, username: str, ip: str, now: datetime, ok: int) -> None:
+    """ok is SUCCEEDED, FAILED (counts toward lockout) or BLOCKED (made while locked)."""
+    db.execute(
+        "INSERT INTO login_attempts (username, at, ok, ip) VALUES (?, ?, ?, ?)", (username, now.isoformat(), ok, ip)
+    )
 
 
 def mfa_required(user: User | None) -> bool:
@@ -167,9 +172,13 @@ def update_user(
     new_enabled = old.enabled if enabled is None else enabled
     new_expiry = expires_at or old.expires_at  # shortcut: no way to clear an expiry yet; add when the UI needs it
     with db.transaction() as conn:
-        if old.role == "admin" and old.enabled and (new_role != "admin" or not new_enabled):
+        at = datetime.now(UTC)
+        still_admin = new_role == "admin" and new_enabled and (new_expiry is None or new_expiry > at)
+        if old.role == "admin" and is_active(old, at) and not still_admin:
             others = conn.execute(
-                "SELECT count(*) FROM users WHERE role='admin' AND enabled=1 AND id<>?", (user_id,)
+                "SELECT count(*) FROM users WHERE role='admin' AND enabled=1 AND id<>? "
+                "AND (expires_at IS NULL OR expires_at>?)",
+                (user_id, at.isoformat()),
             ).fetchone()[0]
             if others == 0:
                 raise LastAdminError("CAVE needs at least one enabled Admin.")

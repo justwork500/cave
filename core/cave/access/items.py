@@ -4,6 +4,7 @@ from dataclasses import asdict
 from cave import audit
 from cave.access.model import Item, ItemKind, TargetKind
 from cave.db import Database
+from cave.state import EventBus
 
 BUILTIN_SECTIONS = {
     "section:devices": "Devices",
@@ -87,13 +88,15 @@ def set_assignments(db: Database, actor: str, item_id: str, targets: list[tuple[
         audit.record(db, actor, "item.assignments", f"item:{item_id}", [list(a) for a in old], [list(a) for a in new])
 
 
-def set_item_entities(db: Database, item_id: str, entity_ids: list[str]) -> None:
+def set_item_entities(db: Database, item_id: str, entity_ids: list[str], *, bus: EventBus) -> None:
+    """Which entities an item holds decides who controls them, so open sockets must re-check."""
     with db.transaction() as conn:
         conn.execute("DELETE FROM item_entities WHERE item_id=?", (item_id,))
         conn.executemany(
             "INSERT OR IGNORE INTO item_entities (item_id, entity_id) VALUES (?, ?)",
             [(item_id, e) for e in entity_ids],
         )
+    bus.publish({"type": "access_changed"})
 
 
 def items_containing(db: Database, entity_id: str) -> list[str]:
