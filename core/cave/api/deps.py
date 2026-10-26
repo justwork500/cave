@@ -1,6 +1,7 @@
 from datetime import UTC, datetime, timedelta
 
-from fastapi import HTTPException, Request
+from fastapi import HTTPException
+from starlette.requests import HTTPConnection
 
 from cave.access.model import Principal
 from cave.access.network import IPAddress, resolve_client_ip
@@ -13,12 +14,12 @@ SESSION_COOKIE = "cave_session"
 PENDING_COOKIE = "cave_pending"
 
 
-def get_db(request: Request) -> Database:
+def get_db(request: HTTPConnection) -> Database:
     db: Database = request.app.state.db
     return db
 
 
-def get_settings(request: Request) -> Settings:
+def get_settings(request: HTTPConnection) -> Settings:
     settings: Settings = request.app.state.settings
     return settings
 
@@ -27,7 +28,7 @@ def now() -> datetime:
     return datetime.now(UTC)
 
 
-def user_from_session(request: Request) -> User | None:
+def user_from_session(request: HTTPConnection) -> User | None:
     session_id = request.cookies.get(SESSION_COOKIE)
     if not session_id:
         return None
@@ -38,7 +39,7 @@ def user_from_session(request: Request) -> User | None:
     return user if user and is_active(user, now()) else None
 
 
-def current_user(request: Request) -> User:
+def current_user(request: HTTPConnection) -> User:
     user = user_from_session(request)
     if user is None:
         raise HTTPException(401, "Sign in to continue.")
@@ -57,10 +58,10 @@ def principal_for_user(db: Database, user: User, at: datetime) -> Principal:
     )
 
 
-def current_principal(request: Request) -> Principal:
+def current_principal(request: HTTPConnection) -> Principal:
     return principal_for_user(get_db(request), current_user(request), now())
 
 
-def client_ip(request: Request) -> IPAddress:
+def client_ip(request: HTTPConnection) -> IPAddress:
     peer = request.client.host if request.client else ""
     return resolve_client_ip(peer, request.headers.get("x-forwarded-for"), get_settings(request).trusted_proxies)

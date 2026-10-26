@@ -38,25 +38,41 @@ class State:
 
 
 class EventBus:
+    """Fan-out to subscriber queues. Safe to publish from any thread (sync API routes run in a thread pool)."""
+
     def __init__(self) -> None:
-        self._queues: list[asyncio.Queue[Event]] = []
+        self._subs: list[tuple[asyncio.AbstractEventLoop | None, asyncio.Queue[Event]]] = []
 
     def subscribe(self) -> "asyncio.Queue[Event]":
+        try:
+            loop: asyncio.AbstractEventLoop | None = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
         q: asyncio.Queue[Event] = asyncio.Queue(QUEUE_SIZE)
-        self._queues.append(q)
+        self._subs.append((loop, q))
         return q
 
     def unsubscribe(self, q: "asyncio.Queue[Event]") -> None:
-        if q in self._queues:
-            self._queues.remove(q)
+        self._subs = [(loop, sq) for loop, sq in self._subs if sq is not q]
 
     def publish(self, event: Event) -> None:
-        for q in list(self._queues):
-            try:
-                q.put_nowait(event)
-            except asyncio.QueueFull:
-                # shortcut: a subscriber 1000 events behind loses events; resync-on-overflow when clients need it
-                log.warning("event queue full; dropping %s", event.get("type"))
+        try:
+            current: asyncio.AbstractEventLoop | None = asyncio.get_running_loop()
+        except RuntimeError:
+            current = None
+        for loop, q in list(self._subs):
+            if loop is None or loop is current:
+                _put(q, event)
+            elif not loop.is_closed():
+                loop.call_soon_threadsafe(_put, q, event)
+
+
+def _put(q: "asyncio.Queue[Event]", event: Event) -> None:
+    try:
+        q.put_nowait(event)
+    except asyncio.QueueFull:
+        # shortcut: a subscriber 1000 events behind loses events; resync-on-overflow when clients need it
+        log.warning("event queue full; dropping %s", event.get("type"))
 
 
 @dataclass
