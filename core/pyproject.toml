@@ -11,6 +11,7 @@ dependencies = [
     "argon2-cffi>=23",
     "pyotp>=2.9",
     "pyyaml>=6",
+    "cryptography>=43",
 ]
 
 [project.optional-dependencies]
@@ -24,7 +25,7 @@ build-backend = "setuptools.build_meta"
 include = ["cave*"]
 
 [tool.setuptools.package-data]
-cave = ["*.sql"]
+cave = ["migrations/*.sql", "web/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

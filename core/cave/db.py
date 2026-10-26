@@ -6,7 +6,14 @@ from importlib.resources import files
 from pathlib import Path
 from typing import Any
 
-SCHEMA_VERSION = 1
+
+def _migrations() -> list[tuple[int, str]]:
+    """(version, sql) for every migrations/NNNN_*.sql file, in order."""
+    found = []
+    for f in files("cave.migrations").iterdir():
+        if f.name.endswith(".sql"):
+            found.append((int(f.name.split("_", 1)[0]), f.read_text()))
+    return sorted(found)
 
 
 class Database:
@@ -27,12 +34,15 @@ class Database:
         return db
 
     def _migrate(self) -> None:
-        if self.execute("PRAGMA user_version").fetchone()[0] < SCHEMA_VERSION:
+        current = self.execute("PRAGMA user_version").fetchone()[0]
+        for version, sql in _migrations():
+            if version <= current:
+                continue
             with self.transaction() as conn:
-                for statement in files("cave").joinpath("schema.sql").read_text().split(";"):
+                for statement in sql.split(";"):
                     if statement.strip():
                         conn.execute(statement)
-                conn.execute(f"PRAGMA user_version={SCHEMA_VERSION}")
+                conn.execute(f"PRAGMA user_version={version}")
 
     def close(self) -> None:
         with self._lock:
