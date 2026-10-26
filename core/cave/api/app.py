@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from cave.api import auth
 from cave.db import Database
 from cave.settings import Settings
+from cave.state import EventBus, StateMachine
 
 
 def create_app(settings: Settings) -> FastAPI:
@@ -10,6 +11,8 @@ def create_app(settings: Settings) -> FastAPI:
     app.state.settings = settings
     app.state.db = Database.open(settings.db_path)
     app.state.pending_mfa = {}
+    app.state.bus = EventBus()
+    app.state.states = StateMachine(app.state.bus)
 
     @app.get("/api/v1/health")
     def health() -> dict[str, str]:
