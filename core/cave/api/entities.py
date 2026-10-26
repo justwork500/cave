@@ -6,7 +6,7 @@ from fastapi import APIRouter, Body, Depends, HTTPException, Request
 from cave.access.evaluate import can_control
 from cave.access.model import Principal
 from cave.access.network import IPAddress
-from cave.api.deps import client_ip, current_principal, get_db, get_settings
+from cave.api.deps import client_ip, current_principal, get_db, net
 from cave.db import Database
 from cave.state import Entity, State, StateMachine
 
@@ -28,7 +28,7 @@ async def run_command(
     args: Annotated[dict[str, Any] | None, Body()] = None,
 ) -> dict[str, bool]:
     states = get_states(request)
-    allowed = can_control(get_db(request), p, entity_id, client_ip(request), get_settings(request).local_ranges)
+    allowed = can_control(get_db(request), p, entity_id, client_ip(request), net(request).local_ranges)
     if not allowed:
         raise HTTPException(403, DENIED)
     if states.entity(entity_id) is None:
@@ -59,7 +59,7 @@ def entity_view(
 
 @router.get("/states")
 def list_states(request: Request, p: Annotated[Principal, Depends(current_principal)]) -> list[dict[str, Any]]:
-    states, db, ip, ranges = get_states(request), get_db(request), client_ip(request), get_settings(request).local_ranges
+    states, db, ip, ranges = get_states(request), get_db(request), client_ip(request), net(request).local_ranges
     return [entity_view(db, p, e, states.get(e.entity_id), ip, ranges) for e in states.entities()]
 
 
@@ -70,5 +70,5 @@ def get_state(entity_id: str, request: Request, p: Annotated[Principal, Depends(
     if entity is None:
         raise HTTPException(404, "No such device control.")
     return entity_view(
-        get_db(request), p, entity, states.get(entity_id), client_ip(request), get_settings(request).local_ranges
+        get_db(request), p, entity, states.get(entity_id), client_ip(request), net(request).local_ranges
     )

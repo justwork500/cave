@@ -8,7 +8,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from cave.access.evaluate import can_control
 from cave.access.model import Principal
-from cave.api.deps import SESSION_COOKIE, client_ip, get_db, get_settings, now, principal_for_user, user_from_session
+from cave.api.deps import SESSION_COOKIE, client_ip, get_db, net, now, principal_for_user, user_from_session
 from cave.api.entities import DENIED
 from cave.auth.users import get_user
 from cave.state import Event, StateMachine
@@ -29,7 +29,7 @@ class _Socket:
         self.session_id = session_id
         self.next_check = time.monotonic() + RECHECK_SECONDS
         self.ip = client_ip(ws)
-        self.local_ranges = get_settings(ws).local_ranges
+        self.local_ranges = net(ws).local_ranges
         self.subscribed = False
         self._can: dict[str, bool] = {}
 

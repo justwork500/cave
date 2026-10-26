@@ -5,6 +5,8 @@ from fastapi import HTTPException
 from starlette.requests import HTTPConnection
 
 from cave.access.model import Principal
+from cave.access.netconfig import NetConfig
+from cave.access.netconfig import load as load_netconfig
 from cave.access.network import IPAddress, resolve_client_ip
 from cave.auth import sessions, tokens
 from cave.auth.users import User, get_user, is_active
@@ -80,6 +82,16 @@ def current_principal(request: HTTPConnection) -> Principal:
     return replace(p, kind="token", id=token[0]) if token else p
 
 
+def net(request: HTTPConnection) -> NetConfig:
+    """Network settings for this request, read once and cached on it."""
+    cached: NetConfig | None = request.scope.get("cave.net")
+    if cached is None:
+        cached = load_netconfig(get_db(request))
+        request.scope["cave.net"] = cached
+    return cached
+
+
 def client_ip(request: HTTPConnection) -> IPAddress:
     peer = request.client.host if request.client else ""
-    return resolve_client_ip(peer, request.headers.get("x-forwarded-for"), get_settings(request).trusted_proxies)
+    forwarded = ",".join(request.headers.getlist("x-forwarded-for")) or None
+    return resolve_client_ip(peer, forwarded, net(request).trusted_proxies)

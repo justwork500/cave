@@ -7,18 +7,9 @@ from pathlib import Path
 import uvicorn
 
 from cave import tls
+from cave.access import netconfig
 from cave.api.app import create_app
 from cave.settings import Settings
-
-
-def host_ipv4() -> str | None:
-    # shortcut: finds the one interface used for outbound traffic; Admins add other ranges by hand
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-        try:
-            s.connect(("192.0.2.1", 9))  # TEST-NET-1: UDP connect sends no packets, it only picks a route
-            return str(s.getsockname()[0])
-        except OSError:
-            return None
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -36,7 +27,7 @@ def main(argv: list[str] | None = None) -> None:
     if bool(args.cert) != bool(args.key):
         parser.error("--cert and --key go together")
     args.data.mkdir(parents=True, exist_ok=True)
-    ip = host_ipv4()
+    ip = netconfig.host_ipv4()
     if args.cert:
         cert, key = args.cert, args.key
     else:

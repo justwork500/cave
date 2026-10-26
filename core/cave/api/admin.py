@@ -10,7 +10,7 @@ from cave import audit
 from cave.access.evaluate import evaluate
 from cave.access.items import get_assignments, get_item, list_items, set_assignments, upsert_item
 from cave.access.model import NetworkCond, OthersSee, Principal, Purpose, Status, TargetKind, Visibility
-from cave.api.deps import client_ip, current_principal, get_db, get_settings
+from cave.api.deps import client_ip, current_principal, get_db, net
 from cave.auth import sessions, tokens
 from cave.auth.users import LastAdminError, Role, User, create_user, list_users, update_user
 from cave.state import EventBus
@@ -27,7 +27,7 @@ def _actor(p: Principal) -> str:
 def _require(request: Request, p: Principal, item_id: str, purpose: Purpose = "manage") -> None:
     item = get_item(get_db(request), item_id)
     if item is None or not evaluate(
-        get_db(request), p, item, client_ip(request), get_settings(request).local_ranges, purpose
+        get_db(request), p, item, client_ip(request), net(request).local_ranges, purpose
     ).allowed:
         raise HTTPException(403, "You don't have access to this.")
 
@@ -185,7 +185,7 @@ class Assignment(BaseModel):
 
 @router.get("/items")
 def get_items(request: Request, p: Caller) -> list[dict[str, Any]]:
-    db, ip, ranges = get_db(request), client_ip(request), get_settings(request).local_ranges
+    db, ip, ranges = get_db(request), client_ip(request), net(request).local_ranges
     out = []
     for item in list_items(db):
         d = evaluate(db, p, item, ip, ranges)

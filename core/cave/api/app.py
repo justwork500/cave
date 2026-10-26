@@ -4,8 +4,9 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from cave.access import netconfig
 from cave.access.items import seed_builtins
-from cave.api import admin, auth, entities, ws
+from cave.api import admin, auth, entities, system, ws
 from cave.db import Database
 from cave.settings import Settings
 from cave.state import EventBus, StateMachine
@@ -18,6 +19,7 @@ def create_app(settings: Settings) -> FastAPI:
     app.state.settings = settings
     app.state.db = Database.open(settings.db_path)
     seed_builtins(app.state.db)
+    netconfig.seed(app.state.db, settings)
     app.state.pending_mfa = {}
     app.state.bus = EventBus()
     app.state.states = StateMachine(app.state.bus)
@@ -36,4 +38,5 @@ def create_app(settings: Settings) -> FastAPI:
     app.include_router(entities.router)
     app.include_router(ws.router)
     app.include_router(admin.router)
+    app.include_router(system.router)
     return app

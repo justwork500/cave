@@ -5,7 +5,7 @@ def test_open_is_idempotent_and_wal(tmp_path):
     Database.open(tmp_path / "c.db").close()
     db = Database.open(tmp_path / "c.db")
     assert db.execute("PRAGMA journal_mode").fetchone()[0] == "wal"
-    assert db.execute("PRAGMA user_version").fetchone()[0] == 1
+    assert db.execute("PRAGMA user_version").fetchone()[0] == 2
     db.close()
 
 
@@ -15,7 +15,7 @@ def test_foreign_keys_on(db):
 
 def test_migrations_apply_in_order(tmp_path):
     db = Database.open(tmp_path / "m.db")
-    assert db.execute("PRAGMA user_version").fetchone()[0] == 1
+    assert db.execute("PRAGMA user_version").fetchone()[0] == 2
     assert db.execute("SELECT count(*) FROM sqlite_master WHERE name='users'").fetchone()[0] == 1
     db.close()
 
