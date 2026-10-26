@@ -1,0 +1,397 @@
+<title>CAVE Architecture Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: whiteboard of five horizontal lanes (clients → devices); detail panel docks right on desktop, below on phones */
+:root {
+  --bg: #EEF0EE;
+  --dot: #D3D8D6;
+  --surface: #FFFFFF;
+  --ink: #1C2329;
+  --muted: #5A6670;
+  --line: #C6CDD2;
+  --accent: #1F6FB2;
+  --accent-soft: #E3EEF8;
+  --cloud: #A8670F;
+  --cloud-soft: #FBF0DF;
+  --sidecar: #4F6B3A;
+  --sidecar-soft: #E8F0E0;
+  --focus: #1F6FB2;
+  --font-ui: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14181B; --dot: #252C31; --surface: #1C2226; --ink: #E5EAEE; --muted: #9AA6AF; --line: #36414A;
+    --accent: #63AEEA; --accent-soft: #17324A; --cloud: #E3A752; --cloud-soft: #3A2B14;
+    --sidecar: #9CC27C; --sidecar-soft: #22301A; --focus: #63AEEA; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14181B; --dot: #252C31; --surface: #1C2226; --ink: #E5EAEE; --muted: #9AA6AF; --line: #36414A;
+  --accent: #63AEEA; --accent-soft: #17324A; --cloud: #E3A752; --cloud-soft: #3A2B14;
+  --sidecar: #9CC27C; --sidecar-soft: #22301A; --focus: #63AEEA; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  background-image: radial-gradient(var(--dot) 1px, transparent 1px);
+  background-size: 20px 20px;
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.45;
+  padding-inline: 16px;
+  padding-block: 20px 40px;
+}
+.wrap { max-width: 1280px; margin: 0 auto; display: grid; gap: 16px; }
+header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; }
+h1 { font-size: 22px; font-weight: 600; margin: 0; text-wrap: balance; }
+.sub { color: var(--muted); margin: 4px 0 0; max-width: 62ch; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 16px; color: var(--muted); font-size: 12.5px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 12px; height: 12px; border-radius: 3px; border: 1.5px solid; }
+.sw.local { border-color: var(--accent); background: var(--accent-soft); }
+.sw.cloud { border-color: var(--cloud); background: var(--cloud-soft); border-style: dashed; }
+.sw.side { border-color: var(--sidecar); background: var(--sidecar-soft); }
+
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.chipbtn {
+  font: inherit; font-size: 13px; padding: 5px 12px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+}
+.chipbtn[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.search { flex: 1 1 200px; max-width: 280px; }
+.search input {
+  width: 100%; font: inherit; font-size: 13px; padding: 6px 10px; border-radius: 6px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+}
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.main { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; align-items: start; }
+@media (max-width: 900px) { .main { grid-template-columns: minmax(0, 1fr); } }
+
+.board { position: relative; display: grid; gap: 14px; }
+#wires { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; overflow: visible; }
+.lane {
+  position: relative; z-index: 1; display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 12px;
+  align-items: start;
+}
+@media (max-width: 600px) { .lane { grid-template-columns: minmax(0, 1fr); gap: 6px; } }
+.lane-label { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding-top: 10px; }
+.lane-body { display: flex; flex-wrap: wrap; gap: 10px; }
+.lane.core .lane-body { padding: 12px; border: 2px solid var(--accent); border-radius: 10px; background: color-mix(in srgb, var(--accent-soft) 55%, var(--surface)); }
+
+.node {
+  font: inherit; text-align: left; color: var(--ink); cursor: pointer;
+  background: var(--surface); border: 1.25px solid var(--line); border-radius: 8px;
+  padding: 8px 12px; min-width: 0; flex: 1 1 150px; max-width: 240px;
+  transition: border-color .15s, box-shadow .15s, opacity .15s;
+}
+.node b { display: block; font-weight: 600; font-size: 13.5px; }
+.node small { display: block; color: var(--muted); font-size: 12px; }
+.node.side { border-color: color-mix(in srgb, var(--sidecar) 55%, var(--line)); }
+.node.cloudhost { border-style: dashed; border-color: var(--cloud); background: var(--cloud-soft); }
+
+.groups { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; width: 100%; }
+@media (max-width: 760px) { .groups { grid-template-columns: minmax(0, 1fr); } }
+.group { background: var(--surface); border: 1.25px solid var(--line); border-radius: 8px; padding: 10px; min-width: 0; }
+.group.cloud { border-style: dashed; border-color: var(--cloud); background: var(--cloud-soft); }
+.group h3 { margin: 0 0 8px; font-size: 12.5px; font-weight: 600; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.int {
+  font: inherit; font-size: 12.5px; cursor: pointer; color: var(--ink);
+  padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg);
+  transition: opacity .15s, border-color .15s;
+}
+.int.cloud { border-style: dashed; border-color: var(--cloud); }
+
+.board.focused .node:not(.on) > * { opacity: .4; }
+.board.focused .int:not(.on) { color: color-mix(in srgb, var(--ink) 40%, var(--surface)); }
+.node.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.int.on { border-color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+.int.on.cloud, .node.on.cloudhost { border-color: var(--cloud); box-shadow: 0 0 0 2px var(--cloud-soft); }
+.int.dim { color: color-mix(in srgb, var(--ink) 18%, var(--surface)) !important; border-color: color-mix(in srgb, var(--line) 50%, var(--surface)); }
+
+.panel {
+  position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px);
+  background: var(--surface); border: 1.25px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0;
+}
+.panel .kicker { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.panel h2 { margin: 4px 0 10px; font-size: 18px; font-weight: 600; }
+.badge { display: inline-block; font-family: var(--font-mono); font-size: 11.5px; padding: 2px 8px; border-radius: 4px; border: 1px solid var(--accent); color: var(--accent); background: var(--accent-soft); }
+.badge.cloud { border-color: var(--cloud); color: var(--cloud); background: var(--cloud-soft); }
+dl { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 6px 10px; margin: 12px 0 0; }
+dt { color: var(--muted); font-size: 12.5px; }
+dd { margin: 0; font-size: 13px; overflow-wrap: anywhere; }
+dd code, .path code { font-family: var(--font-mono); font-size: 12px; }
+.path { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 12.5px; color: var(--muted); }
+.path ol { margin: 6px 0 0; padding-left: 18px; color: var(--ink); }
+.uses { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.note { font-size: 12px; color: var(--muted); margin: 0; }
+
+#wires path { fill: none; stroke: var(--accent); stroke-width: 2; }
+#wires path.cloud { stroke: var(--cloud); stroke-dasharray: 6 5; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>CAVE Architecture Board</h1>
+      <p class="sub">Click an integration to trace how it reaches the core, or click a component to see which integrations depend on it. Runs on Debian 13 minimal, with Docker or as native packages.</p>
+    </div>
+    <div class="legend" aria-label="Legend">
+      <span><i class="sw local"></i>Local path</span>
+      <span><i class="sw side"></i>Sidecar container</span>
+      <span><i class="sw cloud"></i>Vendor cloud, opt-in</span>
+    </div>
+  </header>
+
+  <div class="toolbar" role="toolbar" aria-label="Filter integrations">
+    <button class="chipbtn" data-filter="all" aria-pressed="true">All</button>
+    <button class="chipbtn" data-filter="local" aria-pressed="false">Local only</button>
+    <button class="chipbtn" data-filter="cloud" aria-pressed="false">Cloud</button>
+    <button class="chipbtn" data-filter="sidecar" aria-pressed="false">Uses a sidecar</button>
+    <label class="search"><span class="sr" hidden>Search integrations</span>
+      <input id="q" type="search" placeholder="Search integrations…" autocomplete="off">
+    </label>
+  </div>
+
+  <div class="main">
+    <div class="board" id="board">
+      <svg id="wires" aria-hidden="true"></svg>
+
+      <section class="lane">
+        <div class="lane-label">Clients</div>
+        <div class="lane-body">
+          <button class="node" id="cl-console"><b>Admin console</b><small>React + Fluent UI</small></button>
+          <button class="node" id="cl-dash"><b>Dashboards</b><small>YAML views, PWA</small></button>
+          <button class="node" id="cl-scripts"><b>Scripts and webhooks</b><small>REST, IFTTT, Automate</small></button>
+        </div>
+      </section>
+
+      <section class="lane core">
+        <div class="lane-label">cave-core</div>
+        <div class="lane-body">
+          <button class="node" id="core-api"><b>API</b><small>REST + WebSocket</small></button>
+          <button class="node" id="core-state"><b>State + registry</b><small>entities, events, DB</small></button>
+          <button class="node" id="core-sup"><b>Host supervisor</b><small>heartbeat, restarts</small></button>
+          <button class="node" id="core-auto"><b>Automation engine</b><small>triggers, actions, traces</small></button>
+          <button class="node" id="core-config"><b>Config loader</b><small>YAML + JSON Schema</small></button>
+          <button class="node" id="core-auth"><b>Sign-in + permissions</b><small>5 roles, per-user toggles</small></button>
+        </div>
+      </section>
+
+      <section class="lane">
+        <div class="lane-label">Integration hosts</div>
+        <div class="lane-body">
+          <button class="node" id="h-shared"><b>Shared host</b><small>lightweight integrations</small></button>
+          <button class="node" id="h-dedicated"><b>Dedicated hosts</b><small>one process each</small></button>
+          <button class="node cloudhost" id="h-cloud"><b>Cloud hosts</b><small>vendor APIs, opt-in</small></button>
+        </div>
+      </section>
+
+      <section class="lane">
+        <div class="lane-label">Sidecars</div>
+        <div class="lane-body">
+          <button class="node side" id="sc-mqtt"><b>Mosquitto</b><small>MQTT broker</small></button>
+          <button class="node side" id="sc-z2m"><b>Zigbee2MQTT</b><small>Zigbee coordinator</small></button>
+          <button class="node side" id="sc-zwave"><b>Z-Wave JS UI</b><small>Z-Wave stick, S2</small></button>
+          <button class="node side" id="sc-matter"><b>Matter Server</b><small>matter.js, Thread</small></button>
+          <button class="node side" id="sc-go2rtc"><b>go2rtc</b><small>RTSP to WebRTC</small></button>
+          <button class="node side" id="sc-pwsh"><b>script-runner</b><small>pwsh · Python · Bash</small></button>
+          <button class="node side" id="sc-dproxy"><b>docker-proxy</b><small>filtered Docker API</small></button>
+          <button class="node side" id="sc-idp"><b>SSO provider (optional)</b><small>Authelia, authentik, Keycloak</small></button>
+        </div>
+      </section>
+
+      <section class="lane">
+        <div class="lane-label">Devices and services</div>
+        <div class="lane-body">
+          <div class="groups">
+            <div class="group"><h3>Local network</h3><div class="chips" id="g-local"></div></div>
+            <div class="group"><h3>Radios, cameras, scripts</h3><div class="chips" id="g-radio"></div></div>
+            <div class="group cloud"><h3>Vendor clouds (opt-in)</h3><div class="chips" id="g-cloud"></div></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <aside class="panel" id="panel" aria-live="polite"></aside>
+  </div>
+</div>
+
+<script>
+const INTS = [
+  { id: "mqtt", name: "MQTT", group: "radio", proto: "MQTT 3.1.1 / 5", cls: "local_push", auth: "User + password, TLS", lib: "aiomqtt", phase: "P2", via: ["sc-mqtt"], host: "h-shared" },
+  { id: "zigbee", name: "Zigbee", group: "radio", proto: "Zigbee2MQTT over MQTT", cls: "local_push", auth: "MQTT credentials", lib: "Zigbee2MQTT sidecar", phase: "P2", via: ["sc-z2m", "sc-mqtt"], host: "h-shared" },
+  { id: "hue", name: "Philips Hue", group: "local", proto: "Hue Bridge CLIP API v2 (HTTPS + SSE)", cls: "local_push", auth: "App key via bridge link button", lib: "aiohue", phase: "P2", via: [], host: "h-dedicated" },
+  { id: "tplink", name: "TP-Link Kasa / Tapo", group: "local", proto: "Kasa local protocol; Tapo KLAP", cls: "local_poll", auth: "Tapo needs TP-Link account credentials", lib: "python-kasa (GPL-3.0, isolated host)", phase: "P2", via: [], host: "h-dedicated" },
+  { id: "ntfy", name: "ntfy", group: "local", proto: "HTTP publish; JSON stream subscribe", cls: "local_push", auth: "Access token or basic auth", lib: "httpx", phase: "P2", via: [], host: "h-shared" },
+  { id: "smtp", name: "SMTP email", group: "local", proto: "SMTP, STARTTLS or implicit TLS", cls: "local_push", auth: "User + app password", lib: "aiosmtplib", phase: "P2", via: [], host: "h-shared" },
+  { id: "openweather", name: "OpenWeather", group: "cloud", proto: "One Call API 3.0", cls: "cloud_poll", auth: "API key", lib: "httpx", phase: "P2", via: [], host: "h-cloud" },
+  { id: "nut", name: "Network UPS Tools", group: "local", proto: "NUT protocol, TCP 3493", cls: "local_poll", auth: "upsd user + password", lib: "aionut", phase: "P2", via: [], host: "h-shared" },
+  { id: "docker", name: "Docker", group: "local", proto: "Docker Engine API, event stream", cls: "local_push", auth: "Read-only socket proxy", lib: "aiodocker", phase: "P2", via: ["sc-dproxy"], host: "h-shared" },
+  { id: "zwave", name: "Z-Wave", group: "radio", proto: "zwave-js server WebSocket", cls: "local_push", auth: "S2 PIN / QR inclusion", lib: "zwave-js-server-python", phase: "P3", via: ["sc-zwave"], host: "h-dedicated" },
+  { id: "pwsh", name: "Scripts · sandbox", group: "radio", proto: "PowerShell 7, Python 3 or Bash in the script-runner container; params in, one JSON object out", cls: "local_push", auth: "Runner token", lib: "cave-script-runner (new)", phase: "P3", via: ["sc-pwsh"], host: "core-auto" },
+  { id: "ssh", name: "Scripts · SSH hosts", group: "radio", proto: "Same script contract over SSH to Linux, macOS, NAS, Proxmox or Windows (pwsh or Windows PowerShell 5.1)", cls: "local_push", auth: "SSH key kept in CAVE secrets; host key confirmed on add", lib: "asyncssh", phase: "P3", via: [], host: "core-auto" },
+  { id: "cavehost", name: "Scripts · CAVE host", group: "radio", proto: "SSH to localhost as the restricted cave-scripts user; native Linux tools", cls: "local_push", auth: "Off by default; Admin turns it on with an MFA re-prompt", lib: "asyncssh", phase: "P3", via: [], host: "core-auto" },
+  { id: "unifi", name: "UniFi Network", group: "local", proto: "UniFi Network local API + controller events", cls: "local_push", auth: "API key from Network > Settings > Integrations", lib: "aiounifi", phase: "P4", via: [], host: "h-dedicated" },
+  { id: "adguard", name: "AdGuard Home", group: "local", proto: "REST API (OpenAPI)", cls: "local_poll", auth: "Basic auth", lib: "adguardhome", phase: "P4", via: [], host: "h-shared" },
+  { id: "proxmox", name: "Proxmox VE", group: "local", proto: "REST API", cls: "local_poll", auth: "API token (user@realm!token)", lib: "proxmoxer", phase: "P4", via: [], host: "h-dedicated" },
+  { id: "synology", name: "Synology DSM", group: "local", proto: "DSM Web API (SYNO.*)", cls: "local_poll", auth: "DSM account; 2FA device token", lib: "py-synologydsm-api", phase: "P4", via: [], host: "h-dedicated" },
+  { id: "nginx", name: "Nginx", group: "local", proto: "stub_status metrics", cls: "local_poll", auth: "None or basic auth", lib: "httpx", phase: "P4", via: [], host: "h-shared" },
+  { id: "sonos", name: "Sonos", group: "local", proto: "UPnP/SOAP, port 1400, event subscriptions", cls: "local_push", auth: "None", lib: "SoCo", phase: "P4", via: [], host: "h-dedicated" },
+  { id: "plex", name: "Plex", group: "local", proto: "PMS HTTP API + WebSocket", cls: "local_push", auth: "X-Plex-Token", lib: "plexapi", phase: "P4", via: [], host: "h-dedicated" },
+  { id: "jellyfin", name: "Jellyfin", group: "local", proto: "REST API + WebSocket", cls: "local_push", auth: "API key", lib: "jellyfin-apiclient-python", phase: "P4", via: [], host: "h-dedicated" },
+  { id: "webos", name: "LG webOS TV", group: "local", proto: "SSAP over WebSocket (3000/3001); Wake-on-LAN", cls: "local_push", auth: "Accept prompt on TV", lib: "aiowebostv", phase: "P4", via: [], host: "h-dedicated" },
+  { id: "samsung", name: "Samsung Smart TV", group: "local", proto: "Tizen remote WebSocket (8001/8002); Wake-on-LAN", cls: "local_push", auth: "Accept prompt on TV", lib: "samsungtvws", phase: "P4", via: [], host: "h-dedicated" },
+  { id: "appletv", name: "Apple TV", group: "local", proto: "MRP / Companion / AirPlay", cls: "local_push", auth: "PIN pairing", lib: "pyatv", phase: "P4", via: [], host: "h-dedicated" },
+  { id: "spotify", name: "Spotify", group: "cloud", proto: "Spotify Web API", cls: "cloud_poll", auth: "OAuth 2.0 PKCE; Premium for playback", lib: "spotifyaio", phase: "P4", via: [], host: "h-cloud" },
+  { id: "matter", name: "Matter", group: "radio", proto: "Matter Server WebSocket; Thread via border router", cls: "local_push", auth: "Matter setup code / QR", lib: "OHF Matter Server (matter.js)", phase: "P5", via: ["sc-matter"], host: "h-dedicated" },
+  { id: "cameras", name: "Cameras (RTSP / ONVIF)", group: "radio", proto: "RTSP in, WebRTC / MSE out", cls: "local_push", auth: "Camera user + password", lib: "go2rtc + onvif-zeep-async", phase: "P5", via: ["sc-go2rtc"], host: "h-dedicated" },
+  { id: "enphase", name: "Enphase IQ Gateway", group: "local", proto: "Local HTTPS API on the gateway", cls: "local_poll", auth: "JWT token from Enlighten (1 year on D7 firmware)", lib: "pyenphase", phase: "P5", via: [], host: "h-dedicated" },
+  { id: "ecoflow", name: "EcoFlow", group: "cloud", proto: "Open Platform REST + MQTT; no LAN path", cls: "cloud_push", auth: "Access key + secret key", lib: "Custom client", phase: "P5", via: [], host: "h-cloud" },
+  { id: "thinq", name: "LG ThinQ", group: "cloud", proto: "ThinQ Connect API + MQTT events", cls: "cloud_push", auth: "Personal Access Token", lib: "thinqconnect", phase: "P5", via: [], host: "h-cloud" },
+  { id: "icloud", name: "Apple iCloud", group: "cloud", proto: "Unofficial iCloud web endpoints; CalDAV", cls: "cloud_poll", auth: "Apple ID + 2FA; app-specific password", lib: "pyicloud (experimental)", phase: "P5", via: [], host: "h-cloud" },
+  { id: "ifttt", name: "IFTTT", group: "cloud", proto: "Webhooks in and out", cls: "cloud_push", auth: "Webhook key", lib: "httpx", phase: "P5", via: [], host: "h-cloud" }
+];
+
+const NODES = {
+  "cl-console": ["Admin console", "Intune-style console built on Fluent UI React v9. Uses only the public REST and WebSocket APIs."],
+  "cl-dash": ["Dashboards", "Rendered from /config/dashboards/*.yaml. Live state arrives over the WebSocket."],
+  "cl-scripts": ["Scripts and webhooks", "Anything outside CAVE: REST clients, IFTTT, the Automate app. Webhooks trigger automations."],
+  "core-api": ["API", "FastAPI REST (OpenAPI 3.1) plus one WebSocket for state subscriptions and commands."],
+  "core-auto": ["Automation engine", "Triggers, conditions, actions, sequences and run traces. Runs script steps in the sandbox, on SSH hosts or on the CAVE host."],
+  "core-state": ["State + registry", "Devices, entities, areas, labels, the event bus and history. SQLite by default, PostgreSQL optional."],
+  "core-config": ["Config loader", "Loads and validates YAML against JSON Schemas; resolves !secret references."],
+  "core-sup": ["Host supervisor", "Starts integration hosts, checks a heartbeat every 10 s and restarts a host after 3 misses."],
+  "h-shared": ["Shared host", "One process running several lightweight integrations."],
+  "h-dedicated": ["Dedicated hosts", "One process per integration, for chatty, fragile or copyleft libraries."],
+  "h-cloud": ["Cloud hosts", "Integrations that need a vendor cloud. Opt-in and badged in the console."],
+  "sc-mqtt": ["Mosquitto", "MQTT broker used by Zigbee2MQTT and any MQTT device."],
+  "sc-z2m": ["Zigbee2MQTT", "Owns the Zigbee coordinator and publishes devices over MQTT."],
+  "sc-zwave": ["Z-Wave JS UI", "Owns the Z-Wave stick; CAVE connects to its zwave-js server WebSocket."],
+  "sc-matter": ["Matter Server", "OHF Matter Server built on matter.js. Needs host networking and IPv6."],
+  "sc-go2rtc": ["go2rtc", "Pulls RTSP from cameras and serves WebRTC or MSE to the browser."],
+  "sc-pwsh": ["script-runner", "Sandbox for PowerShell 7, Python 3 and Bash scripts: read-only scripts, no Docker socket, CPU and memory limits. SSH-host and CAVE-host scripts are started by the automation engine directly."],
+  "sc-dproxy": ["docker-proxy", "Filtered, read-only Docker Engine API so CAVE never mounts the raw socket."],
+  "core-auth": ["Sign-in + permissions", "Local accounts (Argon2id, TOTP, optional passkeys) and optional OpenID Connect SSO. Five roles set defaults; per-user toggles turn each dashboard, admin console section and feature on or off. Checked on every API request."],
+  "sc-idp": ["SSO provider (optional)", "Your own open-source OpenID Connect provider: Authelia (Apache-2.0), authentik (MIT core) or Keycloak (Apache-2.0). Group claims map to CAVE roles; a local break-glass Admin always works."]
+};
+
+const board = document.getElementById("board");
+const wires = document.getElementById("wires");
+const panel = document.getElementById("panel");
+let selection = { type: "int", id: "hue" };
+let filter = "all";
+let query = "";
+
+for (const it of INTS) {
+  const b = document.createElement("button");
+  b.className = "int" + (it.cls.startsWith("cloud") ? " cloud" : "");
+  b.id = "i-" + it.id;
+  b.type = "button";
+  b.textContent = it.name;
+  b.addEventListener("click", () => select({ type: "int", id: it.id }));
+  document.getElementById("g-" + it.group).appendChild(b);
+}
+document.querySelectorAll(".node").forEach(n => n.addEventListener("click", () => select({ type: "node", id: n.id })));
+
+function pathFor(it) {
+  const tail = it.host === "core-auto" ? ["core-auto", "core-state", "core-api", "cl-console"] : [it.host, "core-sup", "core-state", "core-api", "cl-console"];
+  return ["i-" + it.id, ...it.via, ...tail];
+}
+
+function select(sel) { selection = sel; render(); }
+
+function render() {
+  document.querySelectorAll(".on").forEach(e => e.classList.remove("on"));
+  board.classList.add("focused");
+  let path = [];
+  let cloud = false;
+  if (selection.type === "int") {
+    const it = INTS.find(i => i.id === selection.id);
+    cloud = it.cls.startsWith("cloud");
+    path = pathFor(it);
+    path.forEach(id => document.getElementById(id)?.classList.add("on"));
+    panel.innerHTML = `
+      <div class="kicker">Integration · ${it.phase}</div>
+      <h2>${it.name}</h2>
+      <span class="badge ${cloud ? "cloud" : ""}">${it.cls}</span>
+      <dl>
+        <dt>Protocol</dt><dd>${it.proto}</dd>
+        <dt>Auth</dt><dd>${it.auth}</dd>
+        <dt>Library</dt><dd><code>${it.lib}</code></dd>
+        <dt>Runs in</dt><dd>${NODES[it.host][0]}${it.via.length ? " via " + it.via.map(v => NODES[v][0]).join(" → ") : ""}</dd>
+      </dl>
+      <div class="path">Path to the console
+        <ol>${path.map(id => `<li>${id.startsWith("i-") ? it.name : NODES[id][0]}</li>`).join("")}</ol>
+      </div>`;
+  } else {
+    const [name, desc] = NODES[selection.id];
+    const users = INTS.filter(i => pathFor(i).includes(selection.id));
+    document.getElementById(selection.id).classList.add("on");
+    users.forEach(i => document.getElementById("i-" + i.id).classList.add("on"));
+    panel.innerHTML = `
+      <div class="kicker">Component</div>
+      <h2>${name}</h2>
+      <p class="note">${desc}</p>
+      <div class="path">${users.length ? `Used by ${users.length} integration${users.length > 1 ? "s" : ""}` : "No integrations route through this component."}
+        <div class="uses">${users.map(i => `<button class="int ${i.cls.startsWith("cloud") ? "cloud" : ""}" data-pick="${i.id}">${i.name}</button>`).join("")}</div>
+      </div>`;
+    panel.querySelectorAll("[data-pick]").forEach(b => b.addEventListener("click", () => select({ type: "int", id: b.dataset.pick })));
+  }
+  applyFilter();
+  drawWires(path, cloud);
+}
+
+function applyFilter() {
+  for (const it of INTS) {
+    const el = document.getElementById("i-" + it.id);
+    const isCloud = it.cls.startsWith("cloud");
+    let show = filter === "all" || (filter === "local" && !isCloud) || (filter === "cloud" && isCloud) || (filter === "sidecar" && it.via.length > 0);
+    if (query && !it.name.toLowerCase().includes(query)) show = false;
+    el.classList.toggle("dim", !show);
+  }
+}
+
+function drawWires(path, cloud) {
+  const box = board.getBoundingClientRect();
+  wires.setAttribute("viewBox", `0 0 ${box.width} ${box.height}`);
+  wires.innerHTML = "";
+  for (let k = 0; k < path.length - 1; k++) {
+    const a = document.getElementById(path[k]), b = document.getElementById(path[k + 1]);
+    if (!a || !b) continue;
+    const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
+    let [lo, hi] = ra.top > rb.top ? [ra, rb] : [rb, ra];
+    const x1 = lo.left + lo.width / 2 - box.left, y1 = lo.top - box.top;
+    const x2 = hi.left + hi.width / 2 - box.left, y2 = hi.bottom - box.top;
+    let d;
+    if (Math.abs(lo.top - hi.top) < 4) {
+      const ya = lo.top + lo.height / 2 - box.top;
+      const [l, r] = lo.left < hi.left ? [lo, hi] : [hi, lo];
+      d = `M${l.right - box.left} ${ya} L${r.left - box.left} ${ya}`;
+    } else {
+      const my = (y1 + y2) / 2;
+      d = `M${x1} ${y1} C${x1} ${my} ${x2} ${my} ${x2} ${y2}`;
+    }
+    const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    p.setAttribute("d", d);
+    if (cloud && k < 2) p.setAttribute("class", "cloud");
+    wires.appendChild(p);
+  }
+}
+
+document.querySelectorAll("[data-filter]").forEach(b => b.addEventListener("click", () => {
+  filter = b.dataset.filter;
+  document.querySelectorAll("[data-filter]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  applyFilter();
+}));
+document.getElementById("q").addEventListener("input", e => { query = e.target.value.trim().toLowerCase(); applyFilter(); });
+
+new ResizeObserver(() => render()).observe(board);
+render();
+</script>

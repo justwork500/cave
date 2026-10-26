@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CAVE admin center – Home</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0B6A8A}a:hover{color:#084E66}
+.app{font-family:"Segoe UI Variable Text","Segoe UI","Noto Sans",system-ui,sans-serif;color:#242424;background:#FAFAFA;min-height:1040px;display:flex;flex-direction:column;font-size:14px}
+.top{min-height:48px;background:#1C2830;color:#FFFFFF;display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:0 12px 0 16px}
+.brandmark{font-weight:600;font-size:15px;display:flex;align-items:center;gap:10px;white-space:nowrap}
+.search{flex:1 1 240px;max-width:520px;margin:0 auto;height:32px;border-radius:4px;background:#2B3A43;border:1px solid #4A5C67;display:flex;align-items:center;gap:8px;padding:0 10px;color:#C9D4DA;font-size:13px}
+.search input{flex:1;min-width:0;background:transparent;border:0;color:#FFFFFF;font:inherit}
+.search input::placeholder{color:#B5C2C9}
+.tools{display:flex;align-items:center;gap:2px}
+.mode{display:flex;border:1px solid #4A5C67;border-radius:4px;overflow:hidden}
+.modebtn{font:inherit;font-size:12.5px;padding:5px 12px;border:0;background:transparent;color:#C9D4DA;cursor:pointer;text-decoration:none}
+.modebtn.on{background:#0B6A8A;color:#FFFFFF;font-weight:600}
+.iconbtn{width:40px;height:40px;display:flex;align-items:center;justify-content:center;background:transparent;border:0;color:#FFFFFF;border-radius:4px;cursor:pointer}
+.avatar{width:32px;height:32px;border-radius:50%;background:#0B6A8A;color:#FFFFFF;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;margin-left:6px}
+.shell{display:flex;flex-wrap:wrap;flex:1}
+.nav{flex:1 1 232px;max-width:232px;background:#EEF1F2;border-right:1px solid #DDE2E4;padding:8px 0;display:flex;flex-direction:column;gap:2px}
+.nav a{display:flex;align-items:center;gap:12px;min-height:36px;padding:0 16px;color:#242424;text-decoration:none;font-size:14px}
+.nav a:hover{background:#E2E7E9;color:#242424}
+.nav a.sel{background:#FFFFFF;font-weight:600;box-shadow:inset 3px 0 0 #0B6A8A}
+.nav .sep{height:1px;background:#DDE2E4;margin:6px 16px}
+.content{flex:999 1 600px;min-width:0;padding:16px 28px 32px;display:flex;flex-direction:column;gap:16px}
+.crumb{font-size:13px;color:#616161;display:flex;gap:6px;align-items:center}
+.crumb a{text-decoration:none}
+h1{font-size:24px;font-weight:600;margin:0}
+h2{font-size:16px;font-weight:600;margin:0}
+.card{background:#FFFFFF;border:1px solid #E0E0E0;border-radius:6px;padding:16px;min-width:0}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:2px 8px;border-radius:999px;font-weight:600;white-space:nowrap}
+.ok{background:#E9F6E9;color:#0B5A0B}.warn{background:#FFF1C7;color:#6B4100}.bad{background:#FCE9EA;color:#9A1F25}.off{background:#EEEEEE;color:#555555}
+.tag{font-family:Consolas,"Cascadia Mono",ui-monospace,monospace;font-size:11.5px;padding:1px 6px;border-radius:3px;border:1px solid #BFD3DA;color:#0B5670;background:#EEF6F9;white-space:nowrap}
+.tag.cloud{border-color:#E2B26E;color:#6B4100;background:#FFF5E6}
+.tablebox{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{text-align:left;font-weight:600;color:#5C5C5C;padding:8px 12px;border-bottom:1px solid #E0E0E0;white-space:nowrap}
+td{padding:9px 12px;border-bottom:1px solid #F0F0F0;white-space:nowrap}
+.muted{color:#616161}
+.bar{height:6px;border-radius:3px;background:#E6E6E6;overflow:hidden}
+.bar span{display:block;height:100%;background:#0B6A8A}
+.span2{grid-column:span 2}
+@media (max-width:760px){.span2{grid-column:auto}}
+</style>
+</helmet>
+<div class="app">
+<header class="top">
+<div class="brandmark">
+<svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="#7FD0E6" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M3 17V10a7 7 0 0 1 14 0v7"></path><path d="M7 17v-6a3 3 0 0 1 6 0v6"></path></svg>
+<span>CAVE admin center</span>
+</div>
+<label class="search">
+<svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="9" cy="9" r="5.5"></circle><path d="m13.5 13.5 4 4"></path></svg>
+<input type="search" aria-label="Search devices, automations and settings" placeholder="Search devices, automations and settings">
+</label>
+<div class="mode" role="group" aria-label="Interface mode"><a class="modebtn" href="Dashboard.dc.html">Dashboards</a><a class="modebtn on" href="Main.dc.html" aria-current="true">Admin console</a></div>
+<div class="tools">
+<button class="iconbtn" aria-label="Notifications"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 14V9a5 5 0 0 1 10 0v5l1.5 1.5h-13zM8.5 17.5h3"></path></svg></button>
+<button class="iconbtn" aria-label="Settings"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="2.5"></circle><path d="M10 2.5v2M10 15.5v2M2.5 10h2M15.5 10h2M4.7 4.7l1.4 1.4M13.9 13.9l1.4 1.4M4.7 15.3l1.4-1.4M13.9 6.1l1.4-1.4"></path></svg></button>
+<button class="iconbtn" aria-label="Help"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="7.5"></circle><path d="M8 8a2 2 0 1 1 2.8 1.8c-.5.3-.8.7-.8 1.2V12M10 14.5v.5"></path></svg></button>
+<div class="avatar" aria-label="Signed in as Alex, Admin">AL</div>
+</div>
+</header>
+<div class="shell">
+<nav class="nav" aria-label="Services">
+<a class="sel" href="Main.dc.html"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9.5 10 4l7 5.5V16a1 1 0 0 1-1 1h-4v-5H8v5H4a1 1 0 0 1-1-1z"></path></svg>Home</a>
+<a href="#"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="6" height="6" rx="1"></rect><rect x="11" y="3" width="6" height="6" rx="1"></rect><rect x="3" y="11" width="6" height="6" rx="1"></rect><rect x="11" y="11" width="6" height="6" rx="1"></rect></svg>Dashboards</a>
+<div class="sep"></div>
+<a href="Devices.dc.html"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2.5" y="4" width="11" height="8" rx="1"></rect><path d="M5.5 15h5"></path><rect x="14.5" y="7" width="3.5" height="8" rx="1"></rect></svg>Devices</a>
+<a href="#"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6h12M4 10h12M4 14h8"></path></svg>Entities</a>
+<a href="#"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 3v4M13 3v4M5 7h10v3a5 5 0 0 1-10 0zM10 15v3"></path></svg>Integrations</a>
+<a href="Automation.dc.html"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11 2 4 11h5l-1 7 7-9h-5z"></path></svg>Automations</a>
+<a href="Scripts.dc.html"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 6 3 10l4 4M13 6l4 4-4 4"></path></svg>Scripts</a>
+<a href="#"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 18s-5-5-5-9a5 5 0 0 1 10 0c0 4-5 9-5 9z"></path><circle cx="10" cy="9" r="1.8"></circle></svg>Areas and labels</a>
+<a href="#"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 14V9a5 5 0 0 1 10 0v5l1.5 1.5h-13zM8.5 17.5h3"></path></svg>Notifications</a>
+<a href="#"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 17h14M6 14V9M10 14V5M14 14v-3"></path></svg>Reports</a>
+<div class="sep"></div>
+<a href="Users.dc.html"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="7" r="3"></circle><path d="M2.5 17a5.5 5.5 0 0 1 11 0M13 4.5a3 3 0 0 1 0 5.5M15 12.5a5 5 0 0 1 2.5 4.5"></path></svg>Users and permissions</a>
+<a href="#"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="2.5"></circle><path d="M10 2.5v2M10 15.5v2M2.5 10h2M15.5 10h2M4.7 4.7l1.4 1.4M13.9 13.9l1.4 1.4M4.7 15.3l1.4-1.4M13.9 6.1l1.4-1.4"></path></svg>System administration</a>
+<a href="#"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12.5 3a4 4 0 0 0-3.8 5.3L3 14l3 3 5.7-5.7A4 4 0 0 0 17 7.5l-2.5 2.5L12 7.5 14.5 5a4 4 0 0 0-2-2z"></path></svg>Troubleshooting + support</a>
+</nav>
+<main class="content">
+<div class="crumb"><span>Home</span></div>
+<div style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px">
+<h1>Home</h1>
+<div style="display: flex; gap: 10px; align-items: center; font-size: 13px; color: #616161">
+<span class="pill off">Sample data</span>
+<span>Refreshed 7:42 PM</span>
+<button style="font: inherit; font-size: 13px; padding: 5px 12px; border: 1px solid #C7C7C7; background: #FFFFFF; border-radius: 4px; color: #242424; cursor: pointer">Refresh</button>
+</div>
+</div>
+
+<section style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px" aria-label="House status">
+<div class="card" style="display: flex; flex-direction: column; gap: 6px">
+<div class="muted" style="font-size: 13px; font-weight: 600">Integrations</div>
+<div style="display: flex; align-items: baseline; gap: 8px"><span style="font-size: 32px; font-weight: 600">28</span><span class="muted">connected of 30</span></div>
+<div style="display: flex; gap: 6px; flex-wrap: wrap"><span class="pill warn">1 degraded</span><span class="pill bad">1 needs sign-in</span></div>
+<a href="#" style="font-size: 13px; margin-top: 4px">View integration health</a>
+</div>
+<div class="card" style="display: flex; flex-direction: column; gap: 6px">
+<div class="muted" style="font-size: 13px; font-weight: 600">Devices</div>
+<div style="display: flex; align-items: baseline; gap: 8px"><span style="font-size: 32px; font-weight: 600">142</span><span class="muted">devices</span></div>
+<div style="display: flex; gap: 6px; flex-wrap: wrap"><span class="pill bad">3 unavailable</span><span class="pill warn">2 low battery</span></div>
+<a href="Devices.dc.html" style="font-size: 13px; margin-top: 4px">View all devices</a>
+</div>
+<div class="card" style="display: flex; flex-direction: column; gap: 6px">
+<div class="muted" style="font-size: 13px; font-weight: 600">Automations</div>
+<div style="display: flex; align-items: baseline; gap: 8px"><span style="font-size: 32px; font-weight: 600">24</span><span class="muted">enabled</span></div>
+<div style="display: flex; gap: 6px; flex-wrap: wrap"><span class="pill bad">1 failed run (24 h)</span></div>
+<a href="Automation.dc.html" style="font-size: 13px; margin-top: 4px">View run history</a>
+</div>
+<div class="card" style="display: flex; flex-direction: column; gap: 6px">
+<div class="muted" style="font-size: 13px; font-weight: 600">Updates</div>
+<div style="display: flex; align-items: baseline; gap: 8px"><span style="font-size: 32px; font-weight: 600">2</span><span class="muted">available</span></div>
+<div class="muted" style="font-size: 13px">cave-core 0.4.1 · Zigbee2MQTT</div>
+<a href="#" style="font-size: 13px; margin-top: 4px">Review updates</a>
+</div>
+</section>
+
+<section style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px">
+<div class="card span2" style="display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 12px"><h2>Integration health</h2><a href="#" style="font-size: 13px">See all 30</a></div>
+<div class="tablebox">
+<table>
+<thead><tr><th>Integration</th><th>Status</th><th>Connection</th><th>Entities</th><th>Last update</th></tr></thead>
+<tbody>
+<sc-for list="{{health}}" as="row" hint-placeholder-count="7">
+<tr><td style="font-weight: 600">{{row.name}}</td><td><span class="pill {{row.cls}}">{{row.status}}</span></td><td><span class="tag {{row.tagcls}}">{{row.iot}}</span></td><td>{{row.entities}}</td><td class="muted">{{row.seen}}</td></tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+</div>
+<div class="card" style="display: flex; flex-direction: column; gap: 14px">
+<h2>Power</h2>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; justify-content: space-between; gap: 8px"><span style="font-weight: 600">Rack UPS</span><span class="pill ok">On mains</span></div>
+<div style="display: flex; justify-content: space-between; font-size: 13px" class="muted"><span>Load 23%</span><span>Runtime 41 min</span></div>
+<div class="bar"><span style="width: 23%"></span></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; justify-content: space-between; gap: 8px"><span style="font-weight: 600">Solar production</span><span class="tag">local_poll</span></div>
+<div style="font-size: 24px; font-weight: 600">3.2 kW</div>
+<div class="muted" style="font-size: 13px">Enphase IQ Gateway · 18.4 kWh today</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; justify-content: space-between; gap: 8px"><span style="font-weight: 600">Portable battery</span><span class="tag cloud">cloud_push</span></div>
+<div style="display: flex; justify-content: space-between; font-size: 13px" class="muted"><span>EcoFlow River 2 Pro</span><span>86%</span></div>
+<div class="bar"><span style="width: 86%"></span></div>
+</div>
+</div>
+</section>
+
+<section style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px">
+<div class="card span2" style="display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 12px"><h2>Recent automation runs</h2><a href="#" style="font-size: 13px">Open run history</a></div>
+<div class="tablebox">
+<table>
+<thead><tr><th>Time</th><th>Automation</th><th>Trigger</th><th>Duration</th><th>Result</th></tr></thead>
+<tbody>
+<sc-for list="{{runs}}" as="run" hint-placeholder-count="5">
+<tr><td class="muted">{{run.time}}</td><td style="font-weight: 600"><a href="Automation.dc.html" style="text-decoration: none">{{run.name}}</a></td><td>{{run.trigger}}</td><td>{{run.duration}}</td><td><span class="pill {{run.cls}}">{{run.result}}</span></td></tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+</div>
+<div class="card" style="display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 12px"><h2>Audit log</h2><a href="#" style="font-size: 13px">View all</a></div>
+<sc-for list="{{audit}}" as="ev" hint-placeholder-count="4">
+<div style="display: flex; flex-direction: column; gap: 2px; padding-bottom: 10px; border-bottom: 1px solid #F0F0F0">
+<span style="font-size: 13px">{{ev.text}}</span>
+<span class="muted" style="font-size: 12px">{{ev.who}} · {{ev.time}}</span>
+</div>
+</sc-for>
+</div>
+</section>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1040}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      health: [
+        { name: 'Philips Hue', status: 'Connected', cls: 'ok', iot: 'local_push', tagcls: '', entities: 46, seen: 'Just now' },
+        { name: 'Zigbee2MQTT', status: 'Connected', cls: 'ok', iot: 'local_push', tagcls: '', entities: 38, seen: 'Just now' },
+        { name: 'UniFi Network', status: 'Connected', cls: 'ok', iot: 'local_push', tagcls: '', entities: 61, seen: '5 s ago' },
+        { name: 'Network UPS Tools', status: 'Connected', cls: 'ok', iot: 'local_poll', tagcls: '', entities: 7, seen: '10 s ago' },
+        { name: 'Plex', status: 'Degraded, retrying', cls: 'warn', iot: 'local_push', tagcls: '', entities: 12, seen: '4 min ago' },
+        { name: 'EcoFlow', status: 'Needs sign-in', cls: 'bad', iot: 'cloud_push', tagcls: 'cloud', entities: 9, seen: '3 h ago' },
+        { name: 'Sonos', status: 'Connected', cls: 'ok', iot: 'local_push', tagcls: '', entities: 18, seen: 'Just now' }
+      ],
+      runs: [
+        { time: '7:30 PM', name: 'Porch lights at sunset', trigger: 'Sun: sunset −10 min', duration: '0.4 s', result: 'Succeeded', cls: 'ok' },
+        { time: '7:12 PM', name: 'Notify when washer is done', trigger: 'LG ThinQ state', duration: '0.2 s', result: 'Succeeded', cls: 'ok' },
+        { time: '6:58 PM', name: 'Lab nightly backup check', trigger: 'Time 18:55', duration: '12.8 s', result: 'Failed: script exit 1', cls: 'bad' },
+        { time: '6:45 PM', name: 'Arrive home scene', trigger: 'Zone: Home', duration: '1.1 s', result: 'Succeeded', cls: 'ok' },
+        { time: '6:00 PM', name: 'UPS self-test report', trigger: 'Time 18:00', duration: '3.4 s', result: 'Succeeded', cls: 'ok' }
+      ],
+      audit: [
+        { text: 'Edited automation “Porch lights at sunset”', who: 'Alex (Admin)', time: '6:52 PM' },
+        { text: 'Restarted integration host “plex”', who: 'Host supervisor', time: '6:41 PM' },
+        { text: 'Added integration “Enphase IQ Gateway”', who: 'Alex (Admin)', time: '5:10 PM' },
+        { text: 'Signed in with MFA from 192.168.1.24', who: 'Sam (Operator)', time: '4:37 PM' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

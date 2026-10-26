@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CAVE – Home (Simple mode)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0B6A8A}a:hover{color:#084E66}
+.app{font-family:"Segoe UI Variable Text","Segoe UI","Noto Sans",system-ui,sans-serif;color:#242424;background:#F6F7F7;min-height:1100px;display:flex;flex-direction:column;font-size:15px}
+.top{min-height:48px;background:#1C2830;color:#FFFFFF;display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:0 12px 0 16px}
+.brandmark{font-weight:600;font-size:15px;display:flex;align-items:center;gap:10px;white-space:nowrap}
+.spacer{flex:1}
+.mode{display:flex;border:1px solid #4A5C67;border-radius:4px;overflow:hidden}
+.modebtn{font:inherit;font-size:12.5px;padding:5px 12px;border:0;background:transparent;color:#C9D4DA;cursor:pointer;text-decoration:none}
+.modebtn.on{background:#0B6A8A;color:#FFFFFF;font-weight:600}
+.iconbtn{width:40px;height:40px;display:flex;align-items:center;justify-content:center;background:transparent;border:0;color:#FFFFFF;border-radius:4px;cursor:pointer}
+.avatar{width:32px;height:32px;border-radius:50%;background:#6B4FA0;color:#FFFFFF;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;margin-left:6px}
+.shell{display:flex;flex-wrap:wrap;flex:1}
+.nav{flex:1 1 200px;max-width:200px;background:#EEF1F2;border-right:1px solid #DDE2E4;padding:12px 0;display:flex;flex-direction:column;gap:4px}
+.nav a{display:flex;align-items:center;gap:12px;min-height:44px;padding:0 18px;color:#242424;text-decoration:none;font-size:15px}
+.nav a:hover{background:#E2E7E9;color:#242424}
+.nav a.sel{background:#FFFFFF;font-weight:600;box-shadow:inset 3px 0 0 #0B6A8A}
+.content{flex:999 1 600px;min-width:0;padding:24px 32px 40px;display:flex;flex-direction:column;gap:24px;max-width:1180px}
+h1{font-size:28px;font-weight:600;margin:0}
+h2{font-size:18px;font-weight:600;margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;padding:6px 12px;border-radius:999px;background:#FFFFFF;border:1px solid #E0E0E0}
+.dot{width:8px;height:8px;border-radius:50%;background:#107C10}
+.dot.warn{background:#C27C0E}
+.grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.room{background:#FFFFFF;border:1px solid #E0E0E0;border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.room small{color:#616161;font-size:13.5px}
+.toggle{font:inherit;font-size:14px;min-height:44px;padding:0 14px;border-radius:8px;border:1px solid #C7C7C7;background:#FFFFFF;color:#242424;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.toggle.on{background:#E3F1F6;border-color:#0B6A8A;color:#0B4F66;font-weight:600}
+.scene{font:inherit;font-size:15px;min-height:52px;padding:0 18px;border-radius:10px;border:1px solid #D6DADC;background:#FFFFFF;color:#242424;cursor:pointer;display:flex;align-items:center;gap:10px}
+.recipe{background:#FFFFFF;border:1px solid #E0E0E0;border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.recipe p{margin:0;color:#555555;font-size:14px}
+.btn{font:inherit;font-size:14px;min-height:40px;padding:0 16px;border-radius:6px;border:1px solid #0B6A8A;background:#0B6A8A;color:#FFFFFF;cursor:pointer;align-self:flex-start;text-decoration:none;display:inline-flex;align-items:center}
+.btn.ghost{background:#FFFFFF;color:#0B6A8A}
+.builder{background:#FFFFFF;border:1px solid #E0E0E0;border-radius:10px;padding:20px;display:flex;flex-direction:column;gap:14px}
+.sentence{font-size:18px;line-height:2.4}
+.sentence select{font:inherit;font-size:16px;font-weight:600;color:#0B4F66;background:#E3F1F6;border:1px solid #9CC3D1;border-radius:6px;padding:4px 8px;margin:0 2px}
+.lang{font-size:11.5px;font-weight:600;padding:1px 7px;border-radius:3px;white-space:nowrap}
+.sh{background:#F1ECE4;color:#5C4426}.ps{background:#E6EEF8;color:#1F4E8C}
+.muted{color:#616161}
+</style>
+</helmet>
+<div class="app">
+<header class="top">
+<div class="brandmark">
+<svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="#7FD0E6" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M3 17V10a7 7 0 0 1 14 0v7"></path><path d="M7 17v-6a3 3 0 0 1 6 0v6"></path></svg>
+<span>CAVE</span>
+</div>
+<div class="spacer"></div>
+<div class="mode" role="group" aria-label="Interface mode"><a class="modebtn on" href="SimpleHome.dc.html" aria-current="true">Simple</a><a class="modebtn" href="Main.dc.html">Advanced</a></div>
+<button class="iconbtn" aria-label="Notifications"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 14V9a5 5 0 0 1 10 0v5l1.5 1.5h-13zM8.5 17.5h3"></path></svg></button>
+<button class="iconbtn" aria-label="Help"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="7.5"></circle><path d="M8 8a2 2 0 1 1 2.8 1.8c-.5.3-.8.7-.8 1.2V12M10 14.5v.5"></path></svg></button>
+<div class="avatar" aria-label="Signed in as Sam, Household member">SA</div>
+</header>
+<div class="shell">
+<nav class="nav" aria-label="Main">
+<a class="sel" href="SimpleHome.dc.html"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9.5 10 4l7 5.5V16a1 1 0 0 1-1 1h-4v-5H8v5H4a1 1 0 0 1-1-1z"></path></svg>Home</a>
+<a href="#"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="14" height="14" rx="2"></rect><path d="M10 3v14M3 10h7"></path></svg>Rooms</a>
+<a href="#"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3l2 4.5 5 .5-3.7 3.3 1 4.9L10 13.8 5.7 16.2l1-4.9L3 8l5-.5z"></path></svg>Scenes</a>
+<a href="#"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11 2 4 11h5l-1 7 7-9h-5z"></path></svg>Automations</a>
+<a href="#"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 14V9a5 5 0 0 1 10 0v5l1.5 1.5h-13zM8.5 17.5h3"></path></svg>Notifications</a>
+<a href="#"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="7.5"></circle><path d="M8 8a2 2 0 1 1 2.8 1.8c-.5.3-.8.7-.8 1.2V12M10 14.5v.5"></path></svg>Help</a>
+</nav>
+<main class="content">
+<section style="display: flex; flex-direction: column; gap: 10px">
+<h1>Good evening, Sam</h1>
+<div class="chips" aria-label="House status">
+<span class="chip"><span class="dot"></span>All doors locked</span>
+<span class="chip"><span class="dot"></span>72 °F inside</span>
+<span class="chip"><span class="dot"></span>Solar making 3.2 kW</span>
+<span class="chip"><span class="dot warn"></span>Garage sensor battery low</span>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 12px">
+<h2>Rooms</h2>
+<div class="grid4">
+<sc-for list="{{rooms}}" as="r" hint-placeholder-count="4">
+<div class="room">
+<div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px"><span style="font-size: 17px; font-weight: 600">{{r.name}}</span><small>{{r.summary}}</small></div>
+<button class="toggle {{r.lightsCls}}" onClick="{{r.toggleLights}}" aria-pressed="{{r.lightsOn}}"><span>Lights</span><span>{{r.lightsLabel}}</span></button>
+<button class="toggle {{r.otherCls}}" onClick="{{r.toggleOther}}" aria-pressed="{{r.otherOn}}"><span>{{r.other}}</span><span>{{r.otherLabel}}</span></button>
+</div>
+</sc-for>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 12px">
+<h2>Scenes</h2>
+<div style="display: flex; flex-wrap: wrap; gap: 12px">
+<button class="scene"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#0B6A8A" stroke-width="1.5"><rect x="3" y="5" width="14" height="10" rx="1"></rect><path d="M8 8.5v3l3-1.5z"></path></svg>Movie night</button>
+<button class="scene"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#0B6A8A" stroke-width="1.5"><path d="M15 12.5A6 6 0 0 1 7.5 5a6 6 0 1 0 7.5 7.5z"></path></svg>Good night</button>
+<button class="scene"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#0B6A8A" stroke-width="1.5"><path d="M4 16V8l6-4 6 4v8M8 16v-4h4v4"></path></svg>I'm home</button>
+<button class="scene"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#0B6A8A" stroke-width="1.5"><rect x="5" y="9" width="10" height="8" rx="1"></rect><path d="M7 9V6a3 3 0 0 1 6 0v3"></path></svg>Away</button>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 12px"><h2>Quick actions</h2><span class="muted" style="font-size: 13.5px">Scripts an Admin approved for this dashboard</span></div>
+<div class="grid3">
+<div class="recipe">
+<div style="display: flex; justify-content: space-between; gap: 8px; align-items: center"><span style="font-weight: 600">Check server disk space</span><span class="lang sh">Bash</span></div>
+<p>Reports how full the CAVE host's disk is. Last run 6:00 PM: 61% used.</p>
+<button class="btn ghost">Run now</button>
+</div>
+<div class="recipe">
+<div style="display: flex; justify-content: space-between; gap: 8px; align-items: center"><span style="font-weight: 600">Shut down the lab</span><span class="lang ps">PowerShell</span></div>
+<p>Safely stops lab servers. Asks for confirmation before it runs.</p>
+<button class="btn ghost">Run now</button>
+</div>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 12px">
+<h2>Start an automation from a recipe</h2>
+<div class="grid3">
+<sc-for list="{{recipes}}" as="rc" hint-placeholder-count="6">
+<div class="recipe">
+<span style="font-weight: 600">{{rc.title}}</span>
+<p>{{rc.text}}</p>
+<button class="btn ghost">Use this recipe</button>
+</div>
+</sc-for>
+</div>
+</section>
+
+<section class="builder" aria-label="Automation sentence builder">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: baseline"><h2>UPS power-loss recipe</h2><span class="muted" style="font-size: 13.5px">Pick from the highlighted words. No codes or IDs needed.</span></div>
+<div class="sentence">
+When
+<select aria-label="Device"><option>Rack UPS</option><option>Office UPS</option></select>
+<select aria-label="Event"><option>switches to battery</option><option>battery is low</option></select>
+for
+<select aria-label="Duration"><option>2 minutes</option><option>5 minutes</option><option>right away</option></select>,
+if
+<select aria-label="Condition"><option>runtime is under 15 minutes</option><option>it's any time</option></select>,
+then
+<select aria-label="First action"><option>notify me</option><option>notify everyone</option></select>
+and
+<select aria-label="Second action"><option>run “Shut down the lab”</option><option>do nothing else</option></select>.
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 10px">
+<button class="btn">Save automation</button>
+<button class="btn ghost">Test it now</button>
+<a class="btn ghost" href="Automation.dc.html">Open in Advanced editor</a>
+</div>
+</section>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1100}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { lights: { living: true, kitchen: false, office: true, garage: false }, other: { living: false, kitchen: false, office: true, garage: false } };
+  }
+  renderVals() {
+    const base = [
+      { id: 'living', name: 'Living Room', summary: '3 lights, TV', other: 'TV' },
+      { id: 'kitchen', name: 'Kitchen', summary: 'Island lights, coffee maker', other: 'Coffee maker' },
+      { id: 'office', name: 'Office', summary: 'Desk lamp, plug, UPS', other: 'Office plug' },
+      { id: 'garage', name: 'Garage', summary: 'Door, solar, battery', other: 'Garage door' }
+    ];
+    const rooms = base.map((r) => {
+      const lightsOn = !!this.state.lights[r.id];
+      const otherOn = !!this.state.other[r.id];
+      const isDoor = r.id === 'garage';
+      return {
+        ...r,
+        lightsOn, otherOn,
+        lightsCls: lightsOn ? 'on' : '',
+        otherCls: otherOn ? 'on' : '',
+        lightsLabel: lightsOn ? 'On' : 'Off',
+        otherLabel: isDoor ? (otherOn ? 'Open' : 'Closed') : (otherOn ? 'On' : 'Off'),
+        toggleLights: () => this.setState({ lights: { ...this.state.lights, [r.id]: !lightsOn } }),
+        toggleOther: () => this.setState({ other: { ...this.state.other, [r.id]: !otherOn } })
+      };
+    });
+    return {
+      rooms,
+      recipes: [
+        { title: 'Lights on at sunset', text: 'Turn chosen lights on at sunset and off at a time you pick.' },
+        { title: 'Washer or dryer is done', text: 'Send a notification when a cycle finishes.' },
+        { title: 'Power outage', text: 'Alert you and shut down servers when the UPS runs on battery.' },
+        { title: 'Everyone left', text: 'Turn everything off when the last person leaves home.' },
+        { title: 'Door opened while away', text: 'Notify you if a door opens while the house is set to Away.' },
+        { title: 'Run a script on a schedule', text: 'Pick an approved script and a time; CAVE runs it for you.' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

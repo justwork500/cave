@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CAVE admin center – Users and permissions</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0B6A8A}a:hover{color:#084E66}
+.app{font-family:"Segoe UI Variable Text","Segoe UI","Noto Sans",system-ui,sans-serif;color:#242424;background:#FAFAFA;min-height:1100px;display:flex;flex-direction:column;font-size:14px}
+.top{min-height:48px;background:#1C2830;color:#FFFFFF;display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:0 12px 0 16px}
+.brandmark{font-weight:600;font-size:15px;display:flex;align-items:center;gap:10px;white-space:nowrap}
+.search{flex:1 1 240px;max-width:520px;margin:0 auto;height:32px;border-radius:4px;background:#2B3A43;border:1px solid #4A5C67;display:flex;align-items:center;gap:8px;padding:0 10px;color:#C9D4DA;font-size:13px}
+.search input{flex:1;min-width:0;background:transparent;border:0;color:#FFFFFF;font:inherit}
+.search input::placeholder{color:#B5C2C9}
+.tools{display:flex;align-items:center;gap:2px}
+.mode{display:flex;border:1px solid #4A5C67;border-radius:4px;overflow:hidden}
+.modebtn{font:inherit;font-size:12.5px;padding:5px 12px;border:0;background:transparent;color:#C9D4DA;cursor:pointer;text-decoration:none}
+.modebtn.on{background:#0B6A8A;color:#FFFFFF;font-weight:600}
+.iconbtn{width:40px;height:40px;display:flex;align-items:center;justify-content:center;background:transparent;border:0;color:#FFFFFF;border-radius:4px;cursor:pointer}
+.avatar{width:32px;height:32px;border-radius:50%;background:#0B6A8A;color:#FFFFFF;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;margin-left:6px}
+.shell{display:flex;flex-wrap:wrap;flex:1}
+.nav{flex:1 1 232px;max-width:232px;background:#EEF1F2;border-right:1px solid #DDE2E4;padding:8px 0;display:flex;flex-direction:column;gap:2px}
+.nav a{display:flex;align-items:center;gap:12px;min-height:36px;padding:0 16px;color:#242424;text-decoration:none;font-size:14px}
+.nav a:hover{background:#E2E7E9;color:#242424}
+.nav a.sel{background:#FFFFFF;font-weight:600;box-shadow:inset 3px 0 0 #0B6A8A}
+.nav .sep{height:1px;background:#DDE2E4;margin:6px 16px}
+.content{flex:999 1 600px;min-width:0;padding:16px 28px 32px;display:flex;flex-direction:column;gap:12px}
+.crumb{font-size:13px;color:#616161;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.crumb a{text-decoration:none}
+h1{font-size:24px;font-weight:600;margin:0}
+h2{font-size:16px;font-weight:600;margin:0}
+h3{font-size:13px;font-weight:600;margin:0;color:#424242;text-transform:uppercase;letter-spacing:.05em}
+.blade{display:flex;flex-wrap:wrap;background:#FFFFFF;border:1px solid #E0E0E0;border-radius:6px;min-height:880px}
+.submenu{flex:1 1 170px;max-width:180px;border-right:1px solid #E8E8E8;padding:12px 0;display:flex;flex-direction:column;gap:1px}
+.submenu a{display:block;padding:7px 16px;color:#242424;text-decoration:none;font-size:13.5px}
+.submenu a:hover{background:#F3F5F6;color:#242424}
+.submenu a.sel{background:#E8F3F7;font-weight:600}
+.work{flex:999 1 560px;min-width:0;padding:12px 20px 20px;display:flex;flex-direction:column;gap:12px}
+.cmdbar{display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid #EEEEEE;padding-bottom:8px}
+.cmd{display:inline-flex;align-items:center;gap:6px;font:inherit;font-size:13px;padding:6px 10px;border:0;background:transparent;color:#242424;border-radius:4px;cursor:pointer}
+.cmd:hover{background:#F3F5F6}
+.cmd svg{color:#0B6A8A}
+.cols{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start}
+.list{flex:1 1 380px;min-width:0}
+.detail{flex:999 1 460px;min-width:0;border:1px solid #E0E0E0;border-radius:6px;padding:16px;display:flex;flex-direction:column;gap:14px}
+.tablebox{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{text-align:left;font-weight:600;color:#5C5C5C;padding:8px 10px;border-bottom:1px solid #E0E0E0;white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid #F0F0F0;white-space:nowrap}
+tr.sel td{background:#EEF6F9}
+.rowbtn{font:inherit;font-size:13px;font-weight:600;color:#0B6A8A;background:transparent;border:0;padding:0;cursor:pointer;text-align:left}
+.pill{display:inline-flex;align-items:center;font-size:12px;padding:2px 8px;border-radius:999px;font-weight:600;white-space:nowrap}
+.ok{background:#E9F6E9;color:#0B5A0B}.warn{background:#FFF1C7;color:#6B4100}.bad{background:#FCE9EA;color:#9A1F25}.off{background:#EEEEEE;color:#555555}
+.group{display:flex;flex-direction:column;gap:2px}
+.row{display:flex;align-items:center;gap:10px;padding:7px 4px;border-bottom:1px solid #F2F2F2;min-height:36px}
+.row .label{flex:1;min-width:0}
+.badge{font-size:11.5px;font-weight:600;padding:1px 7px;border-radius:3px;white-space:nowrap}
+.badge.custom{background:#FFF1C7;color:#6B4100}
+.badge.lock{background:#EEEEEE;color:#555555}
+.sw{position:relative;width:42px;height:24px;border-radius:12px;border:0;background:#A9B2B6;cursor:pointer;flex:0 0 42px;padding:0}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#FFFFFF;transition:left .15s}
+.sw.on{background:#0B6A8A}
+.sw.on::after{left:21px}
+.sw:disabled{opacity:.55;cursor:not-allowed}
+select{font:inherit;font-size:13.5px;padding:5px 8px;border:1px solid #C7C7C7;border-radius:4px;background:#FFFFFF;color:#242424}
+.btn{font:inherit;font-size:13px;padding:6px 14px;border-radius:4px;border:1px solid #0B6A8A;background:#FFFFFF;color:#0B6A8A;cursor:pointer}
+.muted{color:#616161}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+@media (prefers-reduced-motion: reduce){.sw::after{transition:none}}
+</style>
+</helmet>
+<div class="app">
+<header class="top">
+<div class="brandmark">
+<svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="#7FD0E6" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M3 17V10a7 7 0 0 1 14 0v7"></path><path d="M7 17v-6a3 3 0 0 1 6 0v6"></path></svg>
+<span>CAVE admin center</span>
+</div>
+<label class="search">
+<svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="9" cy="9" r="5.5"></circle><path d="m13.5 13.5 4 4"></path></svg>
+<input type="search" aria-label="Search devices, automations and settings" placeholder="Search devices, automations and settings">
+</label>
+<div class="mode" role="group" aria-label="Switch view"><a class="modebtn" href="Dashboard.dc.html">Dashboards</a><a class="modebtn on" href="Main.dc.html" aria-current="true">Admin console</a></div>
+<div class="tools">
+<button class="iconbtn" aria-label="Notifications"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 14V9a5 5 0 0 1 10 0v5l1.5 1.5h-13zM8.5 17.5h3"></path></svg></button>
+<button class="iconbtn" aria-label="Help"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="7.5"></circle><path d="M8 8a2 2 0 1 1 2.8 1.8c-.5.3-.8.7-.8 1.2V12M10 14.5v.5"></path></svg></button>
+<div class="avatar" aria-label="Signed in as Alex, Admin">AL</div>
+</div>
+</header>
+<div class="shell">
+<nav class="nav" aria-label="Services">
+<a href="Main.dc.html"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9.5 10 4l7 5.5V16a1 1 0 0 1-1 1h-4v-5H8v5H4a1 1 0 0 1-1-1z"></path></svg>Home</a>
+<a href="Dashboard.dc.html"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="6" height="6" rx="1"></rect><rect x="11" y="3" width="6" height="6" rx="1"></rect><rect x="3" y="11" width="6" height="6" rx="1"></rect><rect x="11" y="11" width="6" height="6" rx="1"></rect></svg>Dashboards</a>
+<div class="sep"></div>
+<a href="Devices.dc.html"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2.5" y="4" width="11" height="8" rx="1"></rect><path d="M5.5 15h5"></path><rect x="14.5" y="7" width="3.5" height="8" rx="1"></rect></svg>Devices</a>
+<a href="#"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 3v4M13 3v4M5 7h10v3a5 5 0 0 1-10 0zM10 15v3"></path></svg>Integrations</a>
+<a href="Automation.dc.html"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11 2 4 11h5l-1 7 7-9h-5z"></path></svg>Automations</a>
+<a href="Scripts.dc.html"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 6 3 10l4 4M13 6l4 4-4 4"></path></svg>Scripts</a>
+<a href="#"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 14V9a5 5 0 0 1 10 0v5l1.5 1.5h-13zM8.5 17.5h3"></path></svg>Notifications</a>
+<a href="#"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 17h14M6 14V9M10 14V5M14 14v-3"></path></svg>Reports</a>
+<div class="sep"></div>
+<a class="sel" href="Users.dc.html"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="7" r="3"></circle><path d="M2.5 17a5.5 5.5 0 0 1 11 0M13 4.5a3 3 0 0 1 0 5.5M15 12.5a5 5 0 0 1 2.5 4.5"></path></svg>Users and permissions</a>
+<a href="#"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="2.5"></circle><path d="M10 2.5v2M10 15.5v2M2.5 10h2M15.5 10h2M4.7 4.7l1.4 1.4M13.9 13.9l1.4 1.4M4.7 15.3l1.4-1.4M13.9 6.1l1.4-1.4"></path></svg>System administration</a>
+<a href="#"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12.5 3a4 4 0 0 0-3.8 5.3L3 14l3 3 5.7-5.7A4 4 0 0 0 17 7.5l-2.5 2.5L12 7.5 14.5 5a4 4 0 0 0-2-2z"></path></svg>Troubleshooting + support</a>
+</nav>
+<main class="content">
+<div class="crumb"><a href="Main.dc.html">Home</a><span>›</span><span>Users and permissions</span></div>
+<h1>Users and permissions <span style="font-weight: 400; color: #616161">| Users</span></h1>
+<div class="blade">
+<nav class="submenu" aria-label="Users and permissions">
+<a class="sel" href="#">Users</a>
+<a href="#">Role defaults</a>
+<a href="#">Sign-in log</a>
+<a href="#">API tokens</a>
+<a href="#">Kiosk tokens (1)</a>
+<a href="#">Single sign-on</a>
+</nav>
+<section class="work">
+<div class="cmdbar" role="toolbar" aria-label="User commands">
+<button class="cmd"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 4v12M4 10h12"></path></svg>Add user</button>
+<button class="cmd"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M16 10a6 6 0 1 1-1.8-4.3M16 3v4h-4"></path></svg>Refresh</button>
+<button class="cmd"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 3v10M6 9l4 4 4-4M4 17h12"></path></svg>Export</button>
+</div>
+<div class="cols">
+<div class="list">
+<div class="tablebox">
+<table>
+<thead><tr><th>Name</th><th>Role</th><th>Status</th><th>MFA</th><th>Last sign-in</th></tr></thead>
+<tbody>
+<sc-for list="{{users}}" as="u" hint-placeholder-count="5">
+<tr class="{{u.rowCls}}"><td><button class="rowbtn" onClick="{{u.pick}}">{{u.name}}</button></td><td>{{u.role}}</td><td><span class="pill {{u.statusCls}}">{{u.status}}</span></td><td>{{u.mfa}}</td><td class="muted">{{u.last}}</td></tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+</div>
+<section class="detail" aria-label="Selected user">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px">
+<div style="display: flex; flex-direction: column; gap: 2px"><h2>{{sel.name}}</h2><span class="muted" style="font-size: 12.5px">{{sel.username}} · {{sel.customCount}} custom setting(s)</span></div>
+<div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
+<label style="display: flex; align-items: center; gap: 8px; font-size: 13px">Role
+<select aria-label="Role" onChange="{{onRole}}" value="{{sel.role}}">
+<option>Admin</option><option>Operator</option><option>Household member</option><option>Guest</option><option>Auditor</option>
+</select></label>
+<div style="display: flex; align-items: center; gap: 8px; font-size: 13px"><span>Account enabled</span><button class="sw {{sel.enabledCls}}" role="switch" aria-checked="{{sel.enabled}}" aria-label="Account enabled" onClick="{{toggleEnabled}}" disabled="{{sel.enableLocked}}"></button></div>
+</div>
+</div>
+<sc-if value="{{sel.isGuest}}" hint-placeholder-val="{{ false }}">
+<div class="muted" style="font-size: 13px">Guest access expires <b>Oct 31, 2026</b>. <a href="#">Change date</a></div>
+</sc-if>
+<div class="grid3">
+<div class="group">
+<h3>Dashboards</h3>
+<sc-for list="{{dash}}" as="t" hint-placeholder-count="5">
+<div class="row"><span class="label">{{t.label}}</span><span class="badge {{t.badgeCls}}">{{t.badge}}</span><button class="sw {{t.cls}}" role="switch" aria-checked="{{t.on}}" aria-label="{{t.label}}" onClick="{{t.flip}}" disabled="{{t.locked}}"></button></div>
+</sc-for>
+</div>
+<div class="group">
+<h3>Admin console sections</h3>
+<sc-for list="{{console}}" as="t" hint-placeholder-count="9">
+<div class="row"><span class="label">{{t.label}}</span><span class="badge {{t.badgeCls}}">{{t.badge}}</span><button class="sw {{t.cls}}" role="switch" aria-checked="{{t.on}}" aria-label="{{t.label}}" onClick="{{t.flip}}" disabled="{{t.locked}}"></button></div>
+</sc-for>
+</div>
+<div class="group">
+<h3>Features</h3>
+<sc-for list="{{features}}" as="t" hint-placeholder-count="6">
+<div class="row"><span class="label">{{t.label}}</span><span class="badge {{t.badgeCls}}">{{t.badge}}</span><button class="sw {{t.cls}}" role="switch" aria-checked="{{t.on}}" aria-label="{{t.label}}" onClick="{{t.flip}}" disabled="{{t.locked}}"></button></div>
+</sc-for>
+</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; border-top: 1px solid #EEEEEE; padding-top: 12px">
+<span class="muted" style="font-size: 12.5px">Changes apply immediately and are written to the audit log.</span>
+<button class="btn" onClick="{{reset}}">Reset to role default</button>
+</div>
+</section>
+</div>
+</section>
+</div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1100}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      sel: 'sam',
+      users: {
+        alex: { name: 'Alex', username: 'alex', role: 'Admin', enabled: true, mfa: 'Authenticator + passkey', last: 'Today 7:41 PM', overrides: {} },
+        jordan: { name: 'Jordan', username: 'jordan', role: 'Operator', enabled: true, mfa: 'Authenticator', last: 'Yesterday 9:12 PM', overrides: { 'console:integrations': false } },
+        sam: { name: 'Sam', username: 'sam', role: 'Household member', enabled: true, mfa: 'Off', last: 'Today 4:37 PM', overrides: { 'dashboard:power': true, 'dashboard:kids': false } },
+        riley: { name: 'Riley', username: 'riley', role: 'Guest', enabled: true, mfa: 'Off', last: 'Oct 3', overrides: {} },
+        pat: { name: 'Pat', username: 'pat', role: 'Auditor', enabled: false, mfa: 'Authenticator', last: 'Sep 18', overrides: {} }
+      }
+    };
+  }
+  renderVals() {
+    const groups = {
+      dash: [['dashboard:home', 'Home'], ['dashboard:power', 'Power'], ['dashboard:cameras', 'Cameras'], ['dashboard:kids', "Kids' room"], ['dashboard:lab', 'Lab']],
+      console: [['console:devices', 'Devices'], ['console:integrations', 'Integrations'], ['console:automations', 'Automations'], ['console:scripts', 'Scripts'], ['console:notifications', 'Notifications'], ['console:reports', 'Reports'], ['console:users', 'Users and permissions'], ['console:system', 'System administration'], ['console:troubleshooting', 'Troubleshooting + support']],
+      features: [['feature:control', 'Control devices'], ['feature:cameras.live', 'View cameras live'], ['feature:scripts.run', 'Run scripts'], ['feature:automations.edit', 'Edit automations'], ['feature:api.tokens', 'Create API tokens'], ['feature:notify', 'Get notifications']]
+    };
+    const all = Object.values(groups).flat().map(([k]) => k);
+    const on = (keys) => Object.fromEntries(all.map((k) => [k, keys.includes(k)]));
+    const defaults = {
+      'Admin': on(all),
+      'Operator': on(['dashboard:home', 'dashboard:power', 'dashboard:cameras', 'dashboard:kids', 'dashboard:lab', 'console:devices', 'console:integrations', 'console:automations', 'console:scripts', 'console:notifications', 'console:reports', 'console:troubleshooting', 'feature:control', 'feature:cameras.live', 'feature:scripts.run', 'feature:automations.edit', 'feature:notify']),
+      'Household member': on(['dashboard:home', 'dashboard:cameras', 'dashboard:kids', 'feature:control', 'feature:cameras.live', 'feature:scripts.run', 'feature:notify']),
+      'Guest': on(['dashboard:home', 'feature:control']),
+      'Auditor': on(['dashboard:home', 'dashboard:power', 'dashboard:cameras', 'dashboard:kids', 'dashboard:lab', 'console:devices', 'console:integrations', 'console:automations', 'console:scripts', 'console:notifications', 'console:reports', 'console:users', 'console:system', 'console:troubleshooting', 'feature:notify'])
+    };
+    const lockedForAdmin = ['console:users', 'console:system'];
+    const id = this.state.sel;
+    const u = this.state.users[id];
+    const setUser = (patch) => this.setState({ users: { ...this.state.users, [id]: { ...u, ...patch } } });
+    const build = (list) => list.map(([key, label]) => {
+      const def = defaults[u.role][key];
+      const has = Object.prototype.hasOwnProperty.call(u.overrides, key);
+      const locked = u.role === 'Admin' && lockedForAdmin.includes(key);
+      const val = locked ? true : (has ? u.overrides[key] : def);
+      const custom = !locked && has && u.overrides[key] !== def;
+      return {
+        label, on: val, cls: val ? 'on' : '', locked,
+        badge: locked ? 'Required' : (custom ? 'Custom' : ''),
+        badgeCls: locked ? 'lock' : (custom ? 'custom' : ''),
+        flip: () => {
+          if (locked) return;
+          const next = { ...u.overrides };
+          if (!val === def) { delete next[key]; } else { next[key] = !val; }
+          setUser({ overrides: next });
+        }
+      };
+    });
+    const customCount = Object.keys(u.overrides).filter((k) => u.overrides[k] !== defaults[u.role][k]).length;
+    const users = Object.entries(this.state.users).map(([uid, x]) => ({
+      name: x.name, role: x.role, mfa: x.mfa, last: x.last,
+      status: !x.enabled ? 'Disabled' : (x.role === 'Guest' ? 'Expires Oct 31' : 'Enabled'),
+      statusCls: !x.enabled ? 'off' : (x.role === 'Guest' ? 'warn' : 'ok'),
+      rowCls: uid === id ? 'sel' : '',
+      pick: () => this.setState({ sel: uid })
+    }));
+    const isOnlyAdmin = u.role === 'Admin' && Object.values(this.state.users).filter((x) => x.role === 'Admin' && x.enabled).length <= 1;
+    return {
+      users,
+      sel: { name: u.name, username: u.username, role: u.role, enabled: u.enabled, enabledCls: u.enabled ? 'on' : '', isGuest: u.role === 'Guest', customCount, enableLocked: isOnlyAdmin },
+      dash: build(groups.dash),
+      console: build(groups.console),
+      features: build(groups.features),
+      onRole: (e) => { if (isOnlyAdmin) return; setUser({ role: e.target.value }); },
+      toggleEnabled: () => { if (isOnlyAdmin) return; setUser({ enabled: !u.enabled }); },
+      reset: () => setUser({ overrides: {} })
+    };
+  }
+}
+</script>
+</body>
+</html>

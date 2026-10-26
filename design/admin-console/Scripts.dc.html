@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CAVE admin center – Scripts</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0B6A8A}a:hover{color:#084E66}
+.app{font-family:"Segoe UI Variable Text","Segoe UI","Noto Sans",system-ui,sans-serif;color:#242424;background:#FAFAFA;min-height:1100px;display:flex;flex-direction:column;font-size:14px}
+.top{min-height:48px;background:#1C2830;color:#FFFFFF;display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:0 12px 0 16px}
+.brandmark{font-weight:600;font-size:15px;display:flex;align-items:center;gap:10px;white-space:nowrap}
+.search{flex:1 1 240px;max-width:520px;margin:0 auto;height:32px;border-radius:4px;background:#2B3A43;border:1px solid #4A5C67;display:flex;align-items:center;gap:8px;padding:0 10px;color:#C9D4DA;font-size:13px}
+.search input{flex:1;min-width:0;background:transparent;border:0;color:#FFFFFF;font:inherit}
+.search input::placeholder{color:#B5C2C9}
+.tools{display:flex;align-items:center;gap:2px}
+.mode{display:flex;border:1px solid #4A5C67;border-radius:4px;overflow:hidden}
+.modebtn{font:inherit;font-size:12.5px;padding:5px 12px;border:0;background:transparent;color:#C9D4DA;cursor:pointer;text-decoration:none}
+.modebtn.on{background:#0B6A8A;color:#FFFFFF;font-weight:600}
+.iconbtn{width:40px;height:40px;display:flex;align-items:center;justify-content:center;background:transparent;border:0;color:#FFFFFF;border-radius:4px;cursor:pointer}
+.avatar{width:32px;height:32px;border-radius:50%;background:#0B6A8A;color:#FFFFFF;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;margin-left:6px}
+.shell{display:flex;flex-wrap:wrap;flex:1}
+.nav{flex:1 1 232px;max-width:232px;background:#EEF1F2;border-right:1px solid #DDE2E4;padding:8px 0;display:flex;flex-direction:column;gap:2px}
+.nav a{display:flex;align-items:center;gap:12px;min-height:36px;padding:0 16px;color:#242424;text-decoration:none;font-size:14px}
+.nav a:hover{background:#E2E7E9;color:#242424}
+.nav a.sel{background:#FFFFFF;font-weight:600;box-shadow:inset 3px 0 0 #0B6A8A}
+.nav .sep{height:1px;background:#DDE2E4;margin:6px 16px}
+.content{flex:999 1 600px;min-width:0;padding:16px 28px 32px;display:flex;flex-direction:column;gap:12px}
+.crumb{font-size:13px;color:#616161;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.crumb a{text-decoration:none}
+h1{font-size:24px;font-weight:600;margin:0}
+h2{font-size:15px;font-weight:600;margin:0}
+.banner{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;background:#FFF8E6;border:1px solid #F0D399;border-radius:6px;padding:10px 14px;font-size:13.5px;color:#4A3500}
+.blade{display:flex;flex-wrap:wrap;background:#FFFFFF;border:1px solid #E0E0E0;border-radius:6px;min-height:860px}
+.submenu{flex:1 1 170px;max-width:180px;border-right:1px solid #E8E8E8;padding:12px 0;display:flex;flex-direction:column;gap:1px}
+.submenu a{display:block;padding:7px 16px;color:#242424;text-decoration:none;font-size:13.5px}
+.submenu a:hover{background:#F3F5F6;color:#242424}
+.submenu a.sel{background:#E8F3F7;font-weight:600}
+.work{flex:999 1 560px;min-width:0;padding:12px 20px 20px;display:flex;flex-direction:column;gap:12px}
+.cmdbar{display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid #EEEEEE;padding-bottom:8px}
+.cmd{display:inline-flex;align-items:center;gap:6px;font:inherit;font-size:13px;padding:6px 10px;border:0;background:transparent;color:#242424;border-radius:4px;cursor:pointer}
+.cmd:hover{background:#F3F5F6}
+.cmd svg{color:#0B6A8A}
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.fpill{font:inherit;font-size:12.5px;padding:4px 12px;border-radius:999px;border:1px solid #C7C7C7;background:#FFFFFF;color:#242424;cursor:pointer}
+.fpill.on{background:#0B6A8A;border-color:#0B6A8A;color:#FFFFFF;font-weight:600}
+.cols{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start}
+.list{flex:999 1 460px;min-width:0}
+.detail{flex:1 1 380px;max-width:520px;min-width:0;border:1px solid #E0E0E0;border-radius:6px;padding:16px;display:flex;flex-direction:column;gap:12px;background:#FFFFFF}
+.tablebox{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{text-align:left;font-weight:600;color:#5C5C5C;padding:8px 10px;border-bottom:1px solid #E0E0E0;white-space:nowrap}
+td{padding:8px 10px;border-bottom:1px solid #F0F0F0;white-space:nowrap}
+tr.sel td{background:#EEF6F9}
+.rowbtn{font:inherit;font-size:13px;font-weight:600;color:#0B6A8A;background:transparent;border:0;padding:0;cursor:pointer;text-align:left}
+.lang{font-size:11.5px;font-weight:600;padding:1px 7px;border-radius:3px;white-space:nowrap}
+.ps{background:#E6EEF8;color:#1F4E8C}.py{background:#E9F3E6;color:#2F5D1F}.sh{background:#F1ECE4;color:#5C4426}
+.pill{display:inline-flex;align-items:center;font-size:12px;padding:2px 8px;border-radius:999px;font-weight:600;white-space:nowrap}
+.ok{background:#E9F6E9;color:#0B5A0B}.warn{background:#FFF1C7;color:#6B4100}.bad{background:#FCE9EA;color:#9A1F25}.off{background:#EEEEEE;color:#555555}
+.target{font-size:12.5px;white-space:nowrap}
+.target.host{color:#7A4A00;font-weight:600}
+.code{margin:0;background:#1E252A;color:#E3E8EB;border-radius:6px;padding:12px 14px;font-family:Consolas,"Cascadia Mono",ui-monospace,monospace;font-size:12px;line-height:1.55;white-space:pre;overflow-x:auto;max-height:300px}
+.out{margin:0;background:#F4F6F7;border:1px solid #E0E0E0;border-radius:6px;padding:10px 12px;font-family:Consolas,"Cascadia Mono",ui-monospace,monospace;font-size:12px;white-space:pre-wrap;color:#242424}
+.field{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:#616161}
+.field input{font:inherit;font-size:13px;padding:5px 8px;border:1px solid #C7C7C7;border-radius:4px;color:#242424;width:120px}
+.btn{font:inherit;font-size:13px;padding:6px 14px;border-radius:4px;border:1px solid #0B6A8A;background:#0B6A8A;color:#FFFFFF;cursor:pointer}
+.btn.ghost{background:#FFFFFF;color:#0B6A8A}
+.muted{color:#616161}
+</style>
+</helmet>
+<div class="app">
+<header class="top">
+<div class="brandmark">
+<svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="#7FD0E6" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M3 17V10a7 7 0 0 1 14 0v7"></path><path d="M7 17v-6a3 3 0 0 1 6 0v6"></path></svg>
+<span>CAVE admin center</span>
+</div>
+<label class="search">
+<svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="9" cy="9" r="5.5"></circle><path d="m13.5 13.5 4 4"></path></svg>
+<input type="search" aria-label="Search devices, automations and settings" placeholder="Search devices, automations and settings">
+</label>
+<div class="mode" role="group" aria-label="Interface mode"><a class="modebtn" href="Dashboard.dc.html">Dashboards</a><a class="modebtn on" href="Main.dc.html" aria-current="true">Admin console</a></div>
+<div class="tools">
+<button class="iconbtn" aria-label="Notifications"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 14V9a5 5 0 0 1 10 0v5l1.5 1.5h-13zM8.5 17.5h3"></path></svg></button>
+<button class="iconbtn" aria-label="Settings"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="2.5"></circle><path d="M10 2.5v2M10 15.5v2M2.5 10h2M15.5 10h2M4.7 4.7l1.4 1.4M13.9 13.9l1.4 1.4M4.7 15.3l1.4-1.4M13.9 6.1l1.4-1.4"></path></svg></button>
+<button class="iconbtn" aria-label="Help"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="7.5"></circle><path d="M8 8a2 2 0 1 1 2.8 1.8c-.5.3-.8.7-.8 1.2V12M10 14.5v.5"></path></svg></button>
+<div class="avatar" aria-label="Signed in as Alex, Admin">AL</div>
+</div>
+</header>
+<div class="shell">
+<nav class="nav" aria-label="Services">
+<a href="Main.dc.html"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9.5 10 4l7 5.5V16a1 1 0 0 1-1 1h-4v-5H8v5H4a1 1 0 0 1-1-1z"></path></svg>Home</a>
+<a href="#"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="6" height="6" rx="1"></rect><rect x="11" y="3" width="6" height="6" rx="1"></rect><rect x="3" y="11" width="6" height="6" rx="1"></rect><rect x="11" y="11" width="6" height="6" rx="1"></rect></svg>Dashboards</a>
+<div class="sep"></div>
+<a href="Devices.dc.html"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2.5" y="4" width="11" height="8" rx="1"></rect><path d="M5.5 15h5"></path><rect x="14.5" y="7" width="3.5" height="8" rx="1"></rect></svg>Devices</a>
+<a href="#"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6h12M4 10h12M4 14h8"></path></svg>Entities</a>
+<a href="#"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 3v4M13 3v4M5 7h10v3a5 5 0 0 1-10 0zM10 15v3"></path></svg>Integrations</a>
+<a href="Automation.dc.html"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11 2 4 11h5l-1 7 7-9h-5z"></path></svg>Automations</a>
+<a class="sel" href="Scripts.dc.html"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 6 3 10l4 4M13 6l4 4-4 4"></path></svg>Scripts</a>
+<a href="#"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 18s-5-5-5-9a5 5 0 0 1 10 0c0 4-5 9-5 9z"></path><circle cx="10" cy="9" r="1.8"></circle></svg>Areas and labels</a>
+<a href="#"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 14V9a5 5 0 0 1 10 0v5l1.5 1.5h-13zM8.5 17.5h3"></path></svg>Notifications</a>
+<a href="#"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 17h14M6 14V9M10 14V5M14 14v-3"></path></svg>Reports</a>
+<div class="sep"></div>
+<a href="Users.dc.html"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="7" r="3"></circle><path d="M2.5 17a5.5 5.5 0 0 1 11 0M13 4.5a3 3 0 0 1 0 5.5M15 12.5a5 5 0 0 1 2.5 4.5"></path></svg>Users and permissions</a>
+<a href="#"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="2.5"></circle><path d="M10 2.5v2M10 15.5v2M2.5 10h2M15.5 10h2M4.7 4.7l1.4 1.4M13.9 13.9l1.4 1.4M4.7 15.3l1.4-1.4M13.9 6.1l1.4-1.4"></path></svg>System administration</a>
+<a href="#"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12.5 3a4 4 0 0 0-3.8 5.3L3 14l3 3 5.7-5.7A4 4 0 0 0 17 7.5l-2.5 2.5L12 7.5 14.5 5a4 4 0 0 0-2-2z"></path></svg>Troubleshooting + support</a>
+</nav>
+<main class="content">
+<div class="crumb"><a href="Main.dc.html">Home</a><span>›</span><a href="Automation.dc.html">Automations</a><span>›</span><span>Scripts</span></div>
+<h1>Scripts <span style="font-weight: 400; color: #616161">| Library</span></h1>
+<div class="banner" role="status">
+<svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="#9A6400" stroke-width="1.6" aria-hidden="true"><path d="M10 3 2 17h16zM10 8v4M10 14.5v.5"></path></svg>
+<span>Scripts on the CAVE host are turned on. They run as the restricted <b>cave-scripts</b> user, and only Admins can run them.</span>
+<a href="#">Manage in System administration</a>
+</div>
+<div class="blade">
+<nav class="submenu" aria-label="Scripts">
+<a class="sel" href="#">Library</a>
+<a href="#">Run history</a>
+<a href="#">SSH hosts (3)</a>
+<a href="#">Signing and limits</a>
+</nav>
+<section class="work">
+<div class="cmdbar" role="toolbar" aria-label="Script commands">
+<button class="cmd"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 4v12M4 10h12"></path></svg>New script</button>
+<button class="cmd"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 13V3M6 7l4-4 4 4M4 17h12"></path></svg>Import file</button>
+<button class="cmd"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M16 10a6 6 0 1 1-1.8-4.3M16 3v4h-4"></path></svg>Refresh</button>
+</div>
+<div class="filters" role="group" aria-label="Filter by language">
+<span class="muted" style="font-size: 12.5px">Language:</span>
+<sc-for list="{{langs}}" as="l" hint-placeholder-count="4">
+<button class="fpill {{l.cls}}" onClick="{{l.pick}}" aria-pressed="{{l.on}}">{{l.label}}</button>
+</sc-for>
+</div>
+<div class="cols">
+<div class="list">
+<div class="tablebox">
+<table>
+<thead><tr><th>Name</th><th>Language</th><th>Runs on</th><th>Last run</th><th>Used by</th></tr></thead>
+<tbody>
+<sc-for list="{{rows}}" as="s" hint-placeholder-count="6">
+<tr class="{{s.rowCls}}"><td><button class="rowbtn" onClick="{{s.pick}}">{{s.name}}</button><div class="muted" style="font-size: 12px">{{s.file}}</div></td><td><span class="lang {{s.lang}}">{{s.langLabel}}</span></td><td><span class="target {{s.targetCls}}">{{s.target}}</span></td><td><span class="pill {{s.resultCls}}">{{s.result}}</span></td><td class="muted">{{s.usedBy}}</td></tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+</div>
+<aside class="detail" aria-label="Selected script">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 8px"><h2>{{sel.name}}</h2><span class="lang {{sel.lang}}">{{sel.langLabel}}</span></div>
+<div class="muted" style="font-size: 12.5px">{{sel.file}} · runs on <b>{{sel.target}}</b> · timeout {{sel.timeout}}</div>
+<div style="display: flex; flex-wrap: wrap; gap: 12px">
+<sc-for list="{{sel.params}}" as="p" hint-placeholder-count="1">
+<label class="field">{{p.name}}<input value="{{p.value}}" aria-label="{{p.name}}"></label>
+</sc-for>
+</div>
+<pre class="code">{{sel.code}}</pre>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button class="btn">Test run</button>
+<button class="btn ghost">Edit</button>
+<button class="btn ghost">Add to dashboard button</button>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px"><span style="font-weight: 600">Last output</span><span class="muted">{{sel.outMeta}}</span></div>
+<pre class="out">{{sel.out}}</pre>
+</div>
+</aside>
+</div>
+</section>
+</div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1100}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { lang: 'all', sel: 'disk' };
+  }
+  renderVals() {
+    const scripts = [
+      { id: 'lab', name: 'Stop lab hosts', file: 'Stop-LabHosts.ps1', lang: 'ps', target: 'Sandbox', targetCls: '', result: 'Succeeded · Sun 2:15 AM', resultCls: 'ok', usedBy: '1 routine', timeout: '5 min',
+        params: [{ name: 'GraceSeconds', value: '60' }],
+        code: `<#
+cave:
+  name: Stop lab hosts
+  target: sandbox
+  timeout: 5m
+  params:
+    GraceSeconds: { type: int, default: 60 }
+  secrets: [PROXMOX_TOKEN]
+#>
+param([int]$GraceSeconds = 60)
+$stopped = 0
+# ... shut down lab VMs through the Proxmox API ...
+@{ status = "$stopped hosts stopped"; stopped = $stopped } |
+  ConvertTo-Json -Compress`,
+        out: '{"status":"3 hosts stopped","stopped":3}', outMeta: 'exit 0 · 2 min 14 s' },
+      { id: 'disk', name: 'Disk space report', file: 'disk-report.sh', lang: 'sh', target: 'CAVE host', targetCls: 'host', result: 'Succeeded · 6:00 PM', resultCls: 'ok', usedBy: '1 routine, 1 button', timeout: '1 min',
+        params: [{ name: 'warn_pct', value: '85' }],
+        code: `#!/usr/bin/env bash
+# cave:
+#   name: Disk space report
+#   target: cave-host
+#   timeout: 1m
+#   params:
+#     warn_pct: { type: int, default: 85 }
+set -euo pipefail
+used=$(df --output=pcent / | tail -1 | tr -dc '0-9')
+status=ok; [ "$used" -ge "$CAVE_PARAM_WARN_PCT" ] && status=warn
+printf '{"status":"%s","used_pct":%s}\\n' "$status" "$used"`,
+        out: '{"status":"ok","used_pct":61}', outMeta: 'exit 0 · 0.3 s' },
+      { id: 'backup', name: 'Lab nightly backup check', file: 'backup-check.py', lang: 'py', target: 'SSH: nas01', targetCls: '', result: 'Failed: exit 1 · 6:58 PM', resultCls: 'bad', usedBy: '1 automation', timeout: '2 min',
+        params: [{ name: 'max_hours', value: '26' }],
+        code: `# cave:
+#   name: Lab nightly backup check
+#   target: ssh:nas01
+#   timeout: 2m
+#   params:
+#     max_hours: { type: int, default: 26 }
+import json, os, pathlib, sys, time
+max_hours = int(os.environ["CAVE_PARAM_MAX_HOURS"])
+files = pathlib.Path("/volume1/backups/lab").glob("*.tar.zst")
+newest = max(files, key=lambda p: p.stat().st_mtime)
+age = (time.time() - newest.stat().st_mtime) / 3600
+ok = age <= max_hours
+print(json.dumps({"status": "ok" if ok else "stale", "age_hours": round(age, 1)}))
+sys.exit(0 if ok else 1)`,
+        out: '{"status":"stale","age_hours":31.4}', outMeta: 'exit 1 · 1.2 s' },
+      { id: 'plex', name: 'Restart Plex container', file: 'restart-plex.sh', lang: 'sh', target: 'SSH: media01', targetCls: '', result: 'Never run', resultCls: 'off', usedBy: '1 button', timeout: '2 min',
+        params: [],
+        code: `#!/usr/bin/env bash
+# cave:
+#   name: Restart Plex container
+#   target: ssh:media01
+#   timeout: 2m
+set -euo pipefail
+docker restart plex >/dev/null
+printf '{"status":"restarted"}\\n'`,
+        out: 'No runs yet. Use Test run to try it.', outMeta: '' },
+      { id: 'wifi', name: 'Rotate guest Wi-Fi password', file: 'guest-wifi.py', lang: 'py', target: 'Sandbox', targetCls: '', result: 'Succeeded · Mon 3:00 AM', resultCls: 'ok', usedBy: '1 schedule', timeout: '1 min',
+        params: [{ name: 'length', value: '12' }],
+        code: `# cave:
+#   name: Rotate guest Wi-Fi password
+#   target: sandbox
+#   timeout: 1m
+#   params:
+#     length: { type: int, default: 12 }
+#   secrets: [UNIFI_API_KEY]
+import json, os, secrets, string
+n = int(os.environ["CAVE_PARAM_LENGTH"])
+new_pw = "".join(secrets.choice(string.ascii_letters + string.digits) for _ in range(n))
+# ... update the guest network through the UniFi Network API ...
+print(json.dumps({"status": "rotated"}))`,
+        out: '{"status":"rotated"}', outMeta: 'exit 0 · 0.8 s' },
+      { id: 'patch', name: 'Windows lab patch report', file: 'Get-PatchReport.ps1', lang: 'ps', target: 'SSH: winlab01 (PS 5.1)', targetCls: '', result: 'Succeeded · Mon 7:00 AM', resultCls: 'ok', usedBy: '1 schedule', timeout: '3 min',
+        params: [],
+        code: `<#
+cave:
+  name: Windows lab patch report
+  target: ssh:winlab01      # Windows PowerShell 5.1
+  timeout: 3m
+#>
+$hotfixes = Get-HotFix | Sort-Object InstalledOn -Descending
+$latest = $hotfixes | Select-Object -First 1
+@{ status = "ok"; count = $hotfixes.Count; latest = $latest.HotFixID } |
+  ConvertTo-Json -Compress`,
+        out: '{"status":"ok","count":42,"latest":"KB5066835"}', outMeta: 'exit 0 · 6.1 s' }
+    ];
+    const labels = { ps: 'PowerShell', py: 'Python', sh: 'Bash' };
+    const shown = scripts.filter((s) => this.state.lang === 'all' || s.lang === this.state.lang);
+    const rows = shown.map((s) => ({ ...s, langLabel: labels[s.lang], rowCls: s.id === this.state.sel ? 'sel' : '', pick: () => this.setState({ sel: s.id }) }));
+    const found = scripts.find((s) => s.id === this.state.sel) || scripts[0];
+    const sel = { ...found, langLabel: labels[found.lang] };
+    const langs = [['all', 'All'], ['ps', 'PowerShell'], ['py', 'Python'], ['sh', 'Bash']].map(([id, label]) => ({
+      label, on: this.state.lang === id, cls: this.state.lang === id ? 'on' : '', pick: () => this.setState({ lang: id })
+    }));
+    return { rows, sel, langs };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CAVE – Sign in</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0B6A8A}a:hover{color:#084E66}
+.page{font-family:"Segoe UI Variable Text","Segoe UI","Noto Sans",system-ui,sans-serif;color:#242424;background:#E9EDEE;min-height:900px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:24px 16px;box-sizing:border-box;font-size:15px}
+.card{background:#FFFFFF;border:1px solid #D9DEE0;border-radius:10px;width:100%;max-width:420px;padding:32px;box-sizing:border-box;display:flex;flex-direction:column;gap:16px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:18px;color:#1C2830}
+h1{font-size:22px;font-weight:600;margin:0}
+.field{display:flex;flex-direction:column;gap:6px;font-size:13.5px;font-weight:600;color:#424242}
+.field input{font:inherit;font-size:15px;font-weight:400;min-height:44px;padding:0 12px;border:1px solid #B8C0C4;border-radius:6px;color:#242424;box-sizing:border-box;width:100%}
+.code{letter-spacing:.4em;text-align:center;font-size:22px !important}
+.primary{font:inherit;font-size:15px;font-weight:600;min-height:44px;border-radius:6px;border:1px solid #0B6A8A;background:#0B6A8A;color:#FFFFFF;cursor:pointer;display:flex;align-items:center;justify-content:center;text-decoration:none}
+.primary:hover{background:#095A75;color:#FFFFFF}
+.secondary{font:inherit;font-size:15px;min-height:44px;border-radius:6px;border:1px solid #B8C0C4;background:#FFFFFF;color:#242424;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px}
+.or{display:flex;align-items:center;gap:12px;color:#707070;font-size:13px}
+.or span{flex:1;height:1px;background:#E0E0E0}
+.check{display:flex;align-items:center;gap:8px;font-size:14px;color:#424242}
+.muted{color:#616161;font-size:13.5px}
+.linkbtn{font:inherit;font-size:13.5px;background:transparent;border:0;padding:0;color:#0B6A8A;cursor:pointer;text-align:left}
+.foot{font-size:12.5px;color:#616161;text-align:center;max-width:420px}
+</style>
+</helmet>
+<main class="page">
+<div class="card">
+<div class="brand">
+<svg width="26" height="26" viewBox="0 0 20 20" fill="none" stroke="#0B6A8A" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M3 17V10a7 7 0 0 1 14 0v7"></path><path d="M7 17v-6a3 3 0 0 1 6 0v6"></path></svg>
+<span>CAVE</span>
+</div>
+
+<sc-if value="{{isPassword}}" hint-placeholder-val="{{ true }}">
+<h1>Sign in</h1>
+<label class="field">Username<input type="text" autocomplete="username" value="sam"></label>
+<label class="field">Password<input type="password" autocomplete="current-password" value="••••••••••••"></label>
+<label class="check"><input type="checkbox" checked>Remember my username</label>
+<button class="primary" onClick="{{toMfa}}">Sign in</button>
+<div class="or"><span></span>or<span></span></div>
+<button class="secondary"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="#0B6A8A" stroke-width="1.6" aria-hidden="true"><path d="M10 2.5 4 5v5c0 3.5 2.6 6.3 6 7.5 3.4-1.2 6-4 6-7.5V5z"></path><path d="m7.5 10 1.8 1.8L13 8"></path></svg>Sign in with single sign-on</button>
+<p class="muted" style="margin: 0">Forgot your password? Ask a CAVE Admin to reset it.</p>
+</sc-if>
+
+<sc-if value="{{isMfa}}" hint-placeholder-val="{{ false }}">
+<h1>Check your authenticator app</h1>
+<p class="muted" style="margin: 0">Enter the 6-digit code for <b>CAVE (sam)</b>.</p>
+<label class="field">Verification code<input class="code" type="text" inputmode="numeric" autocomplete="one-time-code" value="482 913"></label>
+<a class="primary" href="Dashboard.dc.html">Verify and continue</a>
+<button class="linkbtn">Use a recovery code instead</button>
+<button class="linkbtn" onClick="{{back}}">Back</button>
+</sc-if>
+</div>
+<p class="foot">5 failed attempts locks the account for 15 minutes. Every sign-in is recorded in the audit log.</p>
+</main>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { step: 'password' };
+  }
+  renderVals() {
+    return {
+      isPassword: this.state.step === 'password',
+      isMfa: this.state.step === 'mfa',
+      toMfa: () => this.setState({ step: 'mfa' }),
+      back: () => this.setState({ step: 'password' })
+    };
+  }
+}
+</script>
+</body>
+</html>

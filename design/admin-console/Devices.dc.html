@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CAVE admin center – All devices</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0B6A8A}a:hover{color:#084E66}
+.app{font-family:"Segoe UI Variable Text","Segoe UI","Noto Sans",system-ui,sans-serif;color:#242424;background:#FAFAFA;min-height:1040px;display:flex;flex-direction:column;font-size:14px}
+.top{min-height:48px;background:#1C2830;color:#FFFFFF;display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:0 12px 0 16px}
+.brandmark{font-weight:600;font-size:15px;display:flex;align-items:center;gap:10px;white-space:nowrap}
+.search{flex:1 1 240px;max-width:520px;margin:0 auto;height:32px;border-radius:4px;background:#2B3A43;border:1px solid #4A5C67;display:flex;align-items:center;gap:8px;padding:0 10px;color:#C9D4DA;font-size:13px}
+.search input{flex:1;min-width:0;background:transparent;border:0;color:#FFFFFF;font:inherit}
+.search input::placeholder{color:#B5C2C9}
+.tools{display:flex;align-items:center;gap:2px}
+.mode{display:flex;border:1px solid #4A5C67;border-radius:4px;overflow:hidden}
+.modebtn{font:inherit;font-size:12.5px;padding:5px 12px;border:0;background:transparent;color:#C9D4DA;cursor:pointer;text-decoration:none}
+.modebtn.on{background:#0B6A8A;color:#FFFFFF;font-weight:600}
+.iconbtn{width:40px;height:40px;display:flex;align-items:center;justify-content:center;background:transparent;border:0;color:#FFFFFF;border-radius:4px;cursor:pointer}
+.avatar{width:32px;height:32px;border-radius:50%;background:#0B6A8A;color:#FFFFFF;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;margin-left:6px}
+.shell{display:flex;flex-wrap:wrap;flex:1}
+.nav{flex:1 1 232px;max-width:232px;background:#EEF1F2;border-right:1px solid #DDE2E4;padding:8px 0;display:flex;flex-direction:column;gap:2px}
+.nav a{display:flex;align-items:center;gap:12px;min-height:36px;padding:0 16px;color:#242424;text-decoration:none;font-size:14px}
+.nav a:hover{background:#E2E7E9;color:#242424}
+.nav a.sel{background:#FFFFFF;font-weight:600;box-shadow:inset 3px 0 0 #0B6A8A}
+.nav .sep{height:1px;background:#DDE2E4;margin:6px 16px}
+.content{flex:999 1 600px;min-width:0;padding:16px 28px 32px;display:flex;flex-direction:column;gap:12px}
+.crumb{font-size:13px;color:#616161;display:flex;gap:6px;align-items:center}
+.crumb a{text-decoration:none}
+h1{font-size:24px;font-weight:600;margin:0}
+.blade{display:flex;flex-wrap:wrap;gap:0;background:#FFFFFF;border:1px solid #E0E0E0;border-radius:6px;min-height:820px}
+.submenu{flex:1 1 200px;max-width:210px;border-right:1px solid #E8E8E8;padding:12px 0;display:flex;flex-direction:column;gap:1px}
+.submenu .group{font-size:12px;font-weight:600;color:#616161;padding:12px 16px 4px}
+.submenu a{display:block;padding:7px 16px;color:#242424;text-decoration:none;font-size:13.5px}
+.submenu a:hover{background:#F3F5F6;color:#242424}
+.submenu a.sel{background:#E8F3F7;font-weight:600}
+.work{flex:999 1 560px;min-width:0;padding:12px 20px 20px;display:flex;flex-direction:column;gap:12px}
+.cmdbar{display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid #EEEEEE;padding-bottom:8px}
+.cmd{display:inline-flex;align-items:center;gap:6px;font:inherit;font-size:13px;padding:6px 10px;border:0;background:transparent;color:#242424;border-radius:4px;cursor:pointer}
+.cmd:hover{background:#F3F5F6}
+.cmd svg{color:#0B6A8A}
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.findbox{display:flex;align-items:center;gap:8px;height:32px;border:1px solid #C7C7C7;border-radius:4px;padding:0 10px;flex:1 1 260px;max-width:340px;color:#616161}
+.findbox input{flex:1;min-width:0;border:0;font:inherit;font-size:13px;color:#242424;background:transparent}
+.fpill{font:inherit;font-size:12.5px;padding:4px 10px;border-radius:999px;border:1px solid #C7C7C7;background:#FFFFFF;color:#242424;cursor:pointer}
+.fpill b{font-weight:600}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:2px 8px;border-radius:999px;font-weight:600;white-space:nowrap}
+.ok{background:#E9F6E9;color:#0B5A0B}.warn{background:#FFF1C7;color:#6B4100}.bad{background:#FCE9EA;color:#9A1F25}.off{background:#EEEEEE;color:#555555}
+.tag{font-family:Consolas,"Cascadia Mono",ui-monospace,monospace;font-size:11.5px;padding:1px 6px;border-radius:3px;border:1px solid #BFD3DA;color:#0B5670;background:#EEF6F9;white-space:nowrap}
+.tag.cloud{border-color:#E2B26E;color:#6B4100;background:#FFF5E6}
+.tablebox{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{text-align:left;font-weight:600;color:#5C5C5C;padding:8px 10px;border-bottom:1px solid #E0E0E0;white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid #F0F0F0;white-space:nowrap}
+tbody tr:hover{background:#F7F9FA}
+.muted{color:#616161}
+</style>
+</helmet>
+<div class="app">
+<header class="top">
+<div class="brandmark">
+<svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="#7FD0E6" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M3 17V10a7 7 0 0 1 14 0v7"></path><path d="M7 17v-6a3 3 0 0 1 6 0v6"></path></svg>
+<span>CAVE admin center</span>
+</div>
+<label class="search">
+<svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="9" cy="9" r="5.5"></circle><path d="m13.5 13.5 4 4"></path></svg>
+<input type="search" aria-label="Search devices, automations and settings" placeholder="Search devices, automations and settings">
+</label>
+<div class="mode" role="group" aria-label="Interface mode"><a class="modebtn" href="Dashboard.dc.html">Dashboards</a><a class="modebtn on" href="Main.dc.html" aria-current="true">Admin console</a></div>
+<div class="tools">
+<button class="iconbtn" aria-label="Notifications"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 14V9a5 5 0 0 1 10 0v5l1.5 1.5h-13zM8.5 17.5h3"></path></svg></button>
+<button class="iconbtn" aria-label="Settings"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="2.5"></circle><path d="M10 2.5v2M10 15.5v2M2.5 10h2M15.5 10h2M4.7 4.7l1.4 1.4M13.9 13.9l1.4 1.4M4.7 15.3l1.4-1.4M13.9 6.1l1.4-1.4"></path></svg></button>
+<button class="iconbtn" aria-label="Help"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="7.5"></circle><path d="M8 8a2 2 0 1 1 2.8 1.8c-.5.3-.8.7-.8 1.2V12M10 14.5v.5"></path></svg></button>
+<div class="avatar" aria-label="Signed in as Alex, Admin">AL</div>
+</div>
+</header>
+<div class="shell">
+<nav class="nav" aria-label="Services">
+<a href="Main.dc.html"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9.5 10 4l7 5.5V16a1 1 0 0 1-1 1h-4v-5H8v5H4a1 1 0 0 1-1-1z"></path></svg>Home</a>
+<a href="#"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="6" height="6" rx="1"></rect><rect x="11" y="3" width="6" height="6" rx="1"></rect><rect x="3" y="11" width="6" height="6" rx="1"></rect><rect x="11" y="11" width="6" height="6" rx="1"></rect></svg>Dashboards</a>
+<div class="sep"></div>
+<a class="sel" href="Devices.dc.html"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2.5" y="4" width="11" height="8" rx="1"></rect><path d="M5.5 15h5"></path><rect x="14.5" y="7" width="3.5" height="8" rx="1"></rect></svg>Devices</a>
+<a href="#"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6h12M4 10h12M4 14h8"></path></svg>Entities</a>
+<a href="#"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 3v4M13 3v4M5 7h10v3a5 5 0 0 1-10 0zM10 15v3"></path></svg>Integrations</a>
+<a href="Automation.dc.html"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11 2 4 11h5l-1 7 7-9h-5z"></path></svg>Automations</a>
+<a href="Scripts.dc.html"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 6 3 10l4 4M13 6l4 4-4 4"></path></svg>Scripts</a>
+<a href="#"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 18s-5-5-5-9a5 5 0 0 1 10 0c0 4-5 9-5 9z"></path><circle cx="10" cy="9" r="1.8"></circle></svg>Areas and labels</a>
+<a href="#"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 14V9a5 5 0 0 1 10 0v5l1.5 1.5h-13zM8.5 17.5h3"></path></svg>Notifications</a>
+<a href="#"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 17h14M6 14V9M10 14V5M14 14v-3"></path></svg>Reports</a>
+<div class="sep"></div>
+<a href="Users.dc.html"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="7" r="3"></circle><path d="M2.5 17a5.5 5.5 0 0 1 11 0M13 4.5a3 3 0 0 1 0 5.5M15 12.5a5 5 0 0 1 2.5 4.5"></path></svg>Users and permissions</a>
+<a href="#"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="2.5"></circle><path d="M10 2.5v2M10 15.5v2M2.5 10h2M15.5 10h2M4.7 4.7l1.4 1.4M13.9 13.9l1.4 1.4M4.7 15.3l1.4-1.4M13.9 6.1l1.4-1.4"></path></svg>System administration</a>
+<a href="#"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12.5 3a4 4 0 0 0-3.8 5.3L3 14l3 3 5.7-5.7A4 4 0 0 0 17 7.5l-2.5 2.5L12 7.5 14.5 5a4 4 0 0 0-2-2z"></path></svg>Troubleshooting + support</a>
+</nav>
+<main class="content">
+<div class="crumb"><a href="Main.dc.html">Home</a><span>›</span><span>Devices</span></div>
+<h1>Devices <span style="font-weight: 400; color: #616161">| All devices</span></h1>
+<div class="blade">
+<nav class="submenu" aria-label="Devices">
+<a href="#">Overview</a>
+<a class="sel" href="#">All devices</a>
+<a href="#">By area</a>
+<a href="#">By integration</a>
+<a href="#">Unavailable</a>
+<a href="#">Discovered (4)</a>
+<div class="group">Monitor</div>
+<a href="#">Device health</a>
+<a href="#">Battery levels</a>
+<a href="#">Firmware updates</a>
+<div class="group">Manage</div>
+<a href="#">Areas</a>
+<a href="#">Labels</a>
+<a href="#">Bulk operations</a>
+</nav>
+<section class="work">
+<div class="cmdbar" role="toolbar" aria-label="Device commands">
+<button class="cmd"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 4v12M4 10h12"></path></svg>Add device</button>
+<button class="cmd"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M16 10a6 6 0 1 1-1.8-4.3M16 3v4h-4"></path></svg>Refresh</button>
+<button class="cmd"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 3v10M6 9l4 4 4-4M4 17h12"></path></svg>Export</button>
+<button class="cmd"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4h4v12H4zM12 4h4v12h-4z"></path></svg>Columns</button>
+<button class="cmd"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h12M4 10h12M4 14h12"></path></svg>Bulk actions</button>
+</div>
+<div class="filters">
+<label class="findbox"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="9" cy="9" r="5.5"></circle><path d="m13.5 13.5 4 4"></path></svg><input type="search" aria-label="Search devices" placeholder="Search by name, area or model"></label>
+<button class="fpill">Status: <b>All</b></button>
+<button class="fpill">Area: <b>All</b></button>
+<button class="fpill">Integration: <b>All</b></button>
+<button class="fpill">Connection: <b>Local + cloud</b></button>
+<button class="cmd" style="color: #0B6A8A">Reset filters</button>
+</div>
+<div class="muted" style="font-size: 13px">142 devices · showing 1 to 12</div>
+<div class="tablebox">
+<table>
+<thead><tr><th><input type="checkbox" aria-label="Select all devices"></th><th>Device name ↑</th><th>Area</th><th>Integration</th><th>Model</th><th>Status</th><th>Connection</th><th>Last seen</th></tr></thead>
+<tbody>
+<sc-for list="{{devices}}" as="d" hint-placeholder-count="12">
+<tr><td><input type="checkbox" aria-label="Select device"></td><td><a href="#" style="font-weight: 600; text-decoration: none">{{d.name}}</a></td><td>{{d.area}}</td><td>{{d.integration}}</td><td class="muted">{{d.model}}</td><td><span class="pill {{d.cls}}">{{d.status}}</span></td><td><span class="tag {{d.tagcls}}">{{d.iot}}</span></td><td class="muted">{{d.seen}}</td></tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; font-size: 13px" class="muted">
+<span>Page 1 of 12</span>
+<div style="display: flex; gap: 4px">
+<button class="fpill">‹ Previous</button>
+<button class="fpill" style="background: #0B6A8A; border-color: #0B6A8A; color: #FFFFFF">1</button>
+<button class="fpill">2</button>
+<button class="fpill">3</button>
+<button class="fpill">Next ›</button>
+</div>
+</div>
+</section>
+</div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1040}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      devices: [
+        { name: 'Front door camera', area: 'Entry', integration: 'Cameras (RTSP / ONVIF)', model: 'IP camera', status: 'Online', cls: 'ok', iot: 'local_push', tagcls: '', seen: 'Just now' },
+        { name: 'Garage door tilt', area: 'Garage', integration: 'Z-Wave', model: 'Tilt sensor', status: 'Low battery', cls: 'warn', iot: 'local_push', tagcls: '', seen: '1 min ago' },
+        { name: 'Hallway motion', area: 'Hallway', integration: 'Zigbee', model: 'Motion sensor', status: 'Online', cls: 'ok', iot: 'local_push', tagcls: '', seen: 'Just now' },
+        { name: 'Kitchen island lights', area: 'Kitchen', integration: 'Philips Hue', model: 'Hue white ambiance bulb ×3', status: 'Online', cls: 'ok', iot: 'local_push', tagcls: '', seen: 'Just now' },
+        { name: 'Living room TV', area: 'Living Room', integration: 'LG webOS TV', model: 'OLED TV', status: 'Standby', cls: 'off', iot: 'local_push', tagcls: '', seen: '2 min ago' },
+        { name: 'Media server', area: 'Office', integration: 'Plex', model: 'Plex Media Server', status: 'Degraded', cls: 'warn', iot: 'local_push', tagcls: '', seen: '4 min ago' },
+        { name: 'Office plug', area: 'Office', integration: 'TP-Link Kasa / Tapo', model: 'Smart plug', status: 'Online', cls: 'ok', iot: 'local_poll', tagcls: '', seen: '30 s ago' },
+        { name: 'Portable battery', area: 'Garage', integration: 'EcoFlow', model: 'River 2 Pro', status: 'Unavailable', cls: 'bad', iot: 'cloud_push', tagcls: 'cloud', seen: '3 h ago' },
+        { name: 'pve1', area: 'Office', integration: 'Proxmox VE', model: 'Proxmox VE node', status: 'Online', cls: 'ok', iot: 'local_poll', tagcls: '', seen: '15 s ago' },
+        { name: 'Rack UPS', area: 'Office', integration: 'Network UPS Tools', model: 'UPS 1500 VA', status: 'Online', cls: 'ok', iot: 'local_poll', tagcls: '', seen: '10 s ago' },
+        { name: 'Solar gateway', area: 'Garage', integration: 'Enphase IQ Gateway', model: 'IQ Gateway', status: 'Online', cls: 'ok', iot: 'local_poll', tagcls: '', seen: '1 min ago' },
+        { name: 'Washer', area: 'Laundry', integration: 'LG ThinQ', model: 'Front-load washer', status: 'Running', cls: 'ok', iot: 'cloud_push', tagcls: 'cloud', seen: 'Just now' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
