@@ -11,7 +11,7 @@ from cave.access.evaluate import evaluate
 from cave.access.items import get_assignments, get_item, list_items, set_assignments, upsert_item
 from cave.access.model import NetworkCond, OthersSee, Principal, Purpose, Status, TargetKind, Visibility
 from cave.api.deps import client_ip, current_principal, get_db, get_settings
-from cave.auth import sessions
+from cave.auth import sessions, tokens
 from cave.auth.users import LastAdminError, Role, User, create_user, list_users, update_user
 from cave.state import EventBus
 
@@ -235,3 +235,31 @@ def put_item_assignments(
 def get_audit(request: Request, p: Caller, limit: int = 100) -> list[dict[str, Any]]:
     _require(request, p, "section:audit", "use")
     return audit.list_entries(get_db(request), min(max(limit, 1), 1000))
+
+
+# ---- API tokens ----
+
+class NewToken(BaseModel):
+    name: str = Field(min_length=1, max_length=64)
+
+
+@router.post("/tokens", status_code=201)
+def post_token(body: NewToken, request: Request, p: Caller) -> dict[str, str]:
+    if p.kind == "token":
+        raise HTTPException(403, "An API token can't create more tokens.")
+    _require(request, p, "feature:api_tokens", "use")
+    assert p.user_id is not None
+    return {"token": tokens.create(get_db(request), _actor(p), p.user_id, body.name)}
+
+
+@router.get("/tokens")
+def get_tokens(request: Request, p: Caller) -> list[dict[str, Any]]:
+    return tokens.list_tokens(get_db(request), None if p.is_admin else p.user_id)
+
+
+@router.delete("/tokens/{token_id}", status_code=204)
+def delete_token(token_id: str, request: Request, p: Caller) -> None:
+    mine = {t["id"] for t in tokens.list_tokens(get_db(request), None if p.is_admin else p.user_id)}
+    if token_id not in mine:
+        raise HTTPException(404, "No such token.")
+    tokens.revoke(get_db(request), _actor(p), token_id)

@@ -1,3 +1,4 @@
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 
 from fastapi import HTTPException
@@ -5,7 +6,7 @@ from starlette.requests import HTTPConnection
 
 from cave.access.model import Principal
 from cave.access.network import IPAddress, resolve_client_ip
-from cave.auth import sessions
+from cave.auth import sessions, tokens
 from cave.auth.users import User, get_user, is_active
 from cave.db import Database
 from cave.settings import Settings
@@ -39,7 +40,22 @@ def user_from_session(request: HTTPConnection) -> User | None:
     return user if user and is_active(user, now()) else None
 
 
+def _bearer(request: HTTPConnection) -> tuple[str, User] | None:
+    """(token_id, owner) for a live API token whose owner is active."""
+    scheme, _, raw = request.headers.get("authorization", "").partition(" ")
+    if scheme.lower() != "bearer" or not raw:
+        return None
+    found = tokens.lookup(get_db(request), raw.strip())
+    owner = get_user(get_db(request), found[1]) if found else None
+    return (found[0], owner) if found and owner and is_active(owner, now()) else None
+
+
 def current_user(request: HTTPConnection) -> User:
+    if request.headers.get("authorization"):
+        token = _bearer(request)
+        if token is None:
+            raise HTTPException(401, "That API token isn't valid.")
+        return token[1]
     user = user_from_session(request)
     if user is None:
         raise HTTPException(401, "Sign in to continue.")
@@ -59,7 +75,9 @@ def principal_for_user(db: Database, user: User, at: datetime) -> Principal:
 
 
 def current_principal(request: HTTPConnection) -> Principal:
-    return principal_for_user(get_db(request), current_user(request), now())
+    p = principal_for_user(get_db(request), current_user(request), now())
+    token = _bearer(request) if request.headers.get("authorization") else None
+    return replace(p, kind="token", id=token[0]) if token else p
 
 
 def client_ip(request: HTTPConnection) -> IPAddress:
