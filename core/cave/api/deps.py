@@ -8,13 +8,15 @@ from cave.access.model import Principal
 from cave.access.netconfig import NetConfig
 from cave.access.netconfig import load as load_netconfig
 from cave.access.network import IPAddress, resolve_client_ip
-from cave.auth import sessions, tokens
+from cave.auth import screens, sessions, tokens
+from cave.auth.screens import Screen
 from cave.auth.users import User, get_user, is_active
 from cave.db import Database
 from cave.settings import Settings
 
 SESSION_COOKIE = "cave_session"
 PENDING_COOKIE = "cave_pending"
+SCREEN_COOKIE = "cave_screen"
 
 
 def get_db(request: HTTPConnection) -> Database:
@@ -76,10 +78,36 @@ def principal_for_user(db: Database, user: User, at: datetime) -> Principal:
     )
 
 
+def screen_principal(screen: Screen) -> Principal:
+    return Principal(
+        kind="screen",
+        id=screen.id,
+        user_id=None,
+        role=None,
+        group_ids=frozenset(),
+        active=screen.status == "approved",
+    )
+
+
+def screen_from_cookie(request: HTTPConnection) -> Screen | None:
+    session_id = request.cookies.get(SCREEN_COOKIE)
+    return screens.screen_from_session(get_db(request), session_id, now()) if session_id else None
+
+
 def current_principal(request: HTTPConnection) -> Principal:
-    p = principal_for_user(get_db(request), current_user(request), now())
-    token = _bearer(request) if request.headers.get("authorization") else None
-    return replace(p, kind="token", id=token[0]) if token else p
+    """Bearer token, then a person's session, then a screen's session."""
+    if request.headers.get("authorization"):
+        token = _bearer(request)
+        if token is None:
+            raise HTTPException(401, "That API token isn't valid.")
+        return replace(principal_for_user(get_db(request), token[1], now()), kind="token", id=token[0])
+    user = user_from_session(request)
+    if user is not None:
+        return principal_for_user(get_db(request), user, now())
+    screen = screen_from_cookie(request)
+    if screen is not None:
+        return screen_principal(screen)
+    raise HTTPException(401, "Sign in to continue.")
 
 
 def net(request: HTTPConnection) -> NetConfig:

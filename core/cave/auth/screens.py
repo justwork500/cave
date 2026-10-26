@@ -10,8 +10,10 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Literal
 
-from cryptography.hazmat.primitives import serialization
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives.asymmetric.utils import encode_dss_signature
 
 from cave import audit
 from cave.db import Database
@@ -137,3 +139,70 @@ def revoke(db: Database, actor: str, screen_id: str) -> Screen:
     screen = get_screen(db, screen_id)
     assert screen is not None
     return screen
+
+
+CHALLENGE_TTL = timedelta(seconds=60)
+SESSION_MAX_AGE = timedelta(hours=12)
+SIGNIN_FAILED = "Screen sign-in failed."
+
+
+def issue_challenge(db: Database, screen_id: str, now: datetime) -> str:
+    screen = get_screen(db, screen_id)
+    if screen is None or screen.status != "approved":
+        raise EnrollError("This screen isn't approved.")
+    nonce = secrets.token_urlsafe(32)
+    db.execute("DELETE FROM screen_challenges WHERE expires_at<?", (now.isoformat(),))
+    db.execute(
+        "INSERT INTO screen_challenges (nonce, screen_id, expires_at) VALUES (?, ?, ?)",
+        (nonce, screen_id, (now + CHALLENGE_TTL).isoformat()),
+    )
+    return nonce
+
+
+def _p1363_to_der(signature_b64: str) -> bytes:
+    """WebCrypto signs ECDSA as raw r||s; cryptography verifies DER."""
+    raw = base64.b64decode(signature_b64, validate=True)
+    if len(raw) != 64:
+        raise ValueError("not a P-256 P1363 signature")
+    return encode_dss_signature(int.from_bytes(raw[:32], "big"), int.from_bytes(raw[32:], "big"))
+
+
+def verify_challenge(db: Database, screen_id: str, nonce: str, signature_b64: str, now: datetime) -> str:
+    """Returns a new screen session id. The challenge is used up whether or not this succeeds."""
+    with db.transaction() as conn:
+        row = conn.execute("SELECT screen_id, expires_at FROM screen_challenges WHERE nonce=?", (nonce,)).fetchone()
+        conn.execute("DELETE FROM screen_challenges WHERE nonce=?", (nonce,))
+    if row is None or row["screen_id"] != screen_id or datetime.fromisoformat(row["expires_at"]) < now:
+        raise EnrollError(SIGNIN_FAILED)
+    key_row = db.execute("SELECT public_key FROM screens WHERE id=? AND status='approved'", (screen_id,)).fetchone()
+    if key_row is None or key_row["public_key"] is None:
+        raise EnrollError(SIGNIN_FAILED)
+    key = serialization.load_der_public_key(base64.b64decode(key_row["public_key"]))
+    assert isinstance(key, ec.EllipticCurvePublicKey)
+    try:
+        key.verify(
+            _p1363_to_der(signature_b64), f"cave-screen-auth:{screen_id}:{nonce}".encode(), ec.ECDSA(hashes.SHA256())
+        )
+    except (InvalidSignature, ValueError, binascii.Error) as e:
+        raise EnrollError(SIGNIN_FAILED) from e
+    session_id = secrets.token_urlsafe(32)
+    db.execute(
+        "INSERT INTO screen_sessions (id, screen_id, created_at) VALUES (?, ?, ?)",
+        (session_id, screen_id, now.isoformat()),
+    )
+    return session_id
+
+
+def screen_from_session(db: Database, session_id: str, now: datetime) -> Screen | None:
+    row = db.execute("SELECT screen_id, created_at FROM screen_sessions WHERE id=?", (session_id,)).fetchone()
+    if row is None:
+        return None
+    if datetime.fromisoformat(row["created_at"]) + SESSION_MAX_AGE < now:
+        db.execute("DELETE FROM screen_sessions WHERE id=?", (session_id,))
+        return None
+    screen = get_screen(db, row["screen_id"])
+    return screen if screen is not None and screen.status == "approved" else None
+
+
+def end_session(db: Database, session_id: str) -> None:
+    db.execute("DELETE FROM screen_sessions WHERE id=?", (session_id,))
