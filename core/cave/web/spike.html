@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CAVE tablet check</title>
+<style>
+  body { font: 20px/1.4 system-ui, sans-serif; margin: 0; padding: 24px 16px; background: #fafafa; color: #242424; }
+  h1 { font-size: 26px; margin: 0 0 4px; }
+  p { margin: 0 0 16px; color: #555; }
+  table { border-collapse: collapse; width: 100%; max-width: 720px; background: #fff; }
+  td { border-bottom: 1px solid #e0e0e0; padding: 12px 8px; vertical-align: top; word-break: break-word; }
+  td.v { font-weight: 600; white-space: nowrap; }
+  .pass { color: #0e7a0d; } .fail { color: #b3261e; } .info { color: #555; font-weight: 400; }
+  button { font: inherit; margin-top: 20px; padding: 12px 20px; border: 0; border-radius: 6px; background: #0b6a8a; color: #fff; }
+</style>
+</head>
+<body>
+<h1>CAVE tablet check</h1>
+<p>Tells us whether this browser can keep a screen key CAVE can trust. Screenshot this page when it's done.</p>
+<table id="out"><tr><td>Checking…</td></tr></table>
+<button id="again" type="button">Reload and check again</button>
+<script type="module">
+  import { probe } from "/static/screen.js";
+  const labels = {
+    isSecureContext: "Page counts as a secure context",
+    subtleCrypto: "Web Crypto available",
+    indexedDB: "Storage (IndexedDB) available",
+    keyCreatedOrLoaded: "Key made or loaded",
+    keyStored: "Key stored",
+    keyKeptAfterReload: "Key kept after reload",
+    notExtractable: "Key marked not exportable",
+    privateExportRefused: "Browser refuses to export the key",
+    signs: "Key can sign",
+    publicKey: "Public key readable",
+    error: "Error",
+    userAgent: "Browser",
+  };
+  const r = await probe();
+  const out = document.getElementById("out");
+  out.innerHTML = "";
+  for (const [k, v] of Object.entries(r)) {
+    const tr = out.insertRow();
+    tr.insertCell().textContent = labels[k] || k;
+    const cell = tr.insertCell();
+    cell.className = "v " + (v === true ? "pass" : v === false || k === "error" ? "fail" : "info");
+    cell.textContent = v === true ? "Pass" : v === false ? "Fail" : String(v);
+  }
+  document.getElementById("again").onclick = () => location.reload();
+</script>
+</body>
+</html>
