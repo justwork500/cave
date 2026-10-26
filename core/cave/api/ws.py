@@ -8,8 +8,20 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from cave.access.evaluate import can_control
 from cave.access.model import Principal
-from cave.api.deps import SESSION_COOKIE, client_ip, get_db, net, now, principal_for_user, user_from_session
+from cave.api.deps import (
+    SCREEN_COOKIE,
+    SESSION_COOKIE,
+    client_ip,
+    get_db,
+    net,
+    now,
+    principal_for_user,
+    screen_from_cookie,
+    screen_principal,
+    user_from_session,
+)
 from cave.api.entities import DENIED
+from cave.auth.screens import get_screen
 from cave.auth.users import get_user
 from cave.state import Event, StateMachine
 
@@ -41,17 +53,27 @@ class _Socket:
     def refresh(self) -> bool:
         """Re-read the principal after an access change. False if it may no longer connect."""
         self._can.clear()
-        user = get_user(get_db(self.ws), self.p.id) if self.p.user_id else None
+        db = get_db(self.ws)
+        if self.p.kind == "screen":
+            screen = get_screen(db, self.p.id)
+            if screen is None:
+                return False
+            self.p = screen_principal(screen)
+            return self.p.active
+        user = get_user(db, self.p.id) if self.p.user_id else None
         if user is None:
             return False
-        self.p = principal_for_user(get_db(self.ws), user, now())
+        self.p = principal_for_user(db, user, now())
         return self.p.active
 
     def still_signed_in(self) -> bool:
-        """Re-validate the session now and then, so idle timeouts and expiry end the live feed too."""
+        """Re-validate the session now and then, so idle timeouts, expiry and the screen cap end the feed too."""
         if time.monotonic() < self.next_check:
             return True
         self.next_check = time.monotonic() + RECHECK_SECONDS
+        if self.p.kind == "screen":
+            screen = screen_from_cookie(self.ws)
+            return screen is not None and screen.id == self.p.id
         user = user_from_session(self.ws)
         return user is not None and user.id == self.p.user_id
 
@@ -64,7 +86,9 @@ class _Socket:
         if not self.still_signed_in():
             return False
         if event["type"] == "principal_disabled":
-            return event.get("user_id") != self.p.user_id
+            return self.p.kind == "screen" or event.get("user_id") != self.p.user_id
+        if event["type"] == "screen_revoked":
+            return not (self.p.kind == "screen" and event.get("screen_id") == self.p.id)
         if event["type"] == "access_changed":
             return self.refresh()
         if event["type"] == "state_changed" and self.subscribed and self.can(event["entity_id"]):
@@ -122,10 +146,14 @@ async def websocket(ws: WebSocket) -> None:
         await ws.close(CLOSE_FORBIDDEN_ORIGIN)
         return
     user = user_from_session(ws)
-    if user is None:
+    screen = None if user else screen_from_cookie(ws)
+    if user is not None:
+        sock = _Socket(ws, principal_for_user(get_db(ws), user, now()), ws.cookies.get(SESSION_COOKIE, ""))
+    elif screen is not None:
+        sock = _Socket(ws, screen_principal(screen), ws.cookies.get(SCREEN_COOKIE, ""))
+    else:
         await ws.close(CLOSE_UNAUTHORIZED)
         return
-    sock = _Socket(ws, principal_for_user(get_db(ws), user, now()), ws.cookies.get(SESSION_COOKIE, ""))
     bus = ws.app.state.bus
     q = bus.subscribe()
     recv = asyncio.ensure_future(ws.receive_json())
