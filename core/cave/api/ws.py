@@ -130,6 +130,8 @@ class _Socket:
             await states.command(entity_id, str(msg.get("command", "")), dict(msg.get("args") or {}))
         except KeyError:
             return {"success": False, "error": "This device can't take commands right now."}
+        except ValueError as e:
+            return {"success": False, "error": str(e)}
         return {"success": True}
 
 

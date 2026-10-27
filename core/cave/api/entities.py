@@ -37,6 +37,8 @@ async def run_command(
         await states.command(entity_id, command, args or {})
     except KeyError as e:
         raise HTTPException(409, "This device can't take commands right now.") from e
+    except ValueError as e:
+        raise HTTPException(409, str(e)) from e
     return {"accepted": True}
 
 

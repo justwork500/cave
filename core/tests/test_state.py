@@ -69,3 +69,33 @@ def test_command_without_handler_raises():
     _, sm = make()
     with pytest.raises(KeyError):
         asyncio.run(sm.command("light.kitchen", "turn_on", {}))
+
+
+def test_entity_handler_overrides_capability_handler():
+    _, sm = make()
+    calls = []
+
+    async def cap(entity_id, command, args):
+        calls.append("capability")
+
+    async def ent(entity_id, command, args):
+        calls.append("entity")
+
+    sm.set_command_handler("light", cap)
+    sm.set_entity_handler("light.kitchen", ent)
+    asyncio.run(sm.command("light.kitchen", "turn_on", {}))
+    sm.set_entity_handler("light.kitchen", None)
+    asyncio.run(sm.command("light.kitchen", "turn_on", {}))
+    assert calls == ["entity", "capability"]
+
+
+def test_remove_clears_entity_handler():
+    _, sm = make()
+
+    async def ent(entity_id, command, args): ...
+
+    sm.set_entity_handler("light.kitchen", ent)
+    sm.remove("light.kitchen")
+    sm.register(Entity("light.kitchen", "Kitchen light", "kitchen", "light"))
+    with pytest.raises(KeyError):
+        asyncio.run(sm.command("light.kitchen", "turn_on", {}))

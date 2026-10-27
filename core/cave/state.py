@@ -86,6 +86,7 @@ class StateMachine:
     _entities: dict[str, Entity] = field(default_factory=dict)
     _states: dict[str, State] = field(default_factory=dict)
     _handlers: dict[str, CommandHandler] = field(default_factory=dict)
+    _entity_handlers: dict[str, CommandHandler] = field(default_factory=dict)
 
     def register(self, entity: Entity) -> None:
         m = _ENTITY_ID.match(entity.entity_id)
@@ -94,6 +95,7 @@ class StateMachine:
         self._entities[entity.entity_id] = entity
 
     def remove(self, entity_id: str) -> None:
+        self._entity_handlers.pop(entity_id, None)
         self._entities.pop(entity_id, None)
         self._states.pop(entity_id, None)
 
@@ -126,6 +128,14 @@ class StateMachine:
     def set_command_handler(self, capability: str, handler: CommandHandler) -> None:
         self._handlers[capability] = handler
 
+    def set_entity_handler(self, entity_id: str, handler: CommandHandler | None) -> None:
+        """One entity's own handler, used before its capability's. Lets integrations share a capability."""
+        if handler is None:
+            self._entity_handlers.pop(entity_id, None)
+        else:
+            self._entity_handlers[entity_id] = handler
+
     async def command(self, entity_id: str, command: str, args: dict[str, Any]) -> None:
         entity = self._entities[entity_id]
-        await self._handlers[entity.capability](entity_id, command, args)
+        handler = self._entity_handlers.get(entity_id) or self._handlers[entity.capability]
+        await handler(entity_id, command, args)
