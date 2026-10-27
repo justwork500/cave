@@ -9,6 +9,9 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Any, Literal, cast, get_args
 
+from cave.templates import TemplateError
+from cave.templates import check as check_template
+
 Component = Literal["light", "switch", "sensor", "binary_sensor", "cover", "lock", "button"]
 COMPONENTS: frozenset[str] = frozenset(get_args(Component))
 CONTROLLABLE = frozenset({"light", "switch", "cover", "lock", "button"})
@@ -138,13 +141,22 @@ def _expand(data: Mapping[str, Any]) -> dict[str, Any]:
     return out
 
 
+MAX_TOPIC_BYTES = 65535  # the MQTT limit
+
+
 def _topic(value: Any) -> str | None:
-    return value if isinstance(value, str) and value else None
+    """A concrete topic CAVE can subscribe or publish to: no wildcards, NULs or unencodable text."""
+    if not isinstance(value, str) or not value or "+" in value or "#" in value or "\x00" in value:
+        return None
+    try:
+        size = len(value.encode("utf-8"))
+    except UnicodeEncodeError:
+        return None
+    return value if size <= MAX_TOPIC_BYTES else None
 
 
 def _safe_command_topic(value: Any) -> str | None:
-    t = _topic(value)
-    return None if t is None or "+" in t or "#" in t else t
+    return _topic(value)
 
 
 def _availability(d: Mapping[str, Any]) -> tuple[tuple[str, str, str, str | None], ...]:
@@ -196,9 +208,14 @@ def build_config(
     d = _expand(raw)
     if component == "light" and d.get("schema", "default") not in ("default", "json"):
         return Unsupported(topic, "light schema not supported in this version")
-    templates = [d.get("value_template")] + [a[3] for a in _availability(d)]
-    if any(isinstance(t, str) and len(t) > MAX_TEMPLATE_CHARS for t in templates):
+    templates = [t for t in [d.get("value_template")] + [a[3] for a in _availability(d)] if isinstance(t, str)]
+    if any(len(t) > MAX_TEMPLATE_CHARS for t in templates):
         return Unsupported(topic, "template too long")
+    for t in templates:
+        try:
+            check_template(t)
+        except TemplateError as e:
+            return Unsupported(topic, f"template not allowed: {e}")
     command_topic = _safe_command_topic(d.get("command_topic"))
     if component == "button" and command_topic is None:
         return Unsupported(topic, "button without a usable command topic")

@@ -59,7 +59,7 @@ def test_service_feeds_bridge(db, monkeypatch):
             return False
 
         async def subscribe(self, topic):
-            self.subs.append(topic)
+            self.subs.extend(t for t, _qos in topic)
 
         async def publish(self, topic, payload=None, qos=0, retain=False):
             pass

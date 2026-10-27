@@ -1,5 +1,8 @@
 CREATE TABLE mqtt_entities (
-    unique_id TEXT PRIMARY KEY,
+    component TEXT NOT NULL,
+    unique_id TEXT NOT NULL,
     entity_id TEXT NOT NULL UNIQUE,
-    first_seen TEXT NOT NULL
+    config_topic TEXT NOT NULL,  -- the discovery topic it belongs to, or 'manual'
+    first_seen TEXT NOT NULL,
+    PRIMARY KEY (component, unique_id)
 );

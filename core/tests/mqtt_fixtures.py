@@ -10,7 +10,7 @@ def fixture(name: str) -> tuple[str, bytes]:
     return data["topic"], json.dumps(data["payload"]).encode()
 
 
-def with_payload(name: str, **changes: object) -> tuple[str, bytes]:
-    data = json.loads((FIXTURES / f"{name}.json").read_text(encoding="utf-8"))
+def with_payload(fixture_name: str, /, **changes: object) -> tuple[str, bytes]:
+    data = json.loads((FIXTURES / f"{fixture_name}.json").read_text(encoding="utf-8"))
     data["payload"].update(changes)
     return data["topic"], json.dumps(data["payload"]).encode()

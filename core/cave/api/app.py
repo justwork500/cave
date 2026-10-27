@@ -23,6 +23,11 @@ WEB = Path(__file__).resolve().parent.parent / "web"
 log = logging.getLogger(__name__)
 
 
+def _report_mqtt_exit(task: "asyncio.Task[None]") -> None:
+    if not task.cancelled() and task.exception() is not None:
+        log.error("MQTT stopped unexpectedly: %s", task.exception())
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Starts MQTT when config/mqtt.yaml exists. A broken MQTT config never stops CAVE starting."""
@@ -38,6 +43,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         service = MqttService(cfg, app.state.db, app.state.states, os.environ.get("CAVE_MQTT_PASSWORD"))
         app.state.mqtt = service
         task = asyncio.create_task(service.run())
+        task.add_done_callback(_report_mqtt_exit)
     try:
         yield
     finally:

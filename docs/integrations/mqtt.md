@@ -68,7 +68,9 @@ Typos are rejected with the exact key, for example `mqtt.yaml: entities[0].colou
 ## Safety limits
 
 Messages from devices are treated as untrusted:
-- configs are capped at 64 KiB and state messages at 256 KiB
-- value templates run in a sandbox, are capped at 2,000 characters, and can't build huge strings or numbers
-- CAVE never publishes to a wildcard topic
-- at most 5,000 MQTT devices
+- configs are capped at 64 KiB and state messages at 256 KiB.
+- **Value templates may only read and convert values.** That means picking fields, comparing, `if`/`else`, arithmetic, and the filters `float`, `int`, `round`, `default`, `lower`, `upper`, `trim`, `replace`, `length`, `first`, `last`, `abs`, `string` and `tojson`. Loops, function or method calls and other filters are refused when the device is first seen, and its entry appears under `unsupported`. Templates are capped at 2,000 characters and can't build huge strings or numbers.
+- **A device belongs to the topic that first announced it.** If another discovery topic, or a device announced in `mqtt.yaml`, reuses an existing device's `unique_id`, it's refused, so nobody can redirect your lock's commands. The same `unique_id` announced as a different type (say, a plug re-flashed as a light) becomes a separate device.
+- Topics with wildcards, NUL characters or invalid text are ignored. CAVE never publishes or subscribes to a wildcard topic.
+- At most 5,000 MQTT devices are tracked, and the `unsupported` list keeps the latest 200 entries.
+- One malformed message never stops MQTT: it's logged and CAVE carries on.
