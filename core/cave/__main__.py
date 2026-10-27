@@ -1,7 +1,9 @@
 """`python -m cave serve` — run CAVE over HTTPS. There is no plain-HTTP listener."""
 
 import argparse
+import asyncio
 import socket
+import sys
 from pathlib import Path
 
 import uvicorn
@@ -38,7 +40,14 @@ def main(argv: list[str] | None = None) -> None:
     app.state.cert_path = cert
     print(f"CAVE is running at https://{ip or 'localhost'}:{args.port}")
     print(f"Certificate fingerprint (SHA-256): {tls.fingerprint(cert)}")
-    uvicorn.run(app, host=args.host, port=args.port, ssl_certfile=str(cert), ssl_keyfile=str(key))
+    config = uvicorn.Config(app, host=args.host, port=args.port, ssl_certfile=str(cert), ssl_keyfile=str(key))
+    server = uvicorn.Server(config)
+    if sys.platform == "win32":
+        # aiomqtt needs a selector loop; Windows defaults to Proactor.
+        # shortcut: Windows is a dev convenience; Debian is the target
+        asyncio.run(server.serve(), loop_factory=asyncio.SelectorEventLoop)
+    else:
+        server.run()
 
 
 if __name__ == "__main__":

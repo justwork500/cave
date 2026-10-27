@@ -7,9 +7,12 @@ from pydantic import BaseModel
 
 from cave import tls
 from cave.access import netconfig
+from cave.access.evaluate import evaluate
+from cave.access.items import get_item
 from cave.access.model import Principal
 from cave.api.admin import _actor, _require
-from cave.api.deps import current_principal, get_db
+from cave.api.deps import client_ip, current_principal, get_db, net
+from cave.integrations.mqtt.client import MqttService
 from cave.state import EventBus
 
 router = APIRouter(prefix="/api/v1/system")
@@ -55,3 +58,23 @@ def get_certificate(request: Request, p: Caller) -> dict[str, Any]:
         "not_after": tls.not_after(cert).isoformat(),
         "self_signed": c.issuer == c.subject,
     }
+
+
+@router.get("/mqtt")
+def get_mqtt(request: Request, p: Caller) -> dict[str, Any]:
+    db = get_db(request)
+    allowed = any(
+        evaluate(db, p, item, client_ip(request), net(request).local_ranges).allowed
+        for item in (get_item(db, "section:devices"), get_item(db, "section:system"))
+        if item is not None
+    )
+    if not allowed:
+        raise HTTPException(403, "You don't have access to this.")
+    service: MqttService | None = request.app.state.mqtt
+    error: str | None = request.app.state.mqtt_error
+    if service is None:
+        return {"status": "failed" if error else "disabled", "broker": None, "last_error": error,
+                "entities": 0, "unsupported": []}
+    b = service.cfg.broker
+    return {"status": service.status, "broker": f"{b.host}:{b.port}", "last_error": service.last_error,
+            **service.bridge.status()}

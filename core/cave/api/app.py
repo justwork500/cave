@@ -1,3 +1,9 @@
+import asyncio
+import contextlib
+import logging
+import os
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -8,15 +14,44 @@ from cave.access import netconfig
 from cave.access.items import seed_builtins
 from cave.api import admin, auth, entities, screens, system, ws
 from cave.db import Database
+from cave.integrations.mqtt import config as mqtt_config
+from cave.integrations.mqtt.client import MqttService
 from cave.settings import Settings
 from cave.state import EventBus, StateMachine
 
 WEB = Path(__file__).resolve().parent.parent / "web"
+log = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    """Starts MQTT when config/mqtt.yaml exists. A broken MQTT config never stops CAVE starting."""
+    settings: Settings = app.state.settings
+    task = None
+    try:
+        cfg = mqtt_config.load(settings.config_dir / "mqtt.yaml")
+    except mqtt_config.ConfigError as e:
+        log.error("MQTT not started: %s", e)
+        app.state.mqtt_error = str(e)
+        cfg = None
+    if cfg is not None:
+        service = MqttService(cfg, app.state.db, app.state.states, os.environ.get("CAVE_MQTT_PASSWORD"))
+        app.state.mqtt = service
+        task = asyncio.create_task(service.run())
+    try:
+        yield
+    finally:
+        if task is not None:
+            task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await task
 
 
 def create_app(settings: Settings) -> FastAPI:
-    app = FastAPI(title="CAVE", version="0.1.0")
+    app = FastAPI(title="CAVE", version="0.1.0", lifespan=lifespan)
     app.state.settings = settings
+    app.state.mqtt = None
+    app.state.mqtt_error = None
     app.state.db = Database.open(settings.db_path)
     seed_builtins(app.state.db)
     netconfig.seed(app.state.db, settings)
