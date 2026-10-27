@@ -1,0 +1,16 @@
+{
+  "topic": "homeassistant/binary_sensor/0x00124b0022aabbcc/contact/config",
+  "payload": {
+    "availability": [{"topic": "zigbee2mqtt/bridge/state", "value_template": "{{ value_json.state }}"}],
+    "device": {"identifiers": ["zigbee2mqtt_0x00124b0022aabbcc"], "manufacturer": "Aqara", "model": "MCCGQ11LM",
+               "name": "Back door"},
+    "device_class": "door",
+    "name": "Door",
+    "object_id": "back_door_contact",
+    "payload_off": true,
+    "payload_on": false,
+    "state_topic": "zigbee2mqtt/Back door",
+    "unique_id": "0x00124b0022aabbcc_contact_zigbee2mqtt",
+    "value_template": "{{ value_json.contact }}"
+  }
+}

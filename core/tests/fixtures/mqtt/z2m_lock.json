@@ -1,0 +1,15 @@
+{
+  "topic": "homeassistant/lock/0x000d6f000aabbccd/lock/config",
+  "payload": {
+    "command_topic": "zigbee2mqtt/Front door lock/set",
+    "device": {"name": "Front door lock", "manufacturer": "Yale", "model": "YRD226HA2619"},
+    "name": null,
+    "payload_lock": "LOCK",
+    "payload_unlock": "UNLOCK",
+    "state_locked": "LOCK",
+    "state_unlocked": "UNLOCK",
+    "state_topic": "zigbee2mqtt/Front door lock",
+    "unique_id": "0x000d6f000aabbccd_lock_zigbee2mqtt",
+    "value_template": "{{ value_json.state }}"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "topic": "homeassistant/cover/shellyplus2pm-a8032ab1c2d3/cover-0/config",
+  "payload": {
+    "name": "Living room blind",
+    "uniq_id": "shellyplus2pm-a8032ab1c2d3-cover-0",
+    "cmd_t": "shellyplus2pm-a8032ab1c2d3/command/cover:0",
+    "stat_t": "shellyplus2pm-a8032ab1c2d3/status/cover:0",
+    "val_tpl": "{{ value_json.state }}",
+    "pl_open": "open",
+    "pl_cls": "close",
+    "pl_stop": "stop",
+    "stat_open": "open",
+    "stat_clsd": "closed",
+    "stat_opening": "opening",
+    "stat_closing": "closing",
+    "dev": {"ids": ["a8032ab1c2d3"], "name": "Living room Shelly", "mf": "Shelly", "mdl": "Plus 2PM"}
+  }
+}

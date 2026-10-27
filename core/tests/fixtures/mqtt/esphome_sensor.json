@@ -1,0 +1,13 @@
+{
+  "topic": "homeassistant/sensor/garage-node/garage_temperature/config",
+  "payload": {
+    "dev_cla": "temperature",
+    "unit_of_meas": "°C",
+    "stat_cla": "measurement",
+    "name": "Garage temperature",
+    "stat_t": "garage-node/sensor/garage_temperature/state",
+    "avty_t": "garage-node/status",
+    "uniq_id": "ESPsensorgarage_temperature",
+    "dev": {"ids": "e8db84aabbcc", "name": "garage-node", "sw": "esphome v2025.6.0", "mdl": "esp32dev", "mf": "Espressif"}
+  }
+}

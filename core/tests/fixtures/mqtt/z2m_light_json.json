@@ -1,0 +1,20 @@
+{
+  "topic": "homeassistant/light/0x00158d0001a2b3c4/light/config",
+  "payload": {
+    "availability": [{"topic": "zigbee2mqtt/bridge/state", "value_template": "{{ value_json.state }}"},
+                     {"topic": "zigbee2mqtt/Kitchen lamp/availability"}],
+    "availability_mode": "all",
+    "brightness": true,
+    "brightness_scale": 254,
+    "command_topic": "zigbee2mqtt/Kitchen lamp/set",
+    "device": {"identifiers": ["zigbee2mqtt_0x00158d0001a2b3c4"], "manufacturer": "IKEA", "model": "LED1836G9",
+               "name": "Kitchen lamp", "sw_version": "2.3.093"},
+    "name": null,
+    "object_id": "kitchen_lamp",
+    "origin": {"name": "Zigbee2MQTT", "sw": "2.1.0"},
+    "schema": "json",
+    "state_topic": "zigbee2mqtt/Kitchen lamp",
+    "supported_color_modes": ["brightness"],
+    "unique_id": "0x00158d0001a2b3c4_light_zigbee2mqtt"
+  }
+}

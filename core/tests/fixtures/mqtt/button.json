@@ -1,0 +1,10 @@
+{
+  "topic": "homeassistant/button/doorbell-node/chime_test/config",
+  "payload": {
+    "name": "Test chime",
+    "command_topic": "doorbell-node/button/chime_test/command",
+    "payload_press": "PRESS",
+    "unique_id": "doorbell_chime_test",
+    "device": {"name": "Doorbell"}
+  }
+}

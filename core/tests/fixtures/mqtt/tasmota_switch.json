@@ -1,0 +1,17 @@
+{
+  "topic": "homeassistant/switch/8C4F00ABCDEF_RL_1/config",
+  "payload": {
+    "name": "Garage heater",
+    "stat_t": "~stat/RESULT",
+    "avty_t": "~tele/LWT",
+    "pl_avail": "Online",
+    "pl_not_avail": "Offline",
+    "cmd_t": "~cmnd/POWER",
+    "val_tpl": "{{value_json.POWER}}",
+    "pl_off": "OFF",
+    "pl_on": "ON",
+    "uniq_id": "8C4F00ABCDEF_RL_1",
+    "dev": {"ids": ["8C4F00ABCDEF"], "name": "Garage plug", "mdl": "Sonoff S31", "mf": "Tasmota"},
+    "~": "tasmota_ABCDEF/"
+  }
+}
