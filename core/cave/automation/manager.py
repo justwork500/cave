@@ -196,13 +196,13 @@ class AutomationManager:
             waiting = self._queued.setdefault(aid, [])
             if len(waiting) >= a.max:
                 return None
-            trace_id = self.new_trace(f"automation:{aid}")
+            trace_id = new_trace(self.db, f"automation:{aid}")
             waiting.append((trace_id, trigger, check_conditions))
             return trace_id
         if a.mode == "restart":
             for t in running:
                 t.cancel()
-        trace_id = self.new_trace(f"automation:{aid}")
+        trace_id = new_trace(self.db, f"automation:{aid}")
         self._start(aid, a, trace_id, trigger, check_conditions)
         return trace_id
 
@@ -232,39 +232,45 @@ class AutomationManager:
             log.exception("automation %s failed", aid)
             trace.outcome, trace.error = "failed", str(e)
         finally:
-            self.finish_trace(f"automation:{aid}", trace_id, trace)
+            finish_trace(self.db, f"automation:{aid}", trace_id, trace)
             waiting = self._queued.get(aid)
             if waiting and trace.outcome != "cancelled":
                 next_id, next_trigger, next_check = waiting.pop(0)
                 self._start(aid, a, next_id, next_trigger, next_check)
 
-    # ---- traces ----
-
-    def new_trace(self, item_id: str, test: bool = False) -> int:
-        cur = self.db.execute(
-            "INSERT INTO automation_traces (item_id, test, started_at) VALUES (?, ?, ?)",
-            (item_id, int(test), datetime.now(UTC).isoformat()),
-        )
-        assert cur.lastrowid is not None
-        return cur.lastrowid
-
-    def finish_trace(self, item_id: str, trace_id: int, trace: Trace) -> None:
-        body = json.dumps(dataclasses.asdict(trace), default=str)
-        self.db.execute(
-            "UPDATE automation_traces SET finished_at=?, outcome=?, trace=? WHERE id=?",
-            (datetime.now(UTC).isoformat(), trace.outcome, body, trace_id),
-        )
-        self.db.execute(
-            "DELETE FROM automation_traces WHERE item_id=? AND test=(SELECT test FROM automation_traces WHERE id=?) "
-            "AND id NOT IN (SELECT id FROM automation_traces WHERE item_id=? AND test="
-            "(SELECT test FROM automation_traces WHERE id=?) ORDER BY id DESC LIMIT ?)",
-            (item_id, trace_id, item_id, trace_id, KEEP_TRACES),
-        )
-
     def traces(self, item_id: str, test: bool = False, limit: int = KEEP_TRACES) -> list[dict[str, Any]]:
-        rows = self.db.execute(
-            "SELECT id, started_at, finished_at, outcome, trace FROM automation_traces "
-            "WHERE item_id=? AND test=? AND finished_at IS NOT NULL ORDER BY id DESC LIMIT ?",
-            (item_id, int(test), limit),
-        ).fetchall()
-        return [dict(r) | {"trace": json.loads(r["trace"])} for r in rows]
+        return list_traces(self.db, item_id, test, limit)
+
+
+# ---- traces (module level: the Test Center stores them too, with or without a running manager) ----
+
+def new_trace(db: Database, item_id: str, test: bool = False) -> int:
+    cur = db.execute(
+        "INSERT INTO automation_traces (item_id, test, started_at) VALUES (?, ?, ?)",
+        (item_id, int(test), datetime.now(UTC).isoformat()),
+    )
+    assert cur.lastrowid is not None
+    return cur.lastrowid
+
+
+def finish_trace(db: Database, item_id: str, trace_id: int, trace: Trace) -> None:
+    body = json.dumps(dataclasses.asdict(trace), default=str)
+    db.execute(
+        "UPDATE automation_traces SET finished_at=?, outcome=?, trace=? WHERE id=?",
+        (datetime.now(UTC).isoformat(), trace.outcome, body, trace_id),
+    )
+    test = db.execute("SELECT test FROM automation_traces WHERE id=?", (trace_id,)).fetchone()["test"]
+    db.execute(
+        "DELETE FROM automation_traces WHERE item_id=? AND test=? AND id NOT IN "
+        "(SELECT id FROM automation_traces WHERE item_id=? AND test=? ORDER BY id DESC LIMIT ?)",
+        (item_id, test, item_id, test, KEEP_TRACES),
+    )
+
+
+def list_traces(db: Database, item_id: str, test: bool = False, limit: int = KEEP_TRACES) -> list[dict[str, Any]]:
+    rows = db.execute(
+        "SELECT id, started_at, finished_at, outcome, trace FROM automation_traces "
+        "WHERE item_id=? AND test=? AND finished_at IS NOT NULL ORDER BY id DESC LIMIT ?",
+        (item_id, int(test), limit),
+    ).fetchall()
+    return [dict(r) | {"trace": json.loads(r["trace"])} for r in rows]
