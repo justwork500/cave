@@ -9,12 +9,16 @@ operators that could still blow up memory (`*`, `**`, `%`) are capped on top.
 import json
 import operator
 import re
+from collections.abc import Mapping
+from datetime import datetime
 from functools import lru_cache
-from typing import Any
+from typing import Any, Protocol
 
 from jinja2 import StrictUndefined, Template, nodes
 from jinja2 import TemplateError as JinjaError
 from jinja2.sandbox import ImmutableSandboxedEnvironment
+
+from cave.state import State
 
 MAX_RESULT = 64 * 1024  # longest string or list one operation may build
 MAX_INT_BITS = 4096  # largest number `**` may produce
@@ -77,13 +81,24 @@ _ENV.filters["replace"] = _safe_replace
 _ENV.globals.clear()  # no range(), lipsum(), dict(), cycler() …
 
 
-def check(source: str) -> None:
-    """Raise TemplateError if the template uses anything outside the allow-list."""
+STATE_CALLS = frozenset({"states", "is_state", "state_attr", "now"})
+_ENTITY_CALLS = frozenset({"states", "is_state", "state_attr"})
+
+
+def _parse(source: str) -> nodes.Template:
     try:
-        tree = _ENV.parse(source)
+        return _ENV.parse(source)
     except JinjaError as e:
         raise TemplateError(str(e)) from e
-    for node in tree.find_all(nodes.Node):
+
+
+def check(source: str, allowed_calls: frozenset[str] = frozenset()) -> None:
+    """Raise TemplateError if the template uses anything outside the allow-list."""
+    for node in _parse(source).find_all(nodes.Node):
+        if isinstance(node, nodes.Call):
+            if not (isinstance(node.node, nodes.Name) and node.node.name in allowed_calls):
+                raise TemplateError("templates can't call functions or methods here")
+            continue
         if not isinstance(node, ALLOWED_NODES):
             raise TemplateError(f"templates can't use {type(node).__name__.lower()} here")
         if isinstance(node, nodes.Filter) and node.name not in ALLOWED_FILTERS:
@@ -91,9 +106,61 @@ def check(source: str) -> None:
 
 
 @lru_cache(maxsize=512)
-def _compile(source: str) -> Template:
-    check(source)
+def _compile(source: str, allowed_calls: frozenset[str] = frozenset()) -> Template:
+    check(source, allowed_calls)
     return _ENV.from_string(source)
+
+
+def _render(template: Template, variables: Mapping[str, Any]) -> str:
+    try:
+        out = str(template.render(variables))
+    except TemplateError:
+        raise
+    except (JinjaError, ArithmeticError, TypeError, ValueError, RecursionError, MemoryError) as e:
+        raise TemplateError(str(e)) from e
+    if _too_big(out):
+        raise TemplateError("result too large")
+    return out
+
+
+class StateReader(Protocol):
+    def get(self, entity_id: str) -> State | None: ...
+
+
+def render(template: str, variables: Mapping[str, Any], reader: StateReader, now: datetime) -> str:
+    """Automation templates: the same allow-list, plus states(), is_state(), state_attr() and now()."""
+
+    def states(entity_id: str) -> str:
+        s = reader.get(entity_id)
+        return s.value if s else "unknown"
+
+    def state_attr(entity_id: str, name: str) -> Any:
+        s = reader.get(entity_id)
+        return s.attributes.get(name) if s else None
+
+    calls = {
+        "states": states,
+        "is_state": lambda entity_id, value: states(entity_id) == value,
+        "state_attr": state_attr,
+        "now": lambda: now,
+    }
+    return _render(_compile(template, STATE_CALLS), {**variables, **calls})
+
+
+def entity_refs(template: str) -> tuple[frozenset[str], bool]:
+    """Entity ids a template reads, and whether any read uses something other than a string literal."""
+    if "{" not in template:
+        return frozenset(), False
+    found: set[str] = set()
+    dynamic = False
+    for call in _parse(template).find_all(nodes.Call):
+        if isinstance(call.node, nodes.Name) and call.node.name in _ENTITY_CALLS:
+            first = call.args[0] if call.args else None
+            if isinstance(first, nodes.Const) and isinstance(first.value, str):
+                found.add(first.value)
+            else:
+                dynamic = True
+    return frozenset(found), dynamic
 
 
 def render_value(template: str, payload: str) -> str:
@@ -103,12 +170,4 @@ def render_value(template: str, payload: str) -> str:
         variables["value_json"] = json.loads(payload)
     except ValueError:
         pass  # StrictUndefined makes any use of value_json fail
-    try:
-        out = str(_compile(template).render(variables))
-    except TemplateError:
-        raise
-    except (JinjaError, ArithmeticError, TypeError, ValueError, RecursionError, MemoryError) as e:
-        raise TemplateError(str(e)) from e
-    if _too_big(out):
-        raise TemplateError("result too large")
-    return out
+    return _render(_compile(template), variables)
