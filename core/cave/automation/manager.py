@@ -28,6 +28,7 @@ from cave.state import Event, EventBus, StateMachine
 
 log = logging.getLogger(__name__)
 KEEP_TRACES = 20
+MAX_SEQUENCE_RUNS = 10  # at once, per routine
 Sleep = Callable[[float], Awaitable[None]]
 
 
@@ -93,16 +94,17 @@ class AutomationManager:
         self._timers.clear()
 
     def rearm(self) -> None:
-        """Rebuild which automations listen for what. Called after every load or save."""
-        for t in self._timers.values():
-            t.cancel()
-        self._timers.clear()
-        self._armed = {}
+        """Rebuild which automations listen for what. Called after every load or save.
+        Pending `for:` timers survive unless their own automation changed or went away."""
+        armed: dict[str, Automation] = {}
         for ident, loaded in self.store.list("automation"):
             a = loaded.doc
             item = get_item(self.db, f"automation:{ident}")
             if isinstance(a, Automation) and a.enabled and item is not None and item.status == "enabled":
-                self._armed[ident] = a
+                armed[ident] = a
+        for key in [k for k in self._timers if armed.get(k[0]) != self._armed.get(k[0])]:
+            self._timers.pop(key).cancel()
+        self._armed = armed
 
     # ---- triggers ----
 
@@ -211,6 +213,10 @@ class AutomationManager:
         """Run a routine on demand (a dashboard button). Routines have no run mode: each press runs."""
         if self.store.sequence(ident) is None:
             return None
+        key = f"sequence:{ident}"
+        self._running[key] = [t for t in self._running.get(key, []) if not t.done()]
+        if len(self._running[key]) >= MAX_SEQUENCE_RUNS:
+            return None
         trace_id = new_trace(self.db, f"sequence:{ident}")
         call = RunSequence.model_validate({"type": "sequence", "ref": f"sequence.{ident}", "with": variables})
 
@@ -276,16 +282,20 @@ def new_trace(db: Database, item_id: str, test: bool = False) -> int:
 
 
 def finish_trace(db: Database, item_id: str, trace_id: int, trace: Trace) -> None:
+    row = db.execute("SELECT test FROM automation_traces WHERE id=?", (trace_id,)).fetchone()
+    if row is None:
+        return
     body = json.dumps(dataclasses.asdict(trace), default=str)
     db.execute(
         "UPDATE automation_traces SET finished_at=?, outcome=?, trace=? WHERE id=?",
         (datetime.now(UTC).isoformat(), trace.outcome, body, trace_id),
     )
-    test = db.execute("SELECT test FROM automation_traces WHERE id=?", (trace_id,)).fetchone()["test"]
+    # only finished runs are trimmed; a run still going keeps its row
     db.execute(
-        "DELETE FROM automation_traces WHERE item_id=? AND test=? AND id NOT IN "
-        "(SELECT id FROM automation_traces WHERE item_id=? AND test=? ORDER BY id DESC LIMIT ?)",
-        (item_id, test, item_id, test, KEEP_TRACES),
+        "DELETE FROM automation_traces WHERE item_id=? AND test=? AND finished_at IS NOT NULL AND id NOT IN "
+        "(SELECT id FROM automation_traces WHERE item_id=? AND test=? AND finished_at IS NOT NULL "
+        "ORDER BY id DESC LIMIT ?)",
+        (item_id, row["test"], item_id, row["test"], KEEP_TRACES),
     )
 
 

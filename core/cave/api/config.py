@@ -32,7 +32,7 @@ def store(request: Request) -> ConfigStore:
 
 
 @router.post("/config/reload", status_code=204)
-def reload(request: Request, p: Caller) -> None:
+async def reload(request: Request, p: Caller) -> None:
     if not p.is_admin:
         raise HTTPException(403, "Only an Admin can reload config files.")
     store(request).load_all(f"{p.kind}:{p.id}")
@@ -85,7 +85,7 @@ def get_doc(kinds: Plural, ident: str, request: Request, p: Caller) -> dict[str,
 
 
 @router.put("/{kinds}/{ident}")
-def put_doc(kinds: Plural, ident: str, body: YamlBody, request: Request, p: Caller) -> dict[str, Any]:
+async def put_doc(kinds: Plural, ident: str, body: YamlBody, request: Request, p: Caller) -> dict[str, Any]:
     kind = KINDS[kinds]
     _require(request, p, SECTIONS[kind])
     try:
@@ -99,7 +99,7 @@ def put_doc(kinds: Plural, ident: str, body: YamlBody, request: Request, p: Call
 
 
 @router.delete("/{kinds}/{ident}", status_code=204)
-def delete_doc(kinds: Plural, ident: str, request: Request, p: Caller) -> None:
+async def delete_doc(kinds: Plural, ident: str, request: Request, p: Caller) -> None:
     kind = KINDS[kinds]
     _require(request, p, SECTIONS[kind])
     try:

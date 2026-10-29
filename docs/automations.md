@@ -75,7 +75,7 @@ automation:
 | `stop` | ends the run, optionally with a `reason` |
 | `mqtt_publish` | `topic`, `payload`, `retain` |
 
-Durations accept `"HH:MM:SS"`, `"MM:SS"` or seconds, up to 24 hours. Steps can nest up to 8 levels deep.
+Durations accept `"HH:MM:SS"`, `"MM:SS"` or seconds, up to 24 hours. Steps can nest up to 8 levels deep, and one run can take at most 10,000 steps in all, counting every repeat and routine. A routine can be running at most 10 times at once. Templates are checked when the file is loaded or saved, so a mistake shows its line straight away, not when the automation first runs.
 
 ## Run modes
 

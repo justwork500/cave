@@ -80,6 +80,8 @@ def test_traces_permission_and_redaction(app, users, live):
     wait_for_trace(live, "automations", "close-garage", outcome="failed")  # no handler for the cover: fails
     aud = TestClient(app, base_url="https://testserver", client=("192.168.1.5", 50002))
     sign_in(aud, "aud", "pw-aud-1234")
+    assert aud.get("/api/v1/automations/close-garage/traces").status_code == 403  # not assigned the automation
+    set_assignments(app.state.db, "test", "automation:close-garage", [("role", "auditor")])
     [t] = aud.get("/api/v1/automations/close-garage/traces").json()
     assert all(s["detail"] == "restricted" and s["data"] == {} for s in t["trace"]["steps"])
     assert "cover.garage_door" not in str(t)

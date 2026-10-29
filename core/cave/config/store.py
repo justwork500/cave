@@ -12,7 +12,7 @@ from collections.abc import Sequence as Seq
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 from cave import audit
 from cave.access.evaluate import AccessDenied, assert_can_save, evaluate
@@ -29,9 +29,11 @@ from cave.config.models import (
     check_nesting,
 )
 from cave.config.refs import Refs, refs
-from cave.config.yamlfile import ConfigError, load_text, validate
+from cave.config.yamlfile import ConfigError, YamlDoc, load_text, path_text, validate
 from cave.db import Database
 from cave.state import EventBus
+from cave.templates import STATE_CALLS, TemplateError
+from cave.templates import check as check_template
 
 Kind = Literal["automation", "sequence", "dashboard"]
 Doc = Automation | Sequence | Dashboard
@@ -55,12 +57,28 @@ class Loaded:
         return _name(self.doc)
 
 
+def _check_templates(data: Any, loc: tuple[str | int, ...], yaml_doc: YamlDoc, file: str) -> None:
+    """Every string that looks like a template must pass the automation allow-list now, not fail at run time."""
+    if isinstance(data, dict):
+        for k, v in data.items():
+            _check_templates(v, (*loc, k), yaml_doc, file)
+    elif isinstance(data, list):
+        for i, v in enumerate(data):
+            _check_templates(v, (*loc, i), yaml_doc, file)
+    elif isinstance(data, str) and ("{{" in data or "{%" in data):
+        try:
+            check_template(data, STATE_CALLS)
+        except TemplateError as e:
+            raise ConfigError(file, path_text(loc), f"template: {e}", yaml_doc.lines.get(loc)) from e
+
+
 def parse(kind: Kind, ident: str, text: str) -> Doc:
     """Validate one document. Raises ConfigError naming file and line."""
     file = f"{ident}.yaml"
     if not FILE_ID.fullmatch(ident):
         raise ConfigError(file, "", "file names may only use a-z, 0-9, - and _ (64 characters at most)")
     yaml_doc = load_text(text, file)
+    _check_templates(yaml_doc.data, (), yaml_doc, file)
     doc: Doc
     if kind == "dashboard":
         doc = validate(DashboardFile, yaml_doc, file).dashboard
@@ -92,6 +110,26 @@ class ConfigStore:
 
     def list(self, kind: Kind) -> list[tuple[str, Loaded]]:
         return sorted((i, d) for (k, i), d in self._loaded.items() if k == kind)
+
+    def deep_refs(self, doc: Doc) -> Refs:
+        """refs() plus everything the routines it calls reference, all the way down. For anything that shows
+        what a run read (traces, the Test Center): running a routine is allowed by assignment, seeing inside isn't."""
+        r = refs(doc)
+        entities, dynamic = set(r.entities), r.dynamic_template
+        seen: set[str] = set()
+        todo = list(r.sequences)
+        while todo:
+            ident = todo.pop()
+            if ident in seen:
+                continue
+            seen.add(ident)
+            loaded = self._loaded.get(("sequence", ident))
+            if loaded is None:
+                continue
+            entities |= loaded.refs.entities
+            dynamic = dynamic or loaded.refs.dynamic_template
+            todo.extend(loaded.refs.sequences)
+        return Refs(frozenset(entities), frozenset(seen | r.sequences), r.automations, r.scripts, dynamic)
 
     def sequence(self, ident: str) -> Sequence | None:
         loaded = self._loaded.get(("sequence", ident))

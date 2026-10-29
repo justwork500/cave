@@ -14,7 +14,6 @@ from cave.api.deps import client_ip, current_principal, get_db, net
 from cave.automation.manager import AutomationManager, finish_trace, list_traces, new_trace
 from cave.automation.whatif import what_if
 from cave.config.models import Automation, Sequence
-from cave.config.refs import refs
 from cave.config.store import ConfigStore, item_id, parse
 from cave.config.yamlfile import ConfigError
 
@@ -70,8 +69,12 @@ async def test_center(body: TestRun, request: Request, p: Caller) -> dict[str, A
             raise HTTPException(404, "Not found.")
         doc = loaded.doc
     assert isinstance(doc, Automation | Sequence)
-    try:  # a trace shows real values for devices you didn't simulate, so the save rule applies
-        store.guard(p, refs(doc), client_ip(request), net(request).local_ranges)
+    db, ip, ranges = get_db(request), client_ip(request), net(request).local_ranges
+    item = get_item(db, item_id(body.kind, body.id))
+    if item is not None and not evaluate(db, p, item, ip, ranges).allowed:
+        raise HTTPException(403, "You don't have access to this.")
+    try:  # a trace shows what the run read, routines included, so the save rule applies all the way down
+        store.guard(p, store.deep_refs(doc), ip, ranges)
     except AccessDenied as e:
         raise HTTPException(403, str(e)) from e
     trace = await what_if(
@@ -79,9 +82,8 @@ async def test_center(body: TestRun, request: Request, p: Caller) -> dict[str, A
         script_samples=body.script_samples, reader=request.app.state.states, sequences=store.sequence,
         now=datetime.now().astimezone(),
     )
-    db = get_db(request)
     iid = item_id(body.kind, body.id)
-    if body.yaml is None and get_item(db, iid) is not None:
+    if body.yaml is None and item is not None:
         finish_trace(db, iid, new_trace(db, iid, test=True), trace)
     return {"trace": dataclasses.asdict(trace),
             "summary": {"devices_changed": 0, "messages_sent": 0, "scripts_run": 0}}
@@ -107,6 +109,10 @@ async def run_action(kinds: Runnable, ident: str, body: RunBody, request: Reques
         raise HTTPException(404, "Not found.")
     if not evaluate(db, p, item, client_ip(request), net(request).local_ranges).allowed:
         raise HTTPException(403, "You don't have access to this.")
+    loaded = store.get(kind, ident)
+    if body.variables and not p.is_admin and loaded is not None and store.deep_refs(loaded.doc).dynamic_template:
+        # the routine reads devices by name from its inputs; choosing those names is an Admin's call
+        raise HTTPException(403, "Only an Admin can pass values to this routine.")
     manager: AutomationManager | None = request.app.state.automations
     if manager is None:
         raise HTTPException(503, "Automations aren't running right now.")
@@ -126,11 +132,16 @@ def get_traces(kinds: Runnable, ident: str, request: Request, p: Caller, test: b
     if not any(s is not None and evaluate(db, p, s, ip, ranges).allowed for s in sections):
         raise HTTPException(403, "You don't have access to this.")
     kind = RUN_KINDS[kinds]
+    item = get_item(db, item_id(kind, ident))
+    if item is None or not evaluate(db, p, item, ip, ranges).allowed:
+        raise HTTPException(403, "You don't have access to this.")
     rows = list_traces(db, item_id(kind, ident), test)
-    loaded = request.app.state.config.get(kind, ident)
-    # step details carry rendered device values, so they need control of every device the automation names
-    hidden = not p.is_admin and (loaded is None or not all(
-        can_control(db, p, e, ip, ranges) for e in loaded.refs.entities))
+    store: ConfigStore = request.app.state.config
+    loaded = store.get(kind, ident)
+    deep = store.deep_refs(loaded.doc) if loaded else None
+    # step details carry rendered device values, so they need control of every device the run could read
+    hidden = not p.is_admin and (deep is None or deep.dynamic_template or not all(
+        can_control(db, p, e, ip, ranges) for e in deep.entities))
     if hidden:
         for row in rows:
             row["trace"]["variables"], row["trace"]["error"] = {}, None

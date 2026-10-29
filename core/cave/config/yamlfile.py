@@ -9,6 +9,7 @@ import yaml
 from pydantic import BaseModel, ValidationError
 
 MAX_BYTES = 256 * 1024
+MAX_NESTING = 100
 Loc = tuple[str | int, ...]
 
 
@@ -33,6 +34,8 @@ def path_text(loc: Loc) -> str:
 
 
 def _walk(node: yaml.Node, loc: Loc, lines: dict[Loc, int], file: str) -> Any:
+    if len(loc) > MAX_NESTING:
+        raise ConfigError(file, "", f"nested more than {MAX_NESTING} levels deep", node.start_mark.line + 1)
     if isinstance(node, yaml.MappingNode):
         out: dict[Any, Any] = {}
         for key_node, value_node in node.value:
@@ -74,6 +77,8 @@ def load_text(text: str, file: str) -> YamlDoc:
         raise ConfigError(file, "", e.problem or str(e), mark.line + 1 if mark else None) from e
     except yaml.YAMLError as e:
         raise ConfigError(file, "", str(e)) from e
+    except RecursionError as e:  # PyYAML's parser recurses per nesting level
+        raise ConfigError(file, "", f"nested more than {MAX_NESTING} levels deep") from e
     finally:
         loader.dispose()
     lines: dict[Loc, int] = {}

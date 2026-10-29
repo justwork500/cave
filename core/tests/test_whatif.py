@@ -105,9 +105,10 @@ def test_feature_and_reference_guard(app, users):
     sam = sign_in(lan_client(app), "sam", "pw-sam-1234")
     assert run_test(sam).status_code == 403  # no Test Center feature
     op = sign_in(lan_client(app), "op", "pw-op-1234", users.op_totp)
-    r = run_test(op)  # operators have the Test Center, but not these devices
+    assert run_test(op).status_code == 403  # the automation isn't assigned to operators
+    set_assignments(app.state.db, "test", "automation:ups-on-battery", [("role", "operator")])
+    r = run_test(op)  # now it is, but operators can't control the devices it reads
     assert r.status_code == 403 and "binary_sensor.ups_on_battery" in r.json()["detail"]
-    set_assignments(app.state.db, "test", "sequence:lab_safe_shutdown", [("role", "operator")])
 
 
 def test_test_traces_stored_separately(app, users):

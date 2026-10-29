@@ -1,5 +1,6 @@
 """The automation interpreter: conditions and actions, one Step per action in the trace."""
 
+import asyncio
 from collections.abc import Callable
 from datetime import datetime
 from typing import Any
@@ -31,6 +32,8 @@ from cave.config.models import (
 from cave.templates import StateReader, TemplateError, render
 
 MAX_REPEAT = 1000
+MAX_STEPS = 10_000  # per run, across every repeat, branch and routine
+YIELD_EVERY = 100
 MAX_DEPTH = 8
 WEEKDAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 TRUTHY = {"true", "yes", "on", "1"}
@@ -124,6 +127,7 @@ class Engine:
         self, actions: list[Action], variables: dict[str, Any], *, start_at: str | None = None, source: str
     ) -> Trace:
         trace = Trace(variables=variables)
+        self._steps = 0
         self._source = source
         self._start_at = start_at
         try:
@@ -153,6 +157,11 @@ class Engine:
             if skip and not descend:
                 trace.steps.append(Step(path, action.type, "skipped (before the start point)", self.now(), "skipped"))
                 continue
+            self._steps += 1
+            if self._steps > MAX_STEPS:
+                raise StepFailed(f"A run can take at most {MAX_STEPS} steps.")
+            if self._steps % YIELD_EVERY == 0:
+                await asyncio.sleep(0)  # long runs that never wait must not freeze the server
             step = Step(path, action.type, action.type, self.now())
             trace.steps.append(step)
             try:
