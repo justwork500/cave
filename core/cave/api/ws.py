@@ -91,6 +91,10 @@ class _Socket:
             return False
         if event["type"] == "principal_disabled":
             return self.p.kind == "screen" or event.get("user_id") != self.p.user_id
+        if event["type"] == "notification":
+            if self.p.kind != "screen" and event.get("user_id") == self.p.user_id:
+                await self.ws.send_json({k: v for k, v in event.items() if k != "user_id"})
+            return True
         if event["type"] == "screen_revoked":
             return not (self.p.kind == "screen" and event.get("screen_id") == self.p.id)
         if event["type"] == "access_changed":

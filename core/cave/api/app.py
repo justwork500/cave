@@ -13,7 +13,10 @@ from fastapi.staticfiles import StaticFiles
 from cave.access import netconfig
 from cave.access.items import seed_builtins
 from cave.api import admin, auth, entities, screens, system, ws
+from cave.api import automations as automations_api
 from cave.api import config as config_api
+from cave.automation.effects import LiveEffects
+from cave.automation.manager import AutomationManager
 from cave.config.store import ConfigStore
 from cave.db import Database
 from cave.integrations.mqtt import config as mqtt_config
@@ -46,9 +49,16 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         app.state.mqtt = service
         task = asyncio.create_task(service.run())
         task.add_done_callback(_report_mqtt_exit)
+    effects = LiveEffects(app.state.states, app.state.db, app.state.bus,
+                          lambda: app.state.mqtt.bridge if app.state.mqtt else None)
+    manager = AutomationManager(app.state.config, app.state.db, app.state.states, app.state.bus, effects)
+    app.state.automations = manager
+    app.state.rearm = manager.rearm
+    await manager.start()
     try:
         yield
     finally:
+        await manager.stop()
         if task is not None:
             task.cancel()
             with contextlib.suppress(asyncio.CancelledError):
@@ -60,6 +70,8 @@ def create_app(settings: Settings) -> FastAPI:
     app.state.settings = settings
     app.state.mqtt = None
     app.state.mqtt_error = None
+    app.state.automations = None
+    app.state.rearm = None
     app.state.db = Database.open(settings.db_path)
     seed_builtins(app.state.db)
     netconfig.seed(app.state.db, settings)
@@ -89,5 +101,6 @@ def create_app(settings: Settings) -> FastAPI:
     app.include_router(admin.router)
     app.include_router(system.router)
     app.include_router(screens.router)
+    app.include_router(automations_api.router)
     app.include_router(config_api.router)  # last: its /{kinds} routes must not shadow the others
     return app
