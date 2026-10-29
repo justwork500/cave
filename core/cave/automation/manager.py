@@ -7,6 +7,7 @@ import json
 import logging
 from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
+from functools import partial
 from typing import Any
 
 from cave.access.items import get_item
@@ -121,12 +122,13 @@ class AutomationManager:
             for i, t in enumerate(a.triggers):
                 if not isinstance(t, StateTrigger | NumericStateTrigger) or t.entity != entity:
                     continue
+                still: Callable[[], bool]
                 if isinstance(t, StateTrigger):
                     matches = (t.from_ is None or t.from_ == old) and (t.to is None or t.to == new)
-                    still = (lambda t=t, new=new: self._current(t.entity) == new)
+                    still = partial(self._still_value, t.entity, new)
                 else:
                     matches = _in_range(t, new) and not _in_range(t, old)
-                    still = (lambda t=t: _in_range(t, self._current(t.entity)))
+                    still = partial(self._still_in_range, t)
                 key = (aid, i)
                 if key in self._timers and not still():
                     self._timers.pop(key).cancel()
@@ -139,6 +141,12 @@ class AutomationManager:
                     if key in self._timers:
                         self._timers.pop(key).cancel()
                     self._timers[key] = asyncio.create_task(self._after(key, t.for_.total_seconds(), still, data))
+
+    def _still_value(self, entity_id: str, value: str) -> bool:
+        return self._current(entity_id) == value
+
+    def _still_in_range(self, t: NumericStateTrigger) -> bool:
+        return _in_range(t, self._current(t.entity))
 
     def _current(self, entity_id: str) -> str | None:
         s = self.states.get(entity_id)
