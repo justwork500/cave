@@ -1,5 +1,5 @@
 import sqlite3
-from dataclasses import asdict
+from dataclasses import asdict, replace
 
 from cave import audit
 from cave.access.model import Item, ItemKind, TargetKind
@@ -116,3 +116,12 @@ def seed_builtins(db: Database) -> None:
             if get_item(db, item_id) is None:
                 upsert_item(db, "system", Item(item_id, kind, name, others_see="none", builtin=True))
                 set_assignments(db, "system", item_id, STARTING_ASSIGNMENTS.get(item_id, []))
+
+
+def ensure_item(db: Database, actor: str, item_id: str, kind: ItemKind, name: str) -> None:
+    """Create an item with the defaults, or rename it. Never touches its access settings."""
+    existing = get_item(db, item_id)
+    if existing is None:
+        upsert_item(db, actor, Item(item_id, kind, name))
+    elif existing.name != name:
+        upsert_item(db, actor, replace(existing, name=name))
