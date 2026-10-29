@@ -48,9 +48,9 @@ def test_manual_entity_equals_discovery_equivalent(tmp_path):
 
 
 def test_unknown_key_rejected_with_path(tmp_path):
-    with pytest.raises(ConfigError, match=r"mqtt\.yaml: entities\[0\]\.colour"):
+    with pytest.raises(ConfigError, match=r"mqtt.yaml:12: entities\[0\]\.colour"):
         load(write(tmp_path, MANUAL + "    colour: red\n"))
-    with pytest.raises(ConfigError, match=r"mqtt\.yaml: brokr"):
+    with pytest.raises(ConfigError, match=r"mqtt\.yaml:1: brokr"):
         load(write(tmp_path, "brokr:\n  host: x\n"))
 
 

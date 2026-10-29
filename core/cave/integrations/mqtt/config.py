@@ -2,14 +2,13 @@
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Literal
+from typing import Literal
 
-import yaml
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from cave.config.yamlfile import ConfigError as YamlConfigError
+from cave.config.yamlfile import load_file, validate
 from cave.integrations.mqtt.discovery import EntityConfig, Unsupported, build_config
-
-# shortcut: errors name the key path but not the line number; Plan 4's YAML loader adds line numbers everywhere
 
 
 @dataclass(frozen=True)
@@ -27,8 +26,7 @@ class MqttConfig:
     entities: tuple[EntityConfig, ...] = ()
 
 
-class ConfigError(ValueError):
-    pass
+ConfigError = YamlConfigError  # the shared file:line error; kept under this name for Plan 3 callers
 
 
 Scalar = str | bool | int | float
@@ -94,41 +92,28 @@ class _File(_Strict):
     entities: list[_Entity] = []
 
 
-def _path(loc: tuple[int | str, ...]) -> str:
-    out = ""
-    for part in loc:
-        out += f"[{part}]" if isinstance(part, int) else (f".{part}" if out else str(part))
-    return out
-
-
 def load(path: Path) -> MqttConfig | None:
     if not path.exists():
         return None
     name = path.name
-    try:
-        raw: Any = yaml.safe_load(path.read_text(encoding="utf-8"))
-    except yaml.YAMLError as e:
-        raise ConfigError(f"{name}: not valid YAML ({e})") from e
+    doc = load_file(path)
+    raw = doc.data
     if not isinstance(raw, dict):
-        raise ConfigError(f"{name}: expected a mapping with a broker section")
+        raise ConfigError(name, "", "expected a mapping with a broker section", 1)
     broker = raw.get("broker")
     if isinstance(broker, dict) and "password" in broker:
         raise ConfigError(
-            f"{name}: broker.password: don't put the password in config files; set CAVE_MQTT_PASSWORD instead"
+            name, "broker.password", "don't put the password in config files; set CAVE_MQTT_PASSWORD instead",
+            doc.lines.get(("broker", "password")),
         )
-    try:
-        parsed = _File.model_validate(raw)
-    except ValidationError as e:
-        # a typo shows up as both "unknown key" and "missing key"; the unknown one is the useful message
-        first = min(e.errors(), key=lambda err: err["type"] != "extra_forbidden")
-        raise ConfigError(f"{name}: {_path(first['loc'])}: {first['msg']}") from e
+    parsed = validate(_File, doc, name)
     entities: list[EntityConfig] = []
     for i, ent in enumerate(parsed.entities):
         data = ent.model_dump(by_alias=True, exclude_none=True)
         component = data.pop("component")
         built = build_config(f"{name}:entities[{i}]", component, data, ent.unique_id, ent.unique_id)
         if isinstance(built, Unsupported):
-            raise ConfigError(f"{name}: entities[{i}]: {built.reason}")
+            raise ConfigError(name, f"entities[{i}]", built.reason, doc.lines.get(("entities", i)))
         entities.append(built)
     b = parsed.broker
     return MqttConfig(Broker(b.host, b.port, b.username, b.tls), parsed.discovery_prefix, tuple(entities))
