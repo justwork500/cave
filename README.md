@@ -24,7 +24,7 @@ python -m venv .venv
 cd core && ../.venv/bin/pytest
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Wall tablets: [docs/install/tablets.md](docs/install/tablets.md). MQTT devices: [docs/integrations/mqtt.md](docs/integrations/mqtt.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md). Wall tablets: [docs/install/tablets.md](docs/install/tablets.md). MQTT devices: [docs/integrations/mqtt.md](docs/integrations/mqtt.md). Automations: [docs/automations.md](docs/automations.md).
 
 ## License
 

@@ -16,6 +16,7 @@ from cave.automation.engine import Engine
 from cave.config.models import (
     Automation,
     NumericStateTrigger,
+    RunSequence,
     StartupTrigger,
     StateTrigger,
     TimePatternTrigger,
@@ -204,6 +205,27 @@ class AutomationManager:
                 t.cancel()
         trace_id = new_trace(self.db, f"automation:{aid}")
         self._start(aid, a, trace_id, trigger, check_conditions)
+        return trace_id
+
+    def run_sequence(self, ident: str, variables: dict[str, Any]) -> int | None:
+        """Run a routine on demand (a dashboard button). Routines have no run mode: each press runs."""
+        if self.store.sequence(ident) is None:
+            return None
+        trace_id = new_trace(self.db, f"sequence:{ident}")
+        call = RunSequence.model_validate({"type": "sequence", "ref": f"sequence.{ident}", "with": variables})
+
+        async def go() -> None:
+            trace = Trace()
+            try:
+                trace = await Engine(self.states, self.effects, self.store.sequence, self.now).run(
+                    [call], {}, source=f"sequence:{ident}")
+            except asyncio.CancelledError:
+                trace.outcome = "cancelled"
+                raise
+            finally:
+                finish_trace(self.db, f"sequence:{ident}", trace_id, trace)
+
+        self._running.setdefault(f"sequence:{ident}", []).append(asyncio.create_task(go()))
         return trace_id
 
     def _loaded(self, aid: str) -> Automation | None:
