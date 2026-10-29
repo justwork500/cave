@@ -34,7 +34,7 @@ def main(argv: list[str] | None = None) -> None:
         args.out.mkdir(parents=True, exist_ok=True)
         for name, schema in schema_files().items():
             text = json.dumps(schema, indent=2, sort_keys=True) + "\n"
-            (args.out / name).write_text(text, encoding="utf-8")
+            (args.out / name).write_text(text, encoding="utf-8", newline="\n")
             print(f"wrote {args.out / name}")
         return
 
