@@ -1,0 +1,17 @@
+sequence:
+  id: lab_safe_shutdown
+  name: Lab safe shutdown
+  fields:
+    grace_seconds: { type: int, default: 60 }
+  actions:
+    - type: call
+      target: switch.proxmox_vm_media
+      command: turn_off
+    - type: script
+      ref: scripts/Stop-LabHosts.ps1
+      args:
+        GraceSeconds: "{{ grace_seconds }}"
+      result_var: lab
+    - type: notify
+      targets: [notify.cave]
+      message: "Lab shutdown: {{ lab.status }}."

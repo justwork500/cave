@@ -1,0 +1,33 @@
+# The design framework's UPS example, adapted for Phase 1:
+# notifications go to the console bell, and the cave-host disk report step is gone.
+automation:
+  id: ups-on-battery
+  name: UPS on battery — alert and shut down lab
+  mode: single
+  enabled: true
+  triggers:
+    - type: state
+      entity: binary_sensor.ups_on_battery
+      to: "on"
+      for: 00:02:00
+  conditions:
+    - type: numeric_state
+      entity: sensor.ups_battery_runtime_min
+      below: 15
+  actions:
+    - type: notify
+      targets: [notify.cave]
+      title: "Power outage"
+      message: "UPS on battery. {{ states('sensor.ups_battery_runtime_min') }} min left."
+    - type: sequence
+      ref: sequence.lab_safe_shutdown
+      with:
+        grace_seconds: 120
+    - type: wait_for
+      entity: binary_sensor.ups_on_battery
+      to: "off"
+      timeout: 01:00:00
+      on_timeout: stop
+    - type: notify
+      targets: [notify.cave]
+      message: "Power restored."

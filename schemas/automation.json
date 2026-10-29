@@ -1,0 +1,1399 @@
+{
+  "$defs": {
+    "AndCondition": {
+      "additionalProperties": false,
+      "properties": {
+        "conditions": {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "and": "#/$defs/AndCondition",
+                "not": "#/$defs/NotCondition",
+                "numeric_state": "#/$defs/NumericStateCondition",
+                "or": "#/$defs/OrCondition",
+                "state": "#/$defs/StateCondition",
+                "template": "#/$defs/TemplateCondition",
+                "time": "#/$defs/TimeCondition"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/StateCondition"
+              },
+              {
+                "$ref": "#/$defs/NumericStateCondition"
+              },
+              {
+                "$ref": "#/$defs/TimeCondition"
+              },
+              {
+                "$ref": "#/$defs/TemplateCondition"
+              },
+              {
+                "$ref": "#/$defs/AndCondition"
+              },
+              {
+                "$ref": "#/$defs/OrCondition"
+              },
+              {
+                "$ref": "#/$defs/NotCondition"
+              }
+            ]
+          },
+          "title": "Conditions",
+          "type": "array"
+        },
+        "type": {
+          "const": "and",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "conditions"
+      ],
+      "title": "AndCondition",
+      "type": "object"
+    },
+    "Automation": {
+      "additionalProperties": false,
+      "properties": {
+        "actions": {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "call": "#/$defs/Call",
+                "choose": "#/$defs/Choose",
+                "delay": "#/$defs/Delay",
+                "mqtt_publish": "#/$defs/MqttPublish",
+                "notify": "#/$defs/Notify",
+                "repeat": "#/$defs/Repeat",
+                "script": "#/$defs/Script",
+                "sequence": "#/$defs/RunSequence",
+                "set_variable": "#/$defs/SetVariable",
+                "stop": "#/$defs/Stop",
+                "wait_for": "#/$defs/WaitFor"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/Call"
+              },
+              {
+                "$ref": "#/$defs/Notify"
+              },
+              {
+                "$ref": "#/$defs/Delay"
+              },
+              {
+                "$ref": "#/$defs/WaitFor"
+              },
+              {
+                "$ref": "#/$defs/Choose"
+              },
+              {
+                "$ref": "#/$defs/Repeat"
+              },
+              {
+                "$ref": "#/$defs/RunSequence"
+              },
+              {
+                "$ref": "#/$defs/Script"
+              },
+              {
+                "$ref": "#/$defs/SetVariable"
+              },
+              {
+                "$ref": "#/$defs/Stop"
+              },
+              {
+                "$ref": "#/$defs/MqttPublish"
+              }
+            ]
+          },
+          "minItems": 1,
+          "title": "Actions",
+          "type": "array"
+        },
+        "conditions": {
+          "default": [],
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "and": "#/$defs/AndCondition",
+                "not": "#/$defs/NotCondition",
+                "numeric_state": "#/$defs/NumericStateCondition",
+                "or": "#/$defs/OrCondition",
+                "state": "#/$defs/StateCondition",
+                "template": "#/$defs/TemplateCondition",
+                "time": "#/$defs/TimeCondition"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/StateCondition"
+              },
+              {
+                "$ref": "#/$defs/NumericStateCondition"
+              },
+              {
+                "$ref": "#/$defs/TimeCondition"
+              },
+              {
+                "$ref": "#/$defs/TemplateCondition"
+              },
+              {
+                "$ref": "#/$defs/AndCondition"
+              },
+              {
+                "$ref": "#/$defs/OrCondition"
+              },
+              {
+                "$ref": "#/$defs/NotCondition"
+              }
+            ]
+          },
+          "title": "Conditions",
+          "type": "array"
+        },
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "id": {
+          "pattern": "^[a-z0-9_-]{1,64}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "max": {
+          "default": 10,
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Max",
+          "type": "integer"
+        },
+        "mode": {
+          "default": "single",
+          "enum": [
+            "single",
+            "restart",
+            "queued",
+            "parallel"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "triggers": {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "numeric_state": "#/$defs/NumericStateTrigger",
+                "startup": "#/$defs/StartupTrigger",
+                "state": "#/$defs/StateTrigger",
+                "time": "#/$defs/TimeTrigger",
+                "time_pattern": "#/$defs/TimePatternTrigger"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/StateTrigger"
+              },
+              {
+                "$ref": "#/$defs/NumericStateTrigger"
+              },
+              {
+                "$ref": "#/$defs/TimeTrigger"
+              },
+              {
+                "$ref": "#/$defs/TimePatternTrigger"
+              },
+              {
+                "$ref": "#/$defs/StartupTrigger"
+              }
+            ]
+          },
+          "minItems": 1,
+          "title": "Triggers",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "triggers",
+        "actions"
+      ],
+      "title": "Automation",
+      "type": "object"
+    },
+    "Call": {
+      "additionalProperties": false,
+      "properties": {
+        "args": {
+          "additionalProperties": true,
+          "default": {},
+          "title": "Args",
+          "type": "object"
+        },
+        "command": {
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,63}$",
+          "title": "Command",
+          "type": "string"
+        },
+        "target": {
+          "pattern": "^[a-z_]+\\.[a-z0-9_]+$",
+          "title": "Target",
+          "type": "string"
+        },
+        "type": {
+          "const": "call",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "target",
+        "command"
+      ],
+      "title": "Call",
+      "type": "object"
+    },
+    "Choose": {
+      "additionalProperties": false,
+      "properties": {
+        "default": {
+          "default": [],
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "call": "#/$defs/Call",
+                "choose": "#/$defs/Choose",
+                "delay": "#/$defs/Delay",
+                "mqtt_publish": "#/$defs/MqttPublish",
+                "notify": "#/$defs/Notify",
+                "repeat": "#/$defs/Repeat",
+                "script": "#/$defs/Script",
+                "sequence": "#/$defs/RunSequence",
+                "set_variable": "#/$defs/SetVariable",
+                "stop": "#/$defs/Stop",
+                "wait_for": "#/$defs/WaitFor"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/Call"
+              },
+              {
+                "$ref": "#/$defs/Notify"
+              },
+              {
+                "$ref": "#/$defs/Delay"
+              },
+              {
+                "$ref": "#/$defs/WaitFor"
+              },
+              {
+                "$ref": "#/$defs/Choose"
+              },
+              {
+                "$ref": "#/$defs/Repeat"
+              },
+              {
+                "$ref": "#/$defs/RunSequence"
+              },
+              {
+                "$ref": "#/$defs/Script"
+              },
+              {
+                "$ref": "#/$defs/SetVariable"
+              },
+              {
+                "$ref": "#/$defs/Stop"
+              },
+              {
+                "$ref": "#/$defs/MqttPublish"
+              }
+            ]
+          },
+          "title": "Default",
+          "type": "array"
+        },
+        "options": {
+          "items": {
+            "$ref": "#/$defs/ChooseOption"
+          },
+          "title": "Options",
+          "type": "array"
+        },
+        "type": {
+          "const": "choose",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "options"
+      ],
+      "title": "Choose",
+      "type": "object"
+    },
+    "ChooseOption": {
+      "additionalProperties": false,
+      "properties": {
+        "actions": {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "call": "#/$defs/Call",
+                "choose": "#/$defs/Choose",
+                "delay": "#/$defs/Delay",
+                "mqtt_publish": "#/$defs/MqttPublish",
+                "notify": "#/$defs/Notify",
+                "repeat": "#/$defs/Repeat",
+                "script": "#/$defs/Script",
+                "sequence": "#/$defs/RunSequence",
+                "set_variable": "#/$defs/SetVariable",
+                "stop": "#/$defs/Stop",
+                "wait_for": "#/$defs/WaitFor"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/Call"
+              },
+              {
+                "$ref": "#/$defs/Notify"
+              },
+              {
+                "$ref": "#/$defs/Delay"
+              },
+              {
+                "$ref": "#/$defs/WaitFor"
+              },
+              {
+                "$ref": "#/$defs/Choose"
+              },
+              {
+                "$ref": "#/$defs/Repeat"
+              },
+              {
+                "$ref": "#/$defs/RunSequence"
+              },
+              {
+                "$ref": "#/$defs/Script"
+              },
+              {
+                "$ref": "#/$defs/SetVariable"
+              },
+              {
+                "$ref": "#/$defs/Stop"
+              },
+              {
+                "$ref": "#/$defs/MqttPublish"
+              }
+            ]
+          },
+          "title": "Actions",
+          "type": "array"
+        },
+        "conditions": {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "and": "#/$defs/AndCondition",
+                "not": "#/$defs/NotCondition",
+                "numeric_state": "#/$defs/NumericStateCondition",
+                "or": "#/$defs/OrCondition",
+                "state": "#/$defs/StateCondition",
+                "template": "#/$defs/TemplateCondition",
+                "time": "#/$defs/TimeCondition"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/StateCondition"
+              },
+              {
+                "$ref": "#/$defs/NumericStateCondition"
+              },
+              {
+                "$ref": "#/$defs/TimeCondition"
+              },
+              {
+                "$ref": "#/$defs/TemplateCondition"
+              },
+              {
+                "$ref": "#/$defs/AndCondition"
+              },
+              {
+                "$ref": "#/$defs/OrCondition"
+              },
+              {
+                "$ref": "#/$defs/NotCondition"
+              }
+            ]
+          },
+          "title": "Conditions",
+          "type": "array"
+        }
+      },
+      "required": [
+        "conditions",
+        "actions"
+      ],
+      "title": "ChooseOption",
+      "type": "object"
+    },
+    "Delay": {
+      "additionalProperties": false,
+      "properties": {
+        "duration": {
+          "format": "duration",
+          "title": "Duration",
+          "type": "string"
+        },
+        "type": {
+          "const": "delay",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "duration"
+      ],
+      "title": "Delay",
+      "type": "object"
+    },
+    "MqttPublish": {
+      "additionalProperties": false,
+      "properties": {
+        "payload": {
+          "title": "Payload",
+          "type": "string"
+        },
+        "retain": {
+          "default": false,
+          "title": "Retain",
+          "type": "boolean"
+        },
+        "topic": {
+          "minLength": 1,
+          "pattern": "^[^+#]+$",
+          "title": "Topic",
+          "type": "string"
+        },
+        "type": {
+          "const": "mqtt_publish",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "topic",
+        "payload"
+      ],
+      "title": "MqttPublish",
+      "type": "object"
+    },
+    "NotCondition": {
+      "additionalProperties": false,
+      "properties": {
+        "conditions": {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "and": "#/$defs/AndCondition",
+                "not": "#/$defs/NotCondition",
+                "numeric_state": "#/$defs/NumericStateCondition",
+                "or": "#/$defs/OrCondition",
+                "state": "#/$defs/StateCondition",
+                "template": "#/$defs/TemplateCondition",
+                "time": "#/$defs/TimeCondition"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/StateCondition"
+              },
+              {
+                "$ref": "#/$defs/NumericStateCondition"
+              },
+              {
+                "$ref": "#/$defs/TimeCondition"
+              },
+              {
+                "$ref": "#/$defs/TemplateCondition"
+              },
+              {
+                "$ref": "#/$defs/AndCondition"
+              },
+              {
+                "$ref": "#/$defs/OrCondition"
+              },
+              {
+                "$ref": "#/$defs/NotCondition"
+              }
+            ]
+          },
+          "title": "Conditions",
+          "type": "array"
+        },
+        "type": {
+          "const": "not",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "conditions"
+      ],
+      "title": "NotCondition",
+      "type": "object"
+    },
+    "Notify": {
+      "additionalProperties": false,
+      "properties": {
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "targets": {
+          "default": [],
+          "items": {
+            "pattern": "^(notify\\.cave|user:.+)$",
+            "type": "string"
+          },
+          "title": "Targets",
+          "type": "array"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Title"
+        },
+        "type": {
+          "const": "notify",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "message"
+      ],
+      "title": "Notify",
+      "type": "object"
+    },
+    "NumericStateCondition": {
+      "additionalProperties": false,
+      "properties": {
+        "above": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Above"
+        },
+        "below": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Below"
+        },
+        "entity": {
+          "pattern": "^[a-z_]+\\.[a-z0-9_]+$",
+          "title": "Entity",
+          "type": "string"
+        },
+        "type": {
+          "const": "numeric_state",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "entity"
+      ],
+      "title": "NumericStateCondition",
+      "type": "object"
+    },
+    "NumericStateTrigger": {
+      "additionalProperties": false,
+      "properties": {
+        "above": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Above"
+        },
+        "below": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Below"
+        },
+        "entity": {
+          "pattern": "^[a-z_]+\\.[a-z0-9_]+$",
+          "title": "Entity",
+          "type": "string"
+        },
+        "for": {
+          "anyOf": [
+            {
+              "format": "duration",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "For"
+        },
+        "type": {
+          "const": "numeric_state",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "entity"
+      ],
+      "title": "NumericStateTrigger",
+      "type": "object"
+    },
+    "OrCondition": {
+      "additionalProperties": false,
+      "properties": {
+        "conditions": {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "and": "#/$defs/AndCondition",
+                "not": "#/$defs/NotCondition",
+                "numeric_state": "#/$defs/NumericStateCondition",
+                "or": "#/$defs/OrCondition",
+                "state": "#/$defs/StateCondition",
+                "template": "#/$defs/TemplateCondition",
+                "time": "#/$defs/TimeCondition"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/StateCondition"
+              },
+              {
+                "$ref": "#/$defs/NumericStateCondition"
+              },
+              {
+                "$ref": "#/$defs/TimeCondition"
+              },
+              {
+                "$ref": "#/$defs/TemplateCondition"
+              },
+              {
+                "$ref": "#/$defs/AndCondition"
+              },
+              {
+                "$ref": "#/$defs/OrCondition"
+              },
+              {
+                "$ref": "#/$defs/NotCondition"
+              }
+            ]
+          },
+          "title": "Conditions",
+          "type": "array"
+        },
+        "type": {
+          "const": "or",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "conditions"
+      ],
+      "title": "OrCondition",
+      "type": "object"
+    },
+    "Repeat": {
+      "additionalProperties": false,
+      "properties": {
+        "actions": {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "call": "#/$defs/Call",
+                "choose": "#/$defs/Choose",
+                "delay": "#/$defs/Delay",
+                "mqtt_publish": "#/$defs/MqttPublish",
+                "notify": "#/$defs/Notify",
+                "repeat": "#/$defs/Repeat",
+                "script": "#/$defs/Script",
+                "sequence": "#/$defs/RunSequence",
+                "set_variable": "#/$defs/SetVariable",
+                "stop": "#/$defs/Stop",
+                "wait_for": "#/$defs/WaitFor"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/Call"
+              },
+              {
+                "$ref": "#/$defs/Notify"
+              },
+              {
+                "$ref": "#/$defs/Delay"
+              },
+              {
+                "$ref": "#/$defs/WaitFor"
+              },
+              {
+                "$ref": "#/$defs/Choose"
+              },
+              {
+                "$ref": "#/$defs/Repeat"
+              },
+              {
+                "$ref": "#/$defs/RunSequence"
+              },
+              {
+                "$ref": "#/$defs/Script"
+              },
+              {
+                "$ref": "#/$defs/SetVariable"
+              },
+              {
+                "$ref": "#/$defs/Stop"
+              },
+              {
+                "$ref": "#/$defs/MqttPublish"
+              }
+            ]
+          },
+          "title": "Actions",
+          "type": "array"
+        },
+        "count": {
+          "anyOf": [
+            {
+              "maximum": 1000,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Count"
+        },
+        "type": {
+          "const": "repeat",
+          "title": "Type",
+          "type": "string"
+        },
+        "until": {
+          "anyOf": [
+            {
+              "items": {
+                "discriminator": {
+                  "mapping": {
+                    "and": "#/$defs/AndCondition",
+                    "not": "#/$defs/NotCondition",
+                    "numeric_state": "#/$defs/NumericStateCondition",
+                    "or": "#/$defs/OrCondition",
+                    "state": "#/$defs/StateCondition",
+                    "template": "#/$defs/TemplateCondition",
+                    "time": "#/$defs/TimeCondition"
+                  },
+                  "propertyName": "type"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/StateCondition"
+                  },
+                  {
+                    "$ref": "#/$defs/NumericStateCondition"
+                  },
+                  {
+                    "$ref": "#/$defs/TimeCondition"
+                  },
+                  {
+                    "$ref": "#/$defs/TemplateCondition"
+                  },
+                  {
+                    "$ref": "#/$defs/AndCondition"
+                  },
+                  {
+                    "$ref": "#/$defs/OrCondition"
+                  },
+                  {
+                    "$ref": "#/$defs/NotCondition"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Until"
+        },
+        "while": {
+          "anyOf": [
+            {
+              "items": {
+                "discriminator": {
+                  "mapping": {
+                    "and": "#/$defs/AndCondition",
+                    "not": "#/$defs/NotCondition",
+                    "numeric_state": "#/$defs/NumericStateCondition",
+                    "or": "#/$defs/OrCondition",
+                    "state": "#/$defs/StateCondition",
+                    "template": "#/$defs/TemplateCondition",
+                    "time": "#/$defs/TimeCondition"
+                  },
+                  "propertyName": "type"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/StateCondition"
+                  },
+                  {
+                    "$ref": "#/$defs/NumericStateCondition"
+                  },
+                  {
+                    "$ref": "#/$defs/TimeCondition"
+                  },
+                  {
+                    "$ref": "#/$defs/TemplateCondition"
+                  },
+                  {
+                    "$ref": "#/$defs/AndCondition"
+                  },
+                  {
+                    "$ref": "#/$defs/OrCondition"
+                  },
+                  {
+                    "$ref": "#/$defs/NotCondition"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "While"
+        }
+      },
+      "required": [
+        "type",
+        "actions"
+      ],
+      "title": "Repeat",
+      "type": "object"
+    },
+    "RunSequence": {
+      "additionalProperties": false,
+      "properties": {
+        "ref": {
+          "pattern": "^sequence\\.[a-z0-9_-]{1,64}$",
+          "title": "Ref",
+          "type": "string"
+        },
+        "type": {
+          "const": "sequence",
+          "title": "Type",
+          "type": "string"
+        },
+        "with": {
+          "additionalProperties": true,
+          "default": {},
+          "title": "With",
+          "type": "object"
+        }
+      },
+      "required": [
+        "type",
+        "ref"
+      ],
+      "title": "RunSequence",
+      "type": "object"
+    },
+    "Script": {
+      "additionalProperties": false,
+      "properties": {
+        "args": {
+          "additionalProperties": true,
+          "default": {},
+          "title": "Args",
+          "type": "object"
+        },
+        "ref": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Ref",
+          "type": "string"
+        },
+        "result_var": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Result Var"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Target"
+        },
+        "type": {
+          "const": "script",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "ref"
+      ],
+      "title": "Script",
+      "type": "object"
+    },
+    "SetVariable": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,63}$",
+          "title": "Name",
+          "type": "string"
+        },
+        "type": {
+          "const": "set_variable",
+          "title": "Type",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value"
+        }
+      },
+      "required": [
+        "type",
+        "name",
+        "value"
+      ],
+      "title": "SetVariable",
+      "type": "object"
+    },
+    "StartupTrigger": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "startup",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "StartupTrigger",
+      "type": "object"
+    },
+    "StateCondition": {
+      "additionalProperties": false,
+      "properties": {
+        "entity": {
+          "pattern": "^[a-z_]+\\.[a-z0-9_]+$",
+          "title": "Entity",
+          "type": "string"
+        },
+        "state": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          ],
+          "title": "State"
+        },
+        "type": {
+          "const": "state",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "entity",
+        "state"
+      ],
+      "title": "StateCondition",
+      "type": "object"
+    },
+    "StateTrigger": {
+      "additionalProperties": false,
+      "properties": {
+        "entity": {
+          "pattern": "^[a-z_]+\\.[a-z0-9_]+$",
+          "title": "Entity",
+          "type": "string"
+        },
+        "for": {
+          "anyOf": [
+            {
+              "format": "duration",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "For"
+        },
+        "from": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "From"
+        },
+        "to": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "To"
+        },
+        "type": {
+          "const": "state",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "entity"
+      ],
+      "title": "StateTrigger",
+      "type": "object"
+    },
+    "Stop": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reason"
+        },
+        "type": {
+          "const": "stop",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "Stop",
+      "type": "object"
+    },
+    "TemplateCondition": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "template",
+          "title": "Type",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "value"
+      ],
+      "title": "TemplateCondition",
+      "type": "object"
+    },
+    "TimeCondition": {
+      "additionalProperties": false,
+      "properties": {
+        "after": {
+          "anyOf": [
+            {
+              "format": "time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "After"
+        },
+        "before": {
+          "anyOf": [
+            {
+              "format": "time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Before"
+        },
+        "type": {
+          "const": "time",
+          "title": "Type",
+          "type": "string"
+        },
+        "weekdays": {
+          "anyOf": [
+            {
+              "items": {
+                "enum": [
+                  "mon",
+                  "tue",
+                  "wed",
+                  "thu",
+                  "fri",
+                  "sat",
+                  "sun"
+                ],
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Weekdays"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "TimeCondition",
+      "type": "object"
+    },
+    "TimePatternTrigger": {
+      "additionalProperties": false,
+      "properties": {
+        "hours": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "default": "*",
+          "title": "Hours"
+        },
+        "minutes": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "default": "*",
+          "title": "Minutes"
+        },
+        "type": {
+          "const": "time_pattern",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "TimePatternTrigger",
+      "type": "object"
+    },
+    "TimeTrigger": {
+      "additionalProperties": false,
+      "properties": {
+        "at": {
+          "format": "time",
+          "title": "At",
+          "type": "string"
+        },
+        "type": {
+          "const": "time",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "at"
+      ],
+      "title": "TimeTrigger",
+      "type": "object"
+    },
+    "WaitFor": {
+      "additionalProperties": false,
+      "properties": {
+        "entity": {
+          "pattern": "^[a-z_]+\\.[a-z0-9_]+$",
+          "title": "Entity",
+          "type": "string"
+        },
+        "on_timeout": {
+          "default": "stop",
+          "enum": [
+            "stop",
+            "continue"
+          ],
+          "title": "On Timeout",
+          "type": "string"
+        },
+        "timeout": {
+          "format": "duration",
+          "title": "Timeout",
+          "type": "string"
+        },
+        "to": {
+          "title": "To",
+          "type": "string"
+        },
+        "type": {
+          "const": "wait_for",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "entity",
+        "to",
+        "timeout"
+      ],
+      "title": "WaitFor",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "automation": {
+      "$ref": "#/$defs/Automation"
+    }
+  },
+  "required": [
+    "automation"
+  ],
+  "title": "AutomationFile",
+  "type": "object"
+}

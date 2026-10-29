@@ -1,0 +1,391 @@
+{
+  "$defs": {
+    "ButtonCard": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "anyOf": [
+            {
+              "pattern": "^(automation|sequence)\\.[a-z0-9_-]{1,64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Action"
+        },
+        "command": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Command"
+        },
+        "confirm": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confirm"
+        },
+        "entity": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z_]+\\.[a-z0-9_]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Entity"
+        },
+        "h": {
+          "default": 1,
+          "maximum": 8,
+          "minimum": 1,
+          "title": "H",
+          "type": "integer"
+        },
+        "name": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "type": {
+          "const": "button",
+          "title": "Type",
+          "type": "string"
+        },
+        "w": {
+          "default": 3,
+          "maximum": 12,
+          "minimum": 1,
+          "title": "W",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "type",
+        "name"
+      ],
+      "title": "ButtonCard",
+      "type": "object"
+    },
+    "Dashboard": {
+      "additionalProperties": false,
+      "properties": {
+        "icon": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Icon"
+        },
+        "title": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "views": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/View"
+          },
+          "title": "Views",
+          "type": "array"
+        }
+      },
+      "required": [
+        "title"
+      ],
+      "title": "Dashboard",
+      "type": "object"
+    },
+    "EntitiesCard": {
+      "additionalProperties": false,
+      "properties": {
+        "entities": {
+          "items": {
+            "pattern": "^[a-z_]+\\.[a-z0-9_]+$",
+            "type": "string"
+          },
+          "title": "Entities",
+          "type": "array"
+        },
+        "h": {
+          "default": 1,
+          "maximum": 8,
+          "minimum": 1,
+          "title": "H",
+          "type": "integer"
+        },
+        "type": {
+          "const": "entities",
+          "title": "Type",
+          "type": "string"
+        },
+        "w": {
+          "default": 3,
+          "maximum": 12,
+          "minimum": 1,
+          "title": "W",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "type",
+        "entities"
+      ],
+      "title": "EntitiesCard",
+      "type": "object"
+    },
+    "GaugeCard": {
+      "additionalProperties": false,
+      "properties": {
+        "entity": {
+          "pattern": "^[a-z_]+\\.[a-z0-9_]+$",
+          "title": "Entity",
+          "type": "string"
+        },
+        "h": {
+          "default": 1,
+          "maximum": 8,
+          "minimum": 1,
+          "title": "H",
+          "type": "integer"
+        },
+        "max": {
+          "default": 100,
+          "title": "Max",
+          "type": "number"
+        },
+        "min": {
+          "default": 0,
+          "title": "Min",
+          "type": "number"
+        },
+        "severity": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "number"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Severity"
+        },
+        "type": {
+          "const": "gauge",
+          "title": "Type",
+          "type": "string"
+        },
+        "w": {
+          "default": 3,
+          "maximum": 12,
+          "minimum": 1,
+          "title": "W",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "type",
+        "entity"
+      ],
+      "title": "GaugeCard",
+      "type": "object"
+    },
+    "MarkdownCard": {
+      "additionalProperties": false,
+      "properties": {
+        "content": {
+          "maxLength": 10000,
+          "title": "Content",
+          "type": "string"
+        },
+        "h": {
+          "default": 1,
+          "maximum": 8,
+          "minimum": 1,
+          "title": "H",
+          "type": "integer"
+        },
+        "type": {
+          "const": "markdown",
+          "title": "Type",
+          "type": "string"
+        },
+        "w": {
+          "default": 3,
+          "maximum": 12,
+          "minimum": 1,
+          "title": "W",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "type",
+        "content"
+      ],
+      "title": "MarkdownCard",
+      "type": "object"
+    },
+    "Section": {
+      "additionalProperties": false,
+      "properties": {
+        "cards": {
+          "default": [],
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "button": "#/$defs/ButtonCard",
+                "entities": "#/$defs/EntitiesCard",
+                "gauge": "#/$defs/GaugeCard",
+                "markdown": "#/$defs/MarkdownCard",
+                "tile": "#/$defs/TileCard"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/TileCard"
+              },
+              {
+                "$ref": "#/$defs/EntitiesCard"
+              },
+              {
+                "$ref": "#/$defs/GaugeCard"
+              },
+              {
+                "$ref": "#/$defs/ButtonCard"
+              },
+              {
+                "$ref": "#/$defs/MarkdownCard"
+              }
+            ]
+          },
+          "title": "Cards",
+          "type": "array"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title"
+      ],
+      "title": "Section",
+      "type": "object"
+    },
+    "TileCard": {
+      "additionalProperties": false,
+      "properties": {
+        "entity": {
+          "pattern": "^[a-z_]+\\.[a-z0-9_]+$",
+          "title": "Entity",
+          "type": "string"
+        },
+        "h": {
+          "default": 1,
+          "maximum": 8,
+          "minimum": 1,
+          "title": "H",
+          "type": "integer"
+        },
+        "tap_action": {
+          "default": "toggle",
+          "enum": [
+            "toggle",
+            "none"
+          ],
+          "title": "Tap Action",
+          "type": "string"
+        },
+        "type": {
+          "const": "tile",
+          "title": "Type",
+          "type": "string"
+        },
+        "w": {
+          "default": 3,
+          "maximum": 12,
+          "minimum": 1,
+          "title": "W",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "type",
+        "entity"
+      ],
+      "title": "TileCard",
+      "type": "object"
+    },
+    "View": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9_-]{1,64}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "sections": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Section"
+          },
+          "title": "Sections",
+          "type": "array"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "title"
+      ],
+      "title": "View",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "dashboard": {
+      "$ref": "#/$defs/Dashboard"
+    }
+  },
+  "required": [
+    "dashboard"
+  ],
+  "title": "DashboardFile",
+  "type": "object"
+}

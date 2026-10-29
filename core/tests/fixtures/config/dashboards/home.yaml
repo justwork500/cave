@@ -1,0 +1,30 @@
+dashboard:
+  title: Home
+  icon: home
+  views:
+    - id: main
+      title: Overview
+      sections:
+        - title: Living Room
+          cards:
+            - type: tile
+              entity: light.living_room
+              tap_action: toggle
+              w: 3
+              h: 1
+        - title: Power
+          cards:
+            - type: gauge
+              entity: sensor.ups_load_pct
+              min: 0
+              max: 100
+              severity: { green: 0, yellow: 60, red: 85 }
+              w: 3
+              h: 2
+            - type: button
+              name: Shut down lab
+              action: sequence.lab_safe_shutdown
+              confirm: true
+            - type: markdown
+              content: "Runtime: {{ states('sensor.ups_battery_runtime_min') }} min"
+              w: 6

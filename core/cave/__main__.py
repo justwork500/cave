@@ -1,7 +1,8 @@
-"""`python -m cave serve` — run CAVE over HTTPS. There is no plain-HTTP listener."""
+"""`python -m cave serve` runs CAVE over HTTPS (there is no plain-HTTP listener); `schemas` writes JSON Schemas."""
 
 import argparse
 import asyncio
+import json
 import socket
 import sys
 from pathlib import Path
@@ -11,6 +12,7 @@ import uvicorn
 from cave import tls
 from cave.access import netconfig
 from cave.api.app import create_app
+from cave.config.models import schema_files
 from cave.settings import Settings
 
 
@@ -24,7 +26,17 @@ def main(argv: list[str] | None = None) -> None:
     serve.add_argument("--config", type=Path, default=Path("config"))
     serve.add_argument("--cert", type=Path, help="Your own certificate (PEM). Use with --key.")
     serve.add_argument("--key", type=Path, help="Private key for --cert (PEM).")
+    schemas = sub.add_parser("schemas", help="Write JSON Schemas for the YAML config files")
+    schemas.add_argument("--out", type=Path, default=Path(__file__).resolve().parents[2] / "schemas")
     args = parser.parse_args(argv)
+
+    if args.command == "schemas":
+        args.out.mkdir(parents=True, exist_ok=True)
+        for name, schema in schema_files().items():
+            text = json.dumps(schema, indent=2, sort_keys=True) + "\n"
+            (args.out / name).write_text(text, encoding="utf-8")
+            print(f"wrote {args.out / name}")
+        return
 
     if bool(args.cert) != bool(args.key):
         parser.error("--cert and --key go together")
