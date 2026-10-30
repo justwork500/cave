@@ -24,13 +24,15 @@ def _duration(v: Any) -> timedelta:
         d = v
     elif isinstance(v, int | float) and not isinstance(v, bool):
         d = timedelta(seconds=v)
+    elif isinstance(v, str) and (m := re.fullmatch(r"(\d+)\s*([smh])", v.strip())):
+        d = timedelta(**{{"s": "seconds", "m": "minutes", "h": "hours"}[m[2]]: int(m[1])})
     elif isinstance(v, str) and re.fullmatch(r"\d+(:\d{1,2}){0,2}", v.strip()):
         parts = [int(p) for p in v.strip().split(":")]
         while len(parts) < 3:
             parts.insert(0, 0)
         d = timedelta(hours=parts[0], minutes=parts[1], seconds=parts[2])
     else:
-        raise ValueError("expected seconds or HH:MM:SS")
+        raise ValueError("expected seconds, HH:MM:SS, or a number with s, m or h")
     if d < timedelta(0) or d > MAX_DURATION:
         raise ValueError("durations are at most 24 hours")
     return d
