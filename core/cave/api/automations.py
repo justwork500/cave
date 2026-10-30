@@ -16,6 +16,7 @@ from cave.automation.whatif import what_if
 from cave.config.models import Automation, Sequence
 from cave.config.store import ConfigStore, item_id, parse
 from cave.config.yamlfile import ConfigError
+from cave.scripts.service import ScriptService
 
 router = APIRouter(prefix="/api/v1")
 Caller = Annotated[Principal, Depends(current_principal)]
@@ -73,13 +74,16 @@ async def test_center(body: TestRun, request: Request, p: Caller) -> dict[str, A
     item = get_item(db, item_id(body.kind, body.id))
     if item is not None and not evaluate(db, p, item, ip, ranges).allowed:
         raise HTTPException(403, "You don't have access to this.")
+    deep = store.deep_refs(doc)
     try:  # a trace shows what the run read, routines included, so the save rule applies all the way down
-        store.guard(p, store.deep_refs(doc), ip, ranges)
+        store.guard(p, deep, ip, ranges)
     except AccessDenied as e:
         raise HTTPException(403, str(e)) from e
+    service: ScriptService = request.app.state.script_service
+    samples = {ref: s for ref in deep.scripts if (s := service.sample(ref.removeprefix("scripts/"))) is not None}
     trace = await what_if(
         doc, trigger=body.trigger, states=body.states, variables=dict(body.variables), start_at=body.start_at,
-        script_samples=body.script_samples, reader=request.app.state.states, sequences=store.sequence,
+        script_samples=samples | body.script_samples, reader=request.app.state.states, sequences=store.sequence,
         now=datetime.now().astimezone(),
     )
     iid = item_id(body.kind, body.id)

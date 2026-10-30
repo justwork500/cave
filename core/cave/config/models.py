@@ -4,7 +4,7 @@ import re
 from datetime import time, timedelta
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, model_validator
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, field_validator, model_validator
 
 from cave.config.yamlfile import ConfigError, YamlDoc
 
@@ -222,10 +222,17 @@ class RunSequence(_Strict):
 
 class Script(_Strict):
     type: Literal["script"]
-    ref: str = Field(min_length=1, max_length=255)
+    ref: str = Field(pattern=r"^scripts/[A-Za-z0-9_.-]{1,64}\.(ps1|py|sh)$")
     target: str | None = None
     args: dict[str, Any] = {}
     result_var: Ident | None = None
+
+    @field_validator("ref")
+    @classmethod
+    def _no_dotdot(cls, v: str) -> str:
+        if ".." in v:
+            raise ValueError("script names can't contain ..")
+        return v
 
 
 class SetVariable(_Strict):

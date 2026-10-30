@@ -994,8 +994,7 @@
           "type": "object"
         },
         "ref": {
-          "maxLength": 255,
-          "minLength": 1,
+          "pattern": "^scripts/[A-Za-z0-9_.-]{1,64}\\.(ps1|py|sh)$",
           "title": "Ref",
           "type": "string"
         },

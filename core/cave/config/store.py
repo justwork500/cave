@@ -139,7 +139,7 @@ class ConfigStore:
         """refs() plus everything the routines it calls reference, all the way down. For anything that shows
         what a run read (traces, the Test Center): running a routine is allowed by assignment, seeing inside isn't."""
         r = refs(doc)
-        entities, dynamic = set(r.entities), r.dynamic_template
+        entities, scripts, dynamic = set(r.entities), set(r.scripts), r.dynamic_template
         seen: set[str] = set()
         todo = list(r.sequences)
         while todo:
@@ -151,9 +151,10 @@ class ConfigStore:
             if loaded is None:
                 continue
             entities |= loaded.refs.entities
+            scripts |= loaded.refs.scripts
             dynamic = dynamic or loaded.refs.dynamic_template
             todo.extend(loaded.refs.sequences)
-        return Refs(frozenset(entities), frozenset(seen | r.sequences), r.automations, r.scripts, dynamic)
+        return Refs(frozenset(entities), frozenset(seen | r.sequences), r.automations, frozenset(scripts), dynamic)
 
     def sequence(self, ident: str) -> Sequence | None:
         loaded = self._loaded.get(("sequence", ident))
@@ -208,6 +209,11 @@ class ConfigStore:
                 item = get_item(self.db, item_id(kind, ident))  # type: ignore[arg-type]
                 if item is None or not evaluate(self.db, p, item, ip, local_ranges).allowed:
                     raise AccessDenied(f"You can't use the {kind} {ident!r}, so you can't save something that runs it.")
+        for ref in sorted(r.scripts):
+            file = ref.removeprefix("scripts/")
+            item = get_item(self.db, f"script:{file}")
+            if item is None or not evaluate(self.db, p, item, ip, local_ranges).allowed:
+                raise AccessDenied(f"You can't run the script {file!r}, so you can't save something that runs it.")
 
     # ---- saving ----
 
