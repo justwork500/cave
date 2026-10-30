@@ -42,7 +42,7 @@ async def reload(request: Request, p: Caller) -> None:
 @router.get("/config/errors")
 def errors(request: Request, p: Caller) -> dict[str, str]:
     _require(request, p, "section:system")
-    return dict(store(request).errors)
+    return dict(store(request).errors) | dict(request.app.state.scripts.errors)
 
 
 @router.get("/schemas/{name}")

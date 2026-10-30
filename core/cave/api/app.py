@@ -15,12 +15,14 @@ from cave.access.items import seed_builtins
 from cave.api import admin, auth, entities, screens, system, ws
 from cave.api import automations as automations_api
 from cave.api import config as config_api
+from cave.api import scripts as scripts_api
 from cave.automation.effects import LiveEffects
 from cave.automation.manager import AutomationManager
 from cave.config.store import ConfigStore
 from cave.db import Database
 from cave.integrations.mqtt import config as mqtt_config
 from cave.integrations.mqtt.client import MqttService
+from cave.scripts.store import ScriptStore
 from cave.settings import Settings
 from cave.state import EventBus, StateMachine
 
@@ -80,6 +82,8 @@ def create_app(settings: Settings) -> FastAPI:
     app.state.states = StateMachine(app.state.bus)
     app.state.config = ConfigStore(settings.config_dir, app.state.db, app.state.bus)
     app.state.config.load_all()
+    app.state.scripts = ScriptStore(settings.config_dir, app.state.db, app.state.bus)
+    app.state.scripts.load_all()
 
     @app.get("/api/v1/health")
     def health() -> dict[str, str]:
@@ -101,6 +105,7 @@ def create_app(settings: Settings) -> FastAPI:
     app.include_router(admin.router)
     app.include_router(system.router)
     app.include_router(screens.router)
+    app.include_router(scripts_api.router)
     app.include_router(automations_api.router)
     app.include_router(config_api.router)  # last: its /{kinds} routes must not shadow the others
     return app

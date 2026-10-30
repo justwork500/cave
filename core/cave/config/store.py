@@ -42,6 +42,30 @@ FILE_ID = re.compile(r"^[a-z0-9_-]{1,64}$")
 DYNAMIC_REFUSED = "Templates must name devices directly, like states('sensor.x')."
 
 
+def note_file(db: Database, rel: str, text: str, actor: str) -> None:
+    """Audit a config file that's new or changed since it was last loaded."""
+    digest = hashlib.sha256(text.encode("utf-8")).hexdigest()
+    row = db.execute("SELECT sha256 FROM config_files WHERE path=?", (rel,)).fetchone()
+    if row is not None and row["sha256"] == digest:
+        return
+    db.execute(
+        "INSERT INTO config_files (path, sha256, loaded_at) VALUES (?, ?, ?) "
+        "ON CONFLICT(path) DO UPDATE SET sha256=excluded.sha256, loaded_at=excluded.loaded_at",
+        (rel, digest, datetime.now(UTC).isoformat()),
+    )
+    action = "config.file_added" if row is None else "config.file_changed"
+    audit.record(db, actor, action, f"config:{rel}", row["sha256"] if row else None, digest)
+
+
+def write_atomic(path: Path, text: str) -> None:
+    """Write the text exactly as given (line endings too), replacing the file in one step."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=f".{path.stem}.", suffix=".tmp")
+    with os.fdopen(fd, "w", encoding="utf-8", newline="") as f:
+        f.write(text)
+    os.replace(tmp, path)
+
+
 def item_id(kind: Kind, ident: str) -> str:
     return f"{kind}:{ident}"
 
@@ -161,7 +185,7 @@ class ConfigStore:
             self.errors[rel] = str(e)
             self._loaded.pop((kind, ident), None)  # stops running; the item and its access stay
             return
-        self._note_file(rel, text, actor)
+        note_file(self.db, rel, text, actor)
         r = refs(doc)
         iid = item_id(kind, ident)
         ensure_item(self.db, actor, iid, "dashboard" if kind == "dashboard" else "action", _name(doc))
@@ -169,19 +193,6 @@ class ConfigStore:
             # dashboard cards are what grant control; actions grant it only by being run
             set_item_entities(self.db, iid, sorted(r.entities), bus=self.bus)
         self._loaded[(kind, ident)] = Loaded(doc, text, r)
-
-    def _note_file(self, rel: str, text: str, actor: str) -> None:
-        digest = hashlib.sha256(text.encode("utf-8")).hexdigest()
-        row = self.db.execute("SELECT sha256 FROM config_files WHERE path=?", (rel,)).fetchone()
-        if row is not None and row["sha256"] == digest:
-            return
-        self.db.execute(
-            "INSERT INTO config_files (path, sha256, loaded_at) VALUES (?, ?, ?) "
-            "ON CONFLICT(path) DO UPDATE SET sha256=excluded.sha256, loaded_at=excluded.loaded_at",
-            (rel, digest, datetime.now(UTC).isoformat()),
-        )
-        action = "config.file_added" if row is None else "config.file_changed"
-        audit.record(self.db, actor, action, f"config:{rel}", row["sha256"] if row else None, digest)
 
     # ---- the guard ----
 
@@ -211,11 +222,7 @@ class ConfigStore:
         old_text = self._existing_text(kind, ident, old)
         if old_text is not None and not p.is_admin:
             self.guard(p, self._old_refs(kind, ident, old, old_text, "overwrite"), ip, local_ranges)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=f".{ident}.", suffix=".tmp")
-        with os.fdopen(fd, "w", encoding="utf-8", newline="") as f:
-            f.write(text)
-        os.replace(tmp, path)
+        write_atomic(path, text)
         actor = f"{p.kind}:{p.id}"
         self.db.execute(
             "INSERT INTO config_saves (item_id, user_id, saved_at) VALUES (?, ?, ?) "
