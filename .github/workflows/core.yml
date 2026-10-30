@@ -11,6 +11,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
+      - run: pwsh --version  # preinstalled on GitHub's Ubuntu runners; the script tests use it
       - run: pip install -e ".[dev]"
       - run: ruff check .
       - run: mypy --strict cave
