@@ -143,6 +143,7 @@ def test_runner_client_timeout(monkeypatch):  # Review Focus 5
         assert time.monotonic() - start < 4
     finally:
         server.shutdown()
+        server.server_close()
 
 
 def test_no_runner_configured(app, users, monkeypatch):
