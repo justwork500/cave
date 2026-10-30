@@ -10,6 +10,7 @@ from cave.api.admin import _require
 from cave.api.deps import client_ip, current_principal, get_db, net
 from cave.config.yamlfile import ConfigError
 from cave.scripts.header import FILE_NAME
+from cave.scripts.service import ScriptService
 from cave.scripts.store import LoadedScript, ScriptStore
 
 router = APIRouter(prefix="/api/v1/scripts")
@@ -78,3 +79,36 @@ def delete_script(file: str, request: Request, p: Caller) -> None:
         raise HTTPException(404, "No such script.") from e
     except AccessDenied as e:
         raise HTTPException(403, str(e)) from e
+
+
+# ---- running ----
+
+class RunBody(BaseModel):
+    params: dict[str, Any] = {}
+
+
+@router.post("/{file}/run")
+async def run_script(file: str, body: RunBody, request: Request, p: Caller) -> dict[str, Any]:
+    _name(file)
+    db, ip, ranges = get_db(request), client_ip(request), net(request).local_ranges
+    item, section = get_item(db, f"script:{file}"), get_item(db, "section:scripts")
+    if not any(i is not None and evaluate(db, p, i, ip, ranges).allowed for i in (item, section)):
+        raise HTTPException(403, "You don't have access to this.")
+    service: ScriptService = request.app.state.script_service
+    if service.runner is None:
+        raise HTTPException(503, "The script runner isn't set up.")
+    try:
+        return {"result": await service.run(file, body.params, f"{p.kind}:{p.id}")}
+    except ValueError as e:
+        raise HTTPException(409, str(e)) from e
+
+
+@router.get("/{file}/runs")
+def script_runs(file: str, request: Request, p: Caller) -> list[dict[str, Any]]:
+    _name(file)
+    db, ip, ranges = get_db(request), client_ip(request), net(request).local_ranges
+    sections = [get_item(db, "section:scripts"), get_item(db, "section:run_history")]
+    if not any(s is not None and evaluate(db, p, s, ip, ranges).allowed for s in sections):
+        raise HTTPException(403, "You don't have access to this.")
+    service: ScriptService = request.app.state.script_service
+    return service.runs(file)

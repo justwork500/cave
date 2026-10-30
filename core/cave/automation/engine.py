@@ -206,7 +206,7 @@ class Engine:
             await self._sequence(a, path, variables, trace, depth, step)
         elif isinstance(a, Script):
             args = self._render(a.args, variables)
-            result = await self.effects.run_script(a.ref, a.target, args)
+            result = await self.effects.run_script(a.ref, a.target, args, self._source)
             if a.result_var:
                 variables[a.result_var] = result
             self._mark(step, f"script {a.ref}", ref=a.ref, args=args, output=result)

@@ -93,10 +93,10 @@ def test_wait_for_state_true_and_timeout(db):
     assert asyncio.run(go()) == (True, True, False)
 
 
-def test_script_not_available_yet(db):
+def test_no_runner_configured(db):
     fx, _ = live(db)
-    with pytest.raises(ValueError, match="plan 5"):
-        asyncio.run(fx.run_script("x.ps1", None, {}))
+    with pytest.raises(ValueError, match="isn't set up"):
+        asyncio.run(fx.run_script("scripts/x.ps1", None, {}, "t"))
 
 
 def test_mqtt_publish_without_mqtt(db):

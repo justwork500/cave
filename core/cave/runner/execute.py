@@ -37,7 +37,7 @@ class RunResult:
     error: str | None
 
 
-def _masker(secrets: dict[str, str]) -> Any:
+def masker(secrets: dict[str, str]) -> Any:
     values = sorted((v for v in secrets.values() if len(v) >= 4), key=len, reverse=True)
 
     def mask(text: str) -> str:
@@ -48,13 +48,13 @@ def _masker(secrets: dict[str, str]) -> Any:
     return mask
 
 
-def _mask_value(value: Any, mask: Any) -> Any:
+def mask_value(value: Any, mask: Any) -> Any:
     if isinstance(value, str):
         return mask(value)
     if isinstance(value, dict):
-        return {k: _mask_value(v, mask) for k, v in value.items()}
+        return {k: mask_value(v, mask) for k, v in value.items()}
     if isinstance(value, list):
-        return [_mask_value(v, mask) for v in value]
+        return [mask_value(v, mask) for v in value]
     return value
 
 
@@ -134,7 +134,7 @@ async def execute(
     timeout: float,
     workdir_parent: Path | None = None,
 ) -> RunResult:
-    mask = _masker(secrets)
+    mask = masker(secrets)
     start = time.monotonic()
     argv = _argv(language, path, params)
     if argv is None:
@@ -184,4 +184,4 @@ async def execute(
         result = None
     if not isinstance(result, dict):
         return RunResult(0, False, duration, None, log, "The script must end by printing one JSON object.")
-    return RunResult(0, False, duration, _mask_value(result, mask), log, None)
+    return RunResult(0, False, duration, mask_value(result, mask), log, None)

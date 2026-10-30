@@ -12,6 +12,7 @@ from typing import Any, Literal, Protocol
 from cave import notifications
 from cave.db import Database
 from cave.integrations.mqtt.bridge import MqttBridge
+from cave.scripts.service import ScriptService
 from cave.state import EventBus, StateMachine
 
 StepResult = Literal["ok", "skipped", "failed", "stopped", "what_if"]
@@ -22,7 +23,9 @@ class Effects(Protocol):
     async def call(self, entity_id: str, command: str, args: dict[str, Any]) -> None: ...
     async def notify(self, targets: list[str], title: str | None, message: str, source: str) -> None: ...
     async def mqtt_publish(self, topic: str, payload: str, retain: bool) -> None: ...
-    async def run_script(self, ref: str, target: str | None, args: dict[str, Any]) -> dict[str, Any]: ...
+    async def run_script(
+        self, ref: str, target: str | None, args: dict[str, Any], source: str
+    ) -> dict[str, Any]: ...
     async def sleep(self, seconds: float) -> None: ...
     async def wait_for_state(self, entity_id: str, to: str, timeout: float) -> bool: ...
 
@@ -49,9 +52,14 @@ class LiveEffects:
     """The real world. Automations act as the system; the save guard already checked their author."""
 
     def __init__(
-        self, states: StateMachine, db: Database, bus: EventBus, mqtt: Callable[[], MqttBridge | None]
+        self,
+        states: StateMachine,
+        db: Database,
+        bus: EventBus,
+        mqtt: Callable[[], MqttBridge | None],
+        scripts: ScriptService | None = None,
     ) -> None:
-        self.states, self.db, self.bus, self.mqtt = states, db, bus, mqtt
+        self.states, self.db, self.bus, self.mqtt, self.scripts = states, db, bus, mqtt, scripts
 
     async def call(self, entity_id: str, command: str, args: dict[str, Any]) -> None:
         await self.states.command(entity_id, command, args)
@@ -66,8 +74,14 @@ class LiveEffects:
             raise ValueError("MQTT isn't set up.")
         await bridge.publish(topic, payload, retain)
 
-    async def run_script(self, ref: str, target: str | None, args: dict[str, Any]) -> dict[str, Any]:
-        raise ValueError("Scripts arrive with the script runner (Phase 1 plan 5).")
+    async def run_script(self, ref: str, target: str | None, args: dict[str, Any], source: str) -> dict[str, Any]:
+        if not ref.startswith("scripts/"):
+            raise ValueError("Scripts are referenced as scripts/<file>.")
+        if target not in (None, "sandbox"):
+            raise ValueError("Only the sandbox target is available in this version.")
+        if self.scripts is None:
+            raise ValueError("The script runner isn't set up.")
+        return await self.scripts.run(ref.removeprefix("scripts/"), args, source)
 
     async def sleep(self, seconds: float) -> None:
         await asyncio.sleep(seconds)

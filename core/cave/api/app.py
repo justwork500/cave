@@ -22,6 +22,7 @@ from cave.config.store import ConfigStore
 from cave.db import Database
 from cave.integrations.mqtt import config as mqtt_config
 from cave.integrations.mqtt.client import MqttService
+from cave.scripts.service import RunnerClient, ScriptService
 from cave.scripts.store import ScriptStore
 from cave.settings import Settings
 from cave.state import EventBus, StateMachine
@@ -52,7 +53,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         task = asyncio.create_task(service.run())
         task.add_done_callback(_report_mqtt_exit)
     effects = LiveEffects(app.state.states, app.state.db, app.state.bus,
-                          lambda: app.state.mqtt.bridge if app.state.mqtt else None)
+                          lambda: app.state.mqtt.bridge if app.state.mqtt else None, scripts=app.state.script_service)
     manager = AutomationManager(app.state.config, app.state.db, app.state.states, app.state.bus, effects)
     app.state.automations = manager
     app.state.rearm = manager.rearm
@@ -84,6 +85,9 @@ def create_app(settings: Settings) -> FastAPI:
     app.state.config.load_all()
     app.state.scripts = ScriptStore(settings.config_dir, app.state.db, app.state.bus)
     app.state.scripts.load_all()
+    runner_url, runner_token = os.environ.get("CAVE_RUNNER_URL"), os.environ.get("CAVE_RUNNER_TOKEN")
+    runner = RunnerClient(runner_url, runner_token).post if runner_url and runner_token else None
+    app.state.script_service = ScriptService(app.state.scripts, app.state.db, runner)
 
     @app.get("/api/v1/health")
     def health() -> dict[str, str]:

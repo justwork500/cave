@@ -38,8 +38,8 @@ class FakeEffects:
     async def mqtt_publish(self, topic: str, payload: str, retain: bool) -> None:
         self.calls.append(("mqtt", topic, payload, retain))
 
-    async def run_script(self, ref: str, target: str | None, args: dict[str, Any]) -> dict[str, Any]:
-        self.calls.append(("script", ref, target, args))
+    async def run_script(self, ref: str, target: str | None, args: dict[str, Any], source: str) -> dict[str, Any]:
+        self.calls.append(("script", ref, target, args, source))
         return self.script_result
 
     async def sleep(self, seconds: float) -> None:

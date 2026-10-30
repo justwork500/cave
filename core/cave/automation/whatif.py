@@ -43,7 +43,7 @@ class WhatIfEffects:
     async def mqtt_publish(self, topic: str, payload: str, retain: bool) -> None:
         pass
 
-    async def run_script(self, ref: str, target: str | None, args: dict[str, Any]) -> dict[str, Any]:
+    async def run_script(self, ref: str, target: str | None, args: dict[str, Any], source: str) -> dict[str, Any]:
         return dict(self.samples.get(ref, {}))
 
     async def sleep(self, seconds: float) -> None:

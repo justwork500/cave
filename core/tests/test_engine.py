@@ -193,7 +193,7 @@ def test_script_result_var():
 """)
     e, fx = engine()
     run(e.run(a.actions, {}, source="t"))
-    assert fx.calls == [("script", "scripts/x.ps1", None, {"n": "2"}), ("notify", (), None, "ok")]
+    assert fx.calls == [("script", "scripts/x.ps1", None, {"n": "2"}, "t"), ("notify", (), None, "ok")]
 
 
 def test_stop_and_failure_outcomes():
