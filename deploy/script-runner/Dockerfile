@@ -1,9 +1,12 @@
 # cave-script-runner: runs PowerShell 7, Python 3 and Bash scripts for CAVE, and nothing else.
 # Build from the repository root:  docker build -f deploy/script-runner/Dockerfile -t cave-script-runner .
 #
+# The runner runs as root inside the container only so it can start each script as the separate `script`
+# user (uid 10002): scripts then can't read the runner's memory, environment or token file.
 # Compose (Phase 1 plan 7) must add: read_only: true, tmpfs: [/tmp, /work], cap_drop: [ALL],
-# mem_limit, cpus, a read-only ./config/scripts:/scripts mount, no Docker socket, and the
-# CAVE_RUNNER_TOKEN shared with cave-core. Only cave-core should be able to reach port 8099.
+# cap_add: [SETUID, SETGID, KILL, CHOWN], mem_limit, cpus, a read-only ./config/scripts:/scripts mount,
+# no Docker socket, and the runner token as a Compose secret at /run/secrets/cave_runner_token (mode 0400),
+# shared with cave-core. Only cave-core should be able to reach port 8099.
 #
 # shortcut: not built or smoke-tested yet (no Docker on the dev machine); Phase 1 plan 7 builds it,
 # pins the base image digest, and checks arm64 (Microsoft documents amd64 packages for Debian 13).
@@ -25,8 +28,8 @@ RUN apt-get update \
 COPY core /src/core
 RUN pip install --no-cache-dir /src/core && rm -rf /src
 
-RUN useradd --uid 10001 --create-home --shell /usr/sbin/nologin runner
-USER runner
+RUN useradd --uid 10002 --no-create-home --shell /usr/sbin/nologin script
 WORKDIR /work
 EXPOSE 8099
-ENTRYPOINT ["python", "-m", "cave.runner", "--scripts", "/scripts"]
+ENTRYPOINT ["python", "-m", "cave.runner", "--scripts", "/scripts", "--script-uid", "10002", \
+            "--token-file", "/run/secrets/cave_runner_token"]

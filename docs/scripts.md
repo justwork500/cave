@@ -72,11 +72,17 @@ Set each secret on the CAVE server as an environment variable named `CAVE_SECRET
 
 When you rehearse an automation in the Test Center, scripts don't run. Each step uses the script's `sample:` instead, unless you give a sample of your own in the request.
 
+## How the sandbox keeps secrets safe
+
+Scripts run as their own user, separate from the runner, so they can't read the runner's memory or its token. When a script ends, everything it started is stopped too. A script that uses secrets never runs at the same time as another script, and any leftover script processes are cleared before and after it. Without this, one script could quietly read another's secrets.
+
+Masking catches a secret wherever it appears whole, including in JSON keys. It doesn't catch a secret that's encoded (for example as base64) or split across lines, and secrets shorter than 4 characters aren't masked. Keep secrets long, and don't print them.
+
 ## Setting up the runner
 
 CAVE talks to the runner using two environment variables, both set by the Docker Compose install:
 
 - `CAVE_RUNNER_URL`, for example `http://script-runner:8099`
-- `CAVE_RUNNER_TOKEN`, at least 32 random characters, shared with the runner
+- `CAVE_RUNNER_TOKEN`, at least 32 random characters, shared with the runner (the runner reads it from a secret file)
 
 Without them, every script step fails with "The script runner isn't set up."

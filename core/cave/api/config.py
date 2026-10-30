@@ -36,6 +36,7 @@ async def reload(request: Request, p: Caller) -> None:
     if not p.is_admin:
         raise HTTPException(403, "Only an Admin can reload config files.")
     store(request).load_all(f"{p.kind}:{p.id}")
+    request.app.state.scripts.load_all(f"{p.kind}:{p.id}")
     _changed(request)
 
 
