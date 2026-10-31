@@ -13,6 +13,7 @@ from fastapi.staticfiles import StaticFiles
 from cave.access import netconfig
 from cave.access.items import seed_builtins
 from cave.api import admin, auth, entities, screens, system, ws
+from cave.api import areas as areas_api
 from cave.api import automations as automations_api
 from cave.api import config as config_api
 from cave.api import scripts as scripts_api
@@ -107,6 +108,7 @@ def create_app(settings: Settings) -> FastAPI:
     app.include_router(auth.router)
     app.include_router(setup_api.router)
     app.include_router(entities.router)
+    app.include_router(areas_api.router)
     app.include_router(ws.router)
     app.include_router(admin.router)
     app.include_router(system.router)

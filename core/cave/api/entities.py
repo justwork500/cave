@@ -46,12 +46,15 @@ def entity_view(
     db: Database, p: Principal, entity: Entity, state: State | None, ip: IPAddress, local_ranges: Sequence[str]
 ) -> dict[str, Any]:
     """Full view of what p controls; for everything else only that it exists and is restricted."""
+    row = db.execute("SELECT name, area_id FROM entity_overrides WHERE entity_id=?", (entity.entity_id,)).fetchone()
+    name = (row["name"] if row else None) or entity.name
+    area = (row["area_id"] if row else None) or entity.area_id
     if not can_control(db, p, entity.entity_id, ip, local_ranges):
-        return {"entity_id": entity.entity_id, "name": entity.name, "area_id": entity.area_id, "restricted": True}
+        return {"entity_id": entity.entity_id, "name": name, "area_id": area, "restricted": True}
     return {
         "entity_id": entity.entity_id,
-        "name": entity.name,
-        "area_id": entity.area_id,
+        "name": name,
+        "area_id": area,
         "capability": entity.capability,
         "state": state.value if state else None,
         "attributes": dict(state.attributes) if state else {},
