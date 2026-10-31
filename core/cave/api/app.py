@@ -16,6 +16,7 @@ from cave.api import admin, auth, entities, screens, system, ws
 from cave.api import automations as automations_api
 from cave.api import config as config_api
 from cave.api import scripts as scripts_api
+from cave.api import setup as setup_api
 from cave.automation.effects import LiveEffects
 from cave.automation.manager import AutomationManager
 from cave.config.store import ConfigStore
@@ -104,6 +105,7 @@ def create_app(settings: Settings) -> FastAPI:
     app.mount("/static", StaticFiles(directory=WEB, html=False), name="static")
 
     app.include_router(auth.router)
+    app.include_router(setup_api.router)
     app.include_router(entities.router)
     app.include_router(ws.router)
     app.include_router(admin.router)

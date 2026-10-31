@@ -12,6 +12,7 @@ import uvicorn
 from cave import tls
 from cave.access import netconfig
 from cave.api.app import create_app
+from cave.api.setup import ensure_setup_code
 from cave.config.models import schema_files
 from cave.settings import Settings
 
@@ -50,6 +51,9 @@ def main(argv: list[str] | None = None) -> None:
         )
     app = create_app(Settings(db_path=args.data / "cave.db", config_dir=args.config))
     app.state.cert_path = cert
+    code = ensure_setup_code(app.state.db)
+    if code:
+        print(f"CAVE isn't set up yet. Open it in a browser and use this one-time setup code: {code}")
     print(f"CAVE is running at https://{ip or 'localhost'}:{args.port}")
     print(f"Certificate fingerprint (SHA-256): {tls.fingerprint(cert)}")
     config = uvicorn.Config(app, host=args.host, port=args.port, ssl_certfile=str(cert), ssl_keyfile=str(key))
