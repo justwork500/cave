@@ -59,7 +59,7 @@ def test_server_pages_work_under_the_csp(app, built, path):
 
     r = lan_client(app).get(path)
     assert "script-src 'self'" in r.headers["content-security-policy"]
-    scripts = re.findall(r"<script\b([^>]*)>(.*?)</script>", r.text, re.S)
+    scripts = re.findall(r"<script\b([^>]*)>(.*?)</script>", r.text, re.DOTALL)
     assert scripts and all('src="/static/' in attrs and not body.strip() for attrs, body in scripts)
 
 

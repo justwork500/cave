@@ -119,3 +119,30 @@ def test_each_start_gets_a_fresh_code(app):
     assert first and second and first != second and len(second.split("-")) == 4
     assert owner(lan_client(app), first).status_code == 403
     assert owner(lan_client(app), second).status_code == 200
+
+
+def test_interrupted_enrollment_can_start_again(app):
+    """The owner closes the tab before scanning the QR code: signing in again restarts enrollment."""
+    c, code = fresh(app)
+    first = owner(c, code).json()
+    c2 = lan_client(app)
+    r = c2.post("/api/v1/auth/login", json={"username": "owner", "password": PW})
+    assert r.json() == {"mfa_required": True, "mfa_setup": True}
+    again = c2.post("/api/v1/auth/mfa/setup")
+    assert again.status_code == 200 and again.json()["provisioning_uri"] != first["provisioning_uri"]
+    old = pyotp.parse_uri(first["provisioning_uri"]).now()
+    new = pyotp.parse_uri(again.json()["provisioning_uri"]).now()
+    if old != new:  # the replaced secret no longer works
+        assert c2.post("/api/v1/auth/mfa", json={"code": old}).status_code == 401
+    assert c2.post("/api/v1/auth/mfa", json={"code": new}).status_code == 200
+    assert c2.get("/api/v1/me").json()["has_totp"] is True
+    # once proven, it's set for good
+    c3 = lan_client(app)
+    assert c3.post("/api/v1/auth/login", json={"username": "owner", "password": PW}).json() == {"mfa_required": True}
+    assert c3.post("/api/v1/auth/mfa/setup").status_code == 409
+
+
+def test_unproven_authenticator_takes_no_recovery_code(app):
+    c, code = fresh(app)
+    codes = owner(c, code).json()["recovery_codes"]
+    assert c.post("/api/v1/auth/mfa", json={"code": codes[0]}).status_code == 401
