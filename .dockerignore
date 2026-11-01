@@ -1,0 +1,12 @@
+**/node_modules
+**/.venv
+**/__pycache__
+**/*.pyc
+.git
+.superpowers
+data
+config
+secrets
+.env
+core/cave/web/console
+console/dist
