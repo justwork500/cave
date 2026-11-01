@@ -36,12 +36,10 @@ def test_every_console_call_has_a_real_route(tmp_path):
     assert len(calls) > 50  # the scan itself works
 
     def served(method: str, path: str) -> bool:
-        for m, p in routes:
-            if m == method and re.fullmatch(re.sub(r"\{[^}]+\}", "[^/]+", p), path):
-                # /{kinds} answers any single word, then refuses unknown ones: only real kinds count
-                if not GENERIC.match(p) or path.split("/")[3] in ("automations", "sequences", "dashboards"):
-                    return True
-        return False
+        # /{kinds} answers any single word, then refuses unknown ones: only real kinds count
+        real_kind = path.split("/")[3] in ("automations", "sequences", "dashboards")
+        return any(m == method and re.fullmatch(re.sub(r"\{[^}]+\}", "[^/]+", p), path)
+                   and (not GENERIC.match(p) or real_kind) for m, p in routes)
 
     missing = [f"{m} {p} ({f})" for m, p, f in calls if not served(m, p)]
     assert missing == []
