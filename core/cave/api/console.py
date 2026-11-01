@@ -13,7 +13,7 @@ NOT_BUILT = (
 )
 SECURITY_HEADERS = {
     "Content-Security-Policy": (
-        "default-src 'self'; connect-src 'self' wss:; img-src 'self' data:; style-src 'self' 'unsafe-inline'; "
+        "default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; "
         "script-src 'self'; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'none'"
     ),
     "X-Content-Type-Options": "nosniff",

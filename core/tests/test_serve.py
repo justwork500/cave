@@ -1,7 +1,7 @@
 def test_spike_page_served(client):
     r = client.get("/spike")
     assert r.status_code == 200 and r.headers["content-type"].startswith("text/html")
-    assert "screen.js" in r.text
+    assert "/static/spike.js" in r.text and "screen.js" in client.get("/static/spike.js").text
 
 
 def test_screen_js_served(client):

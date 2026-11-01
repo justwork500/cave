@@ -25,7 +25,7 @@ def test_api_routes_not_shadowed(app, built):
     assert c.get("/api/v1/health").json() == {"status": "ok"}
     r = c.get("/api/v1/nope/at/all")
     assert r.status_code in (401, 404) and r.headers["content-type"].startswith("application/json")
-    assert c.get("/spike").status_code == 200 and "screen.js" in c.get("/spike").text
+    assert c.get("/spike").status_code == 200 and "spike.js" in c.get("/spike").text
 
 
 def test_assets_cached_index_not(app, built):
@@ -50,3 +50,19 @@ def test_missing_build_message(app, tmp_path, monkeypatch):
 @pytest.mark.parametrize("path", ["/assets/..%2F..%2Fdb.py", "/assets/%2e%2e/%2e%2e/db.py", "/assets/..%5Cx"])
 def test_no_path_escape(app, built, path):
     assert lan_client(app).get(path).status_code == 404
+
+
+@pytest.mark.parametrize("path", ["/enroll", "/spike"])
+def test_server_pages_work_under_the_csp(app, built, path):
+    """script-src 'self' blocks inline scripts, so every page CAVE serves must load its script from a file."""
+    import re
+
+    r = lan_client(app).get(path)
+    assert "script-src 'self'" in r.headers["content-security-policy"]
+    scripts = re.findall(r"<script\b([^>]*)>(.*?)</script>", r.text, re.S)
+    assert scripts and all('src="/static/' in attrs and not body.strip() for attrs, body in scripts)
+
+
+def test_csp_allows_websockets_only_to_this_origin(app, built):
+    csp = lan_client(app).get("/").headers["content-security-policy"]
+    assert "connect-src 'self';" in csp and "wss:" not in csp

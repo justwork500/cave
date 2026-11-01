@@ -102,4 +102,5 @@ def test_revoke_clears_key(db):
 
 def test_enroll_page_reads_code_from_fragment(client):
     r = client.get("/enroll")
-    assert r.status_code == 200 and "location.hash" in r.text
+    assert r.status_code == 200 and 'src="/static/enroll.js"' in r.text
+    assert "location.hash" in client.get("/static/enroll.js").text
