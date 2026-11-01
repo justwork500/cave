@@ -8,3 +8,6 @@ data/
 .ruff_cache/
 *.egg-info/
 node_modules/
+core/cave/web/console/
+console/node_modules/
+console/dist/

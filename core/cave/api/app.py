@@ -16,6 +16,7 @@ from cave.api import admin, auth, entities, screens, system, ws
 from cave.api import areas as areas_api
 from cave.api import automations as automations_api
 from cave.api import config as config_api
+from cave.api import console as console_api
 from cave.api import scripts as scripts_api
 from cave.api import setup as setup_api
 from cave.api import views as views_api
@@ -118,4 +119,6 @@ def create_app(settings: Settings) -> FastAPI:
     app.include_router(scripts_api.router)
     app.include_router(automations_api.router)
     app.include_router(config_api.router)  # last: its /{kinds} routes must not shadow the others
+    app.include_router(console_api.router)  # very last: it serves the console for any other path
+    console_api.add_security_headers(app)
     return app
