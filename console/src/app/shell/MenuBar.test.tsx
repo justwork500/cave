@@ -41,14 +41,16 @@ describe("menu bar", () => {
     setNarrow(false);
     const { container } = bar(SAM);
     expect(await screen.findByRole("link", { name: "CAVE home" })).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Admin console" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Overview" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Set up")).not.toBeInTheDocument();
     await expectAccessible(container);
   });
 
   it("shows the admin link when you have a console section", async () => {
     setNarrow(false);
     bar(ADMIN);
-    expect(await screen.findByRole("link", { name: "Admin console" })).toHaveAttribute("href", "/admin");
+    expect(await screen.findByRole("link", { name: "Overview" })).toHaveAttribute("href", "/admin");
+    expect(screen.getByRole("link", { name: "People" })).toHaveAttribute("href", "/admin/users");
   });
 
   it("counts new notifications live", async () => {
@@ -64,9 +66,9 @@ describe("menu bar", () => {
     setNarrow(true);
     bar(ADMIN);
     const menu = await screen.findByRole("button", { name: "Menu" });
-    expect(screen.queryByRole("link", { name: "Admin console" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Overview" })).not.toBeInTheDocument();
     await userEvent.click(menu);
-    expect(await screen.findByRole("menuitem", { name: "Admin console" })).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "Overview" })).toBeInTheDocument();
   });
 
   it("stops the live feed before signing out, so its closing socket can't redirect mid-sign-in", async () => {

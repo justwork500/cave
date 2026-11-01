@@ -22,12 +22,13 @@ describe("admin layout", () => {
                        sections: ["section:devices", "section:automations"] };
     mockApi({ "GET /me": operator, "GET /items": [], "GET /notifications": [], "GET /summary": { unavailable: 2 } });
     const { container } = renderWith(<AppRoutes />, "/admin");
-    const nav = await screen.findByRole("navigation", { name: "Admin console" });
+    const nav = await screen.findByRole("navigation", { name: "Main" });
     expect(within(nav).getByRole("link", { name: "Devices" })).toBeInTheDocument();
     expect(within(nav).getByRole("link", { name: "Automations" })).toBeInTheDocument();
-    expect(within(nav).queryByRole("link", { name: "Users" })).not.toBeInTheDocument();
-    expect(await screen.findByRole("link", { name: /2 devices not responding/ })).toHaveAttribute(
-      "href", "/admin/devices?filter=unavailable");
+    expect(within(nav).queryByRole("link", { name: "People" })).not.toBeInTheDocument();
+    expect(within(nav).queryByRole("link", { name: "Who can use what" })).not.toBeInTheDocument();
+    expect(await screen.findByText("2 devices not responding")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "View devices" })).toHaveAttribute("href", "/admin/devices?filter=unavailable");
     await expectAccessible(container);
   });
 });
@@ -35,9 +36,9 @@ describe("admin layout", () => {
 const ITEM = { id: "dashboard:garage", kind: "dashboard", name: "Garage", allowed: true, status: "enabled",
                visibility: "show", others_see: "locked", network: "anywhere", builtin: false };
 
-function access(extra: Record<string, unknown> = {}) {
+function access(extra: Record<string, unknown> = {}, item: object = ITEM) {
   return mockApi({
-    "GET /items": [ITEM],
+    "GET /items": [item],
     "GET /items/dashboard:garage/assignments": [{ kind: "role", id: "admin" }],
     "GET /users": [{ id: "u1", username: "sam", display_name: "Sam", role: "household", enabled: true,
                      expires_at: null }],
@@ -50,20 +51,22 @@ function access(extra: Record<string, unknown> = {}) {
 }
 
 describe("access", () => {
-  it("shows Others see it only for Restrict, and saves the row", async () => {
+  it("asks about everyone else only once it's restricted, and saves each answer", async () => {
     const calls = access();
     const { container } = renderWith(<Access />);
-    const visibility = await screen.findByRole("combobox", { name: "Visibility for Garage" });
-    expect(screen.queryByRole("combobox", { name: "Others see Garage" })).not.toBeInTheDocument();
-    await userEvent.selectOptions(visibility, "restrict");
-    expect(await screen.findByRole("combobox", { name: "Others see Garage" })).toBeInTheDocument();
+    expect(await screen.findByText("Everyone")).toBeInTheDocument();  // the row answers "who can use it"
+    await userEvent.click(screen.getByRole("button", { name: "Change access to Garage" }));
+    const panel = await screen.findByRole("dialog");
+    expect(within(panel).queryByRole("radiogroup", { name: "Everyone else" })).not.toBeInTheDocument();
+    await userEvent.click(within(panel).getByRole("radio", { name: "Only the people, groups and tablets you choose" }));
+    expect(await within(panel).findByRole("radiogroup", { name: "Everyone else" })).toBeInTheDocument();
     expect(calls.find((c) => c.method === "PATCH")?.body).toEqual({ visibility: "restrict" });
     expect(await screen.findByRole("button", { name: "Undo" })).toBeInTheDocument();
     await expectAccessible(container);
   });
 
   it("assigns a group with the keyboard alone", async () => {  // Review Focus 5
-    const calls = access();
+    const calls = access({}, { ...ITEM, visibility: "restrict" });
     renderWith(<Access />);
     const assign = await screen.findByRole("button", { name: "Assign Garage" });
     assign.focus();

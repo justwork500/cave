@@ -157,7 +157,7 @@ export function Screens() {
 
   return (
     <Page
-      title="Screens"
+      title="Wall tablets"
       commands={
         <Button appearance="primary" icon={<AddRegular />} onClick={() => setAdding(true)}>
           Add screen

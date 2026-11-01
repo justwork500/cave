@@ -5,5 +5,5 @@ import { expect } from "vitest";
 export async function expectAccessible(container: Element): Promise<void> {
   const result = await axe.run(container, { rules: { "color-contrast": { enabled: false } } });
   const problems = result.violations.map((v) => `${v.id}: ${v.help} (${v.nodes.length})`);
-  expect(problems).toEqual([]);
+  expect(problems.join("; ")).toBe("");
 }

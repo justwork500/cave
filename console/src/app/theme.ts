@@ -27,11 +27,30 @@ const cave: BrandVariants = {
   160: "#D3E8F0",
 };
 
-const light = createLightTheme(cave);
-const dark = createDarkTheme(cave);
+const FONT = '"Instrument Sans Variable", "Segoe UI", system-ui, sans-serif';
+
+/**
+ * Fills that mean "act" (primary buttons, switches, checkboxes) are near-black, inverted on dark: the teal is
+ * kept for data, such as a device that is on, and for links and focus. (taste-skill app rules: colour on data.)
+ */
+function quietFills(t: Theme, fill: string, hover: string, pressed: string, onFill: string): Theme {
+  return {
+    ...t,
+    fontFamilyBase: FONT,
+    colorBrandBackground: fill, colorBrandBackgroundHover: hover, colorBrandBackgroundPressed: pressed,
+    colorBrandBackgroundSelected: hover,
+    colorCompoundBrandBackground: fill, colorCompoundBrandBackgroundHover: hover,
+    colorCompoundBrandBackgroundPressed: pressed, colorCompoundBrandStroke: fill,
+    colorCompoundBrandStrokeHover: hover, colorCompoundBrandStrokePressed: pressed,
+    colorNeutralForegroundOnBrand: onFill,
+  };
+}
+
+const light = quietFills(createLightTheme(cave), "#1f201d", "#3a3b37", "#0f100e", "#ffffff");
+const dark = quietFills(createDarkTheme(cave), "#f4f4f2", "#d8d8d5", "#ffffff", "#111111");
 dark.colorBrandForeground1 = cave[120];
 dark.colorBrandForegroundLink = cave[130];
-const high = createHighContrastTheme();
+const high = { ...createHighContrastTheme(), fontFamilyBase: FONT };
 
 export const themes: Record<"light" | "dark" | "contrast", Theme> = { light, dark, contrast: high };
 export type ThemeName = keyof typeof themes;

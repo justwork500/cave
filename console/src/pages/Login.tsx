@@ -3,6 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Navigate, useNavigate, useSearchParams } from "react-router";
 import { api, message } from "../api/client";
+import { Mark } from "../app/shell/MenuBar";
 import { Authenticator, type Enrollment } from "./Authenticator";
 
 /** Only same-site paths, so a crafted link can't bounce you elsewhere after signing in. */
@@ -14,7 +15,7 @@ export function AuthFrame({ children }: { children: React.ReactNode }) {
   return (
     <main className="auth">
       <div className="auth-panel">
-        <p className="wordmark" aria-hidden="true">CAVE</p>
+        <p className="wordmark" aria-hidden="true"><Mark />CAVE</p>
         {children}
       </div>
     </main>
