@@ -1,11 +1,11 @@
 import { act, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Route, Routes } from "react-router";
+import { Outlet, Route, Routes } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { StateEvent } from "../api/ws";
 import { LiveContext } from "../app/live";
 import { expectAccessible } from "../test/axe";
-import { mockApi, renderWith, setNarrow } from "../test/render";
+import { ADMIN, SAM, mockApi, renderWith, setNarrow } from "../test/render";
 import { Dashboard } from "./Dashboard";
 
 const lamp = { entity_id: "light.porch", name: "Porch light", area_id: "front_yard", capability: "switch",
@@ -124,5 +124,35 @@ describe("the actions dashboard", () => {
     await screen.findByRole("heading", { name: "Outside" });
     const tile = screen.getByRole("button", { name: /Porch light/ }).closest(".card") as HTMLElement;
     expect(tile.style.gridColumn).toBe("span 3");
+  });
+});
+
+describe("editing from the dashboard", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  function asViewer(me: object) {
+    mockApi({ "GET /dashboards/default": { slug: "home" }, "GET /dashboards/home/view": VIEW });
+    renderWith(
+      <LiveContext.Provider value={live().feed as never}>
+        <Routes>
+          <Route element={<Outlet context={me} />}>
+            <Route path="/" element={<Dashboard />} />
+          </Route>
+        </Routes>
+      </LiveContext.Provider>,
+    );
+  }
+
+  it("offers Edit to people who manage dashboards", async () => {
+    setNarrow(false);
+    asViewer(ADMIN);
+    expect(await screen.findByRole("link", { name: "Edit dashboard" })).toHaveAttribute("href", "/admin/dashboards/home");
+  });
+
+  it("shows no Edit to everyone else", async () => {
+    setNarrow(false);
+    asViewer(SAM);
+    await screen.findByRole("heading", { name: "Outside" });
+    expect(screen.queryByRole("link", { name: "Edit dashboard" })).not.toBeInTheDocument();
   });
 });

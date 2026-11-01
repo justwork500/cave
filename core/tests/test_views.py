@@ -89,10 +89,12 @@ def test_button_allowed_flags(app, users, garage):
 
 
 def test_default_dashboard_choice(app, users, garage):
+    home = app.state.settings.config_dir / "dashboards" / "home.yaml"
+    starter = home.read_text(encoding="utf-8")
+    home.unlink()  # an Admin deleted Home
     load_kids(app)
-    assert as_sam(app).get("/api/v1/dashboards/default").json() == {"slug": "kids"}  # home has no file yet
-    d = app.state.settings.config_dir / "dashboards"
-    (d / "home.yaml").write_text("dashboard:\n  title: Home\n  views: []\n", encoding="utf-8")
+    assert as_sam(app).get("/api/v1/dashboards/default").json() == {"slug": "kids"}
+    home.write_text(starter, encoding="utf-8")
     app.state.config.load_all()
     assert as_sam(app).get("/api/v1/dashboards/default").json() == {"slug": "home"}
     op = sign_in(lan_client(app), "op", "pw-op-1234", users.op_totp)
