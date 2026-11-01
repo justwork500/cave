@@ -60,15 +60,16 @@ def test_scripts_run_as_the_script_uid(tmp_path, monkeypatch):
 
     async def spy(*args, **kwargs):
         seen.update(kwargs)
-        kwargs.pop("user", None)
-        kwargs.pop("group", None)
+        for k in ("user", "group", "extra_groups"):  # switching identity needs root
+            kwargs.pop(k, None)
         return await real(*args, **kwargs)
 
     monkeypatch.setattr(execute_mod.asyncio, "create_subprocess_exec", spy)
     # chown needs root, which a CI runner isn't; the real switch is checked in the runner container on a real box
     monkeypatch.setattr(execute_mod.os, "chown", lambda path, uid, gid: seen.update(chown=(uid, gid)))
     asyncio.run(execute(write(tmp_path, "a.py", "print('{}')\n"), "python", {}, {}, 10, run_as=(10002, 10002)))
-    assert seen["user"] == 10002 and seen["group"] == 10002 and seen["chown"] == (10002, 10002)
+    assert seen["user"] == 10002 and seen["group"] == 10002 and seen["extra_groups"] == []
+    assert seen["chown"] == (10002, 10002)
 
 
 def test_secret_runs_never_overlap(tmp_path):
