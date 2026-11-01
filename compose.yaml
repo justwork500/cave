@@ -1,0 +1,66 @@
+# CAVE on Docker Compose. deploy/install.sh writes .env and secrets/ and starts this; see docs/install/debian.md.
+# Profiles: `mqtt` adds the Mosquitto broker, `scripts` adds the script sandbox. .env sets COMPOSE_PROFILES.
+# Nothing here needs the internet once the images are built: built images are never pulled, Mosquitto's is pinned.
+
+services:
+  cave:
+    build: {context: ., dockerfile: deploy/core/Dockerfile}
+    image: cave-core:local
+    pull_policy: never
+    ports: ["${CAVE_PORT:-8443}:8443"]
+    volumes:
+      - ./data:/data
+      - ./config:/config
+    env_file: .env  # non-secret settings only: CAVE_LOCAL_RANGES, CAVE_HOSTNAMES, CAVE_HOST_IPS, CAVE_RUNNER_URL
+    environment:
+      CAVE_MQTT_PASSWORD_FILE: /run/secrets/mqtt_password
+      CAVE_RUNNER_TOKEN_FILE: /run/secrets/runner_token
+    secrets: [mqtt_password, runner_token]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    networks: [default, runner]
+    restart: unless-stopped
+
+  mosquitto:
+    profiles: [mqtt]
+    image: eclipse-mosquitto:2@sha256:860aeb5d63ce509508f6dcfb2bc8a1c1dd2bc60555b562b45ce90e52d8dabb0f
+    pull_policy: missing
+    ports: ["1883:1883"]  # devices on your LAN connect here; every one signs in (allow_anonymous false)
+    volumes:
+      - ./deploy/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./secrets/mosquitto_passwd:/mosquitto/config/passwd:ro
+      - ./data/mosquitto:/mosquitto/data
+    restart: unless-stopped
+
+  script-runner:
+    profiles: [scripts]
+    build: {context: ., dockerfile: deploy/script-runner/Dockerfile}
+    image: cave-script-runner:local
+    pull_policy: never
+    volumes:
+      - ./config/scripts:/scripts:ro
+    secrets: [runner_token]
+    read_only: true
+    tmpfs: [/tmp, /work]
+    cap_drop: [ALL]
+    # SETUID/SETGID/KILL/CHOWN: start each script as uid 10002 and stop it. DAC_OVERRIDE: read the token (owned by
+    # cave's uid) and enter each run's 0700 folder before switching user; the script user doesn't keep it.
+    cap_add: [SETUID, SETGID, KILL, CHOWN, DAC_OVERRIDE]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 512m
+    cpus: 1.0
+    pids_limit: 256
+    networks: [runner]  # no ports: only cave can reach it
+    restart: unless-stopped
+
+networks:
+  runner:
+    internal: true
+
+secrets:
+  mqtt_password:
+    file: ./secrets/mqtt_password
+  runner_token:
+    file: ./secrets/runner_token

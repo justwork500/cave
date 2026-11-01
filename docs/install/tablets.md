@@ -19,14 +19,14 @@ If a browser fails "Kept after reload" or "Signs" on the self-signed certificate
 
 ## Run CAVE for testing
 
-Until the Docker Compose install arrives, run CAVE from a checkout:
+Install CAVE as the [Debian install guide](debian.md) describes. For development, you can also run it from a checkout:
 
 ```bash
 cd core
 ../.venv/bin/python -m cave serve --data ../data
 ```
 
-On Windows, use `..\.venv\Scripts\python`. CAVE prints its address (for example `https://192.168.1.20:8443`) and its **certificate fingerprint**. CAVE serves HTTPS only; there's no plain-HTTP address.
+On Windows, use `..\.venv\Scripts\python`. Either way, CAVE prints its address (for example `https://192.168.1.20:8443`) and its **certificate fingerprint**. CAVE serves HTTPS only; there's no plain-HTTP address.
 
 ## Run the tablet check
 

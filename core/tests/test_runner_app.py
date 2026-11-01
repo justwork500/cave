@@ -81,3 +81,16 @@ def test_main_refuses_short_token(monkeypatch):
     monkeypatch.delenv("CAVE_RUNNER_TOKEN")
     with pytest.raises(SystemExit):
         main(["--scripts", "."])
+
+
+def test_runner_uses_the_asyncio_loop(tmp_path, monkeypatch):
+    """uvicorn[standard] would pick uvloop, whose subprocess call refuses user= and group=: every script run
+    failed in the real container. Found on the first Debian 13 install."""
+    from cave.runner import __main__ as runner_main
+
+    seen = {}
+    monkeypatch.setattr(runner_main.uvicorn, "run", lambda app, **kw: seen.update(kw))
+    token = tmp_path / "token"
+    token.write_text("t" * 40, encoding="utf-8")
+    runner_main.main(["--scripts", str(tmp_path), "--token-file", str(token)])
+    assert seen["loop"] == "asyncio"

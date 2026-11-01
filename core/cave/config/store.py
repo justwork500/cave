@@ -63,6 +63,8 @@ def write_atomic(path: Path, text: str) -> None:
     fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=f".{path.stem}.", suffix=".tmp")
     with os.fdopen(fd, "w", encoding="utf-8", newline="") as f:
         f.write(text)
+    # mkstemp makes it 0600; scripts are read by the runner's script user, a different uid
+    os.chmod(tmp, 0o644)
     os.replace(tmp, path)
 
 
