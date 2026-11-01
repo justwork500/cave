@@ -13,9 +13,13 @@ from fastapi.staticfiles import StaticFiles
 from cave.access import netconfig
 from cave.access.items import seed_builtins
 from cave.api import admin, auth, entities, screens, system, ws
+from cave.api import areas as areas_api
 from cave.api import automations as automations_api
 from cave.api import config as config_api
+from cave.api import console as console_api
 from cave.api import scripts as scripts_api
+from cave.api import setup as setup_api
+from cave.api import views as views_api
 from cave.automation.effects import LiveEffects
 from cave.automation.manager import AutomationManager
 from cave.config.store import ConfigStore
@@ -104,7 +108,10 @@ def create_app(settings: Settings) -> FastAPI:
     app.mount("/static", StaticFiles(directory=WEB, html=False), name="static")
 
     app.include_router(auth.router)
+    app.include_router(setup_api.router)
     app.include_router(entities.router)
+    app.include_router(areas_api.router)
+    app.include_router(views_api.router)
     app.include_router(ws.router)
     app.include_router(admin.router)
     app.include_router(system.router)
@@ -112,4 +119,6 @@ def create_app(settings: Settings) -> FastAPI:
     app.include_router(scripts_api.router)
     app.include_router(automations_api.router)
     app.include_router(config_api.router)  # last: its /{kinds} routes must not shadow the others
+    app.include_router(console_api.router)  # very last: it serves the console for any other path
+    console_api.add_security_headers(app)
     return app

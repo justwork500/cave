@@ -1,13 +1,12 @@
 import secrets
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from cave import audit
-from cave.api.deps import PENDING_COOKIE, SESSION_COOKIE, current_user, get_db, now
+from cave.api.deps import PENDING_COOKIE, SESSION_COOKIE, get_db, now
 from cave.auth import sessions
 from cave.auth.users import (
     FAILED,
@@ -65,7 +64,7 @@ def login(body: LoginBody, request: Request, response: Response) -> dict[str, bo
         pending_id = secrets.token_urlsafe(32)
         request.app.state.pending_mfa[pending_id] = PendingMfa(user.id, user.username, now() + PENDING_TTL)
         _cookie(response, PENDING_COOKIE, pending_id, int(PENDING_TTL.total_seconds()))
-        return {"mfa_required": True}
+        return {"mfa_required": True, "mfa_setup": True} if not user.has_totp else {"mfa_required": True}
     _start_session(request, response, user)
     return {"mfa_required": False}
 
@@ -104,7 +103,3 @@ def logout(request: Request, response: Response) -> None:
         bus.publish({"type": "session_ended", "session_id": session_id})
     response.delete_cookie(SESSION_COOKIE, path="/")
 
-
-@router.get("/me")
-def me(user: Annotated[User, Depends(current_user)]) -> dict[str, str]:
-    return {"id": user.id, "username": user.username, "display_name": user.display_name, "role": user.role}

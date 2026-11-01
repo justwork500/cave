@@ -59,7 +59,9 @@ def test_admin_and_operator_need_mfa(db):
 
 def test_household_with_totp_needs_mfa(db):
     u = create_user(db, "system", "h", "pw-aaaaaaaa", "household")
-    setup_totp(db, u.id)
+    uri, _ = setup_totp(db, u.id)
+    assert not mfa_required(get_user(db, u.id))  # not until a code proves the app has it
+    assert verify_second_factor(db, u.id, pyotp.parse_uri(uri).now())
     assert mfa_required(get_user(db, u.id))
 
 
@@ -72,8 +74,9 @@ def test_totp_code_accepted(db):
 
 def test_recovery_code_is_single_use(db):
     u = create_user(db, "system", "a", "pw-aaaaaaaa", "admin")
-    _, codes = setup_totp(db, u.id)
+    uri, codes = setup_totp(db, u.id)
     assert len(codes) == 10
+    assert verify_second_factor(db, u.id, pyotp.parse_uri(uri).now())
     assert verify_second_factor(db, u.id, codes[0])
     assert not verify_second_factor(db, u.id, codes[0])
 

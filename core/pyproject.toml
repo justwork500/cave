@@ -27,7 +27,7 @@ build-backend = "setuptools.build_meta"
 include = ["cave*"]
 
 [tool.setuptools.package-data]
-cave = ["migrations/*.sql", "web/*"]
+cave = ["migrations/*.sql", "web/*", "web/console/**/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

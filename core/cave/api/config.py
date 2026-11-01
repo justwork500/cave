@@ -9,7 +9,7 @@ from cave.access.model import Principal
 from cave.api.admin import _require
 from cave.api.deps import client_ip, current_principal, get_db, net
 from cave.config.models import schema_files
-from cave.config.store import ConfigStore, Kind, item_id
+from cave.config.store import AlreadyExists, ConfigStore, Kind, item_id
 from cave.config.yamlfile import ConfigError
 from cave.state import EventBus
 
@@ -86,11 +86,16 @@ def get_doc(kinds: Plural, ident: str, request: Request, p: Caller) -> dict[str,
 
 
 @router.put("/{kinds}/{ident}")
-async def put_doc(kinds: Plural, ident: str, body: YamlBody, request: Request, p: Caller) -> dict[str, Any]:
+async def put_doc(
+    kinds: Plural, ident: str, body: YamlBody, request: Request, p: Caller, create: bool = False,
+) -> dict[str, Any]:
     kind = KINDS[kinds]
     _require(request, p, SECTIONS[kind])
     try:
-        loaded = store(request).save(kind, ident, body.yaml, p, client_ip(request), net(request).local_ranges)
+        loaded = store(request).save(kind, ident, body.yaml, p, client_ip(request), net(request).local_ranges,
+                                     create=create)
+    except AlreadyExists as e:
+        raise HTTPException(409, str(e)) from e
     except ConfigError as e:
         raise HTTPException(422, str(e)) from e
     except AccessDenied as e:

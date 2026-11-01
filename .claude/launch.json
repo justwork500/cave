@@ -1,0 +1,38 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "cave",
+      "runtimeExecutable": ".venv/Scripts/python.exe",
+      "runtimeArgs": [
+        "-m",
+        "cave",
+        "serve",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8443",
+        "--data",
+        "data",
+        "--config",
+        "config"
+      ],
+      "port": 8443,
+      "url": "https://localhost:8443"
+    },
+    {
+      "name": "console-dev",
+      "runtimeExecutable": "corepack",
+      "runtimeArgs": [
+        "pnpm",
+        "--dir",
+        "console",
+        "dev",
+        "--port",
+        "5173",
+        "--strictPort"
+      ],
+      "port": 5173
+    }
+  ]
+}

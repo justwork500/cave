@@ -32,9 +32,9 @@ class User:
 
 
 class LoginError(Exception):
-    def __init__(self, message: str) -> None:
+    def __init__(self, message: str, locked: bool = False) -> None:
         super().__init__(message)
-        self.message = message
+        self.message, self.locked = message, locked
 
 
 def _to_user(row: sqlite3.Row) -> User:
@@ -90,7 +90,7 @@ def check_password(db: Database, username: str, password: str, ip: str, now: dat
 
     if _recent_failures(db, username, now) >= LOCKOUT_ATTEMPTS:
         log(BLOCKED)  # logged, but not counted: attempts while locked must not extend the lockout
-        raise LoginError("Too many attempts. Try again in 15 minutes.")
+        raise LoginError("Too many attempts. Try again in 15 minutes.", locked=True)
     row = db.execute("SELECT * FROM users WHERE username=?", (username,)).fetchone()
     ok = verify_password(row["password_hash"] if row else DUMMY_HASH, password)
     user = _to_user(row) if row else None
@@ -123,7 +123,8 @@ def setup_totp(db: Database, user_id: str) -> tuple[str, list[str]]:
     assert user is not None
     with db.transaction() as conn:
         # shortcut: TOTP secret stored unencrypted in the DB; encrypt with a host key when secrets storage lands
-        conn.execute("UPDATE users SET totp_secret=? WHERE id=?", (secret, user_id))
+        # pending until a code proves the app has it, so an interrupted enrollment can simply start again
+        conn.execute("UPDATE users SET totp_pending=? WHERE id=?", (secret, user_id))
         conn.execute("DELETE FROM recovery_codes WHERE user_id=?", (user_id,))
         conn.executemany(
             "INSERT INTO recovery_codes (user_id, code_hash) VALUES (?, ?)",
@@ -134,7 +135,14 @@ def setup_totp(db: Database, user_id: str) -> tuple[str, list[str]]:
 
 
 def verify_second_factor(db: Database, user_id: str, code: str) -> bool:
-    row = db.execute("SELECT totp_secret FROM users WHERE id=?", (user_id,)).fetchone()
+    row = db.execute("SELECT totp_secret, totp_pending FROM users WHERE id=?", (user_id,)).fetchone()
+    if row and not row["totp_secret"] and row["totp_pending"]:
+        # first code after enrollment: only the app's code proves it; recovery codes wait until then
+        if not (code.isdigit() and pyotp.TOTP(row["totp_pending"]).verify(code, valid_window=1)):
+            return False
+        db.execute("UPDATE users SET totp_secret=totp_pending, totp_pending=NULL WHERE id=?", (user_id,))
+        audit.record(db, f"user:{user_id}", "user.mfa_confirmed", f"user:{user_id}")
+        return True
     if not row or not row["totp_secret"]:
         return False
     if code.isdigit() and pyotp.TOTP(row["totp_secret"]).verify(code, valid_window=1):

@@ -118,7 +118,8 @@ def test_screen_session_expires_after_12h(db):
 
 def test_screen_cannot_reach_admin_or_me(app, users, garage):
     c = screen_client(app, "garage", approved_screen(app.state.db, "garage"))
-    assert c.get("/api/v1/me").status_code == 401
+    me = c.get("/api/v1/me").json()  # a screen knows who it is, and has no console sections
+    assert me["kind"] == "screen" and me["sections"] == []
     assert c.get("/api/v1/users").status_code in (401, 403)
     allowed = {i["id"] for i in c.get("/api/v1/items").json() if i["allowed"]}
     assert allowed == {"dashboard:garage"}

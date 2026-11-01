@@ -30,3 +30,7 @@ def end(db: Database, session_id: str) -> None:
 
 def end_for_user(db: Database, user_id: str) -> None:
     db.execute("DELETE FROM sessions WHERE user_id=?", (user_id,))
+
+
+def end_others(db: Database, user_id: str, keep: str) -> None:
+    db.execute("DELETE FROM sessions WHERE user_id=? AND id<>?", (user_id, keep))

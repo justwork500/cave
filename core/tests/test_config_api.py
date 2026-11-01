@@ -168,7 +168,8 @@ def test_id_must_match_filename(app, users):
 
 def test_bad_url_id_refused(app, users):
     assert as_admin(app, users).put("/api/v1/automations/..%2Fevil", json={"yaml": KIDS_AUTOMATION}).status_code in (
-        404, 422)
+        404, 405, 422)  # 405: the decoded path only matches the console's GET-only fallback
+    assert not list(app.state.settings.config_dir.rglob("evil*"))
 
 
 def test_invalid_yaml_422_with_line(app, users):
@@ -210,3 +211,15 @@ def test_schema_endpoint(app, users):
     c = sign_in(lan_client(app), "sam", "pw-sam-1234")
     assert c.get("/api/v1/schemas/automation.json").json()["title"] == "AutomationFile"
     assert c.get("/api/v1/schemas/nope.json").status_code == 404
+
+
+def test_create_refuses_an_existing_file(app, users):
+    """New automations and recipes save with ?create=true, so they can't silently replace one that exists."""
+    c = as_admin(app, users)
+    assert c.put("/api/v1/automations/kids-off?create=true", json={"yaml": KIDS_AUTOMATION}).status_code == 200
+    changed = KIDS_AUTOMATION.replace("20:00", "21:00")
+    r = c.put("/api/v1/automations/kids-off?create=true", json={"yaml": changed})
+    assert r.status_code == 409 and "already taken" in r.json()["detail"]
+    path = app.state.settings.config_dir / "automations" / "kids-off.yaml"
+    assert path.read_text(encoding="utf-8") == KIDS_AUTOMATION
+    assert c.put("/api/v1/automations/kids-off", json={"yaml": changed}).status_code == 200  # editing still works

@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from cave.api.app import create_app
-from cave.auth.users import User, create_user, setup_totp
+from cave.auth.users import User, create_user, setup_totp, verify_second_factor
 from cave.db import Database
 from cave.settings import Settings
 
@@ -47,6 +47,8 @@ def users(app: FastAPI) -> Users:
     op = create_user(db, "system", "op", "pw-op-1234", "operator")
     admin_uri, _ = setup_totp(db, admin.id)
     op_uri, _ = setup_totp(db, op.id)
+    for u, uri in ((admin, admin_uri), (op, op_uri)):  # prove each app once, as enrollment does
+        assert verify_second_factor(db, u.id, pyotp.parse_uri(uri).now())
     return Users(
         admin=admin,
         admin_totp=pyotp.parse_uri(admin_uri),
