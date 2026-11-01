@@ -20,7 +20,7 @@ export function mockApi(routes: Record<string, Handler>): Call[] {
     "fetch",
     vi.fn(async (url: string, init?: RequestInit) => {
       const method = init?.method ?? "GET";
-      const path = url.replace(/^\/api\/v1/, "").split("?")[0] ?? "";
+      const path = decodeURIComponent(url.replace(/^\/api\/v1/, "").split("?")[0] ?? "");
       const body = init?.body ? JSON.parse(String(init.body)) : undefined;
       calls.push({ method, path, body });
       const key = `${method} ${path}`;
