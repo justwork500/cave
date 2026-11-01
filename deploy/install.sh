@@ -99,27 +99,7 @@ if [[ ! -e secrets/mosquitto_passwd ]]; then
   own "$MOSQUITTO_UID" 0400 secrets/mosquitto_passwd
 fi
 
-# ---- 5. MQTT ----
-if has_profile mqtt && [[ ! -e config/mqtt.yaml ]]; then
-  cat >config/mqtt.yaml <<'EOF'
-# The broker CAVE signs in to. The password is in secrets/mqtt_password, never here.
-broker:
-  host: mosquitto
-  port: 1883
-  username: cave
-EOF
-fi
-[[ -n ${CAVE_SKIP_CHOWN:-} ]] || as_root chown -R "$CORE_UID:$CORE_UID" data config
-has_profile mqtt && own "$MOSQUITTO_UID" - data/mosquitto
-
-if has_profile mqtt && [[ $DRY -eq 0 ]] && ! as_root grep -q '^cave:' secrets/mosquitto_passwd; then
-  # the same pinned image Compose runs; mosquitto_passwd stores only a hash
-  as_root docker run --rm -v "$ROOT/secrets/mosquitto_passwd:/passwd" "$(docker compose config --images mosquitto)" \
-    mosquitto_passwd -b /passwd cave "$(as_root cat secrets/mqtt_password)"
-  own "$MOSQUITTO_UID" 0400 secrets/mosquitto_passwd
-fi
-
-# ---- 6. .env: settings only, no secrets ----
+# ---- 5. .env: settings only, no secrets. First, because compose.yaml reads it (env_file) ----
 if [[ ! -f .env ]]; then
   runner_url=""
   has_profile scripts && runner_url="http://script-runner:8099"
@@ -133,6 +113,30 @@ CAVE_RUNNER_URL=$runner_url
 EOF
 else
   say "Keeping the existing .env (edit it to change profiles or ranges)."
+fi
+
+# ---- 6. MQTT ----
+if has_profile mqtt && [[ ! -e config/mqtt.yaml ]]; then
+  cat >config/mqtt.yaml <<'EOF'
+# The broker CAVE signs in to. The password is in secrets/mqtt_password, never here.
+broker:
+  host: mosquitto
+  port: 1883
+  username: cave
+EOF
+fi
+[[ -n ${CAVE_SKIP_CHOWN:-} ]] || as_root chown -R "$CORE_UID:$CORE_UID" data config
+has_profile mqtt && own "$MOSQUITTO_UID" - data/mosquitto
+
+if has_profile mqtt && [[ $DRY -eq 0 ]] && ! as_root grep -q '^cave:' secrets/mosquitto_passwd; then
+  # The same pinned image Compose runs. The password goes in on stdin and is hashed in a scratch file
+  # (mosquitto_passwd -U), so it's never a command-line argument that ps or docker inspect would show.
+  image=$(docker compose config --images mosquitto)
+  [[ -n $image ]] || die "can't read the Mosquitto image from compose.yaml."
+  printf 'cave:%s\n' "$(as_root cat secrets/mqtt_password)" |
+    as_root docker run --rm -i -v "$ROOT/secrets/mosquitto_passwd:/passwd" "$image" \
+      sh -c 'cat >/tmp/p && mosquitto_passwd -U /tmp/p && cat /tmp/p >>/passwd'
+  own "$MOSQUITTO_UID" 0400 secrets/mosquitto_passwd
 fi
 
 if [[ $DRY -eq 1 ]]; then

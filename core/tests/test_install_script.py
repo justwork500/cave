@@ -26,7 +26,8 @@ ROUTES = {
 }
 
 
-def install(tmp_path: Path, profiles: str = "mqtt,scripts", route: str = "lan") -> subprocess.CompletedProcess[str]:
+def install(tmp_path: Path, profiles: str = "mqtt,scripts", route: str = "lan", dry_run: bool = True,
+            extra_env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
     fake = tmp_path / "bin"
     fake.mkdir(exist_ok=True)
     get, addr = ROUTES[route]
@@ -37,8 +38,9 @@ def install(tmp_path: Path, profiles: str = "mqtt,scripts", route: str = "lan") 
     root = tmp_path / "cave"
     root.mkdir(exist_ok=True)
     env = {**os.environ, "PATH": f"{fake}{os.pathsep}{os.environ['PATH']}", "CAVE_INSTALL_ROOT": root.as_posix(),
-           "CAVE_SKIP_CHOWN": "1"}
-    return subprocess.run([BASH, SCRIPT.as_posix(), "--dry-run", "--yes", "--profiles", profiles],
+           "CAVE_SKIP_CHOWN": "1", **(extra_env or {})}
+    flags = ["--dry-run"] if dry_run else []
+    return subprocess.run([BASH, SCRIPT.as_posix(), *flags, "--yes", "--profiles", profiles],
                           capture_output=True, text=True, env=env, timeout=60, check=False)
 
 
@@ -95,3 +97,40 @@ def test_scripts_profile_sets_runner_url(tmp_path):
     other.mkdir()
     install(other, profiles="mqtt,scripts")
     assert env_lines(other)["CAVE_RUNNER_URL"] == "http://script-runner:8099"
+
+
+FAKE_DOCKER = """#!/bin/sh
+echo "docker $*" >> "$CAVE_FAKE_LOG"
+case "$*" in
+  "compose version") exit 0 ;;
+  "compose config --images mosquitto")
+    [ -f .env ] || { echo "env file .env not found" >&2; exit 1; }  # compose.yaml has env_file: .env
+    echo "eclipse-mosquitto:2@sha256:abc" ;;
+  "compose ps -q cave") echo cid ;;
+  inspect*) echo healthy ;;
+  "compose logs cave") echo "cave-1  | CAVE isn't set up yet. Open it in a browser and use this one-time setup code: AAAA-BBBB" ;;
+  run*) cat >/dev/null; chmod u+w "$CAVE_FAKE_PASSWD"; echo 'cave:$7$101$hash' >> "$CAVE_FAKE_PASSWD" ;;  # root in the container, like mosquitto_passwd -U
+esac
+exit 0
+"""
+
+
+def test_full_install_with_fake_docker(tmp_path):
+    """The real run, with Docker faked: .env exists before Compose is asked anything, and the MQTT password never
+    goes on a command line (where ps and docker inspect would show it)."""
+    fake = tmp_path / "bin"
+    fake.mkdir()
+    for name, text in (("docker", FAKE_DOCKER), ("sudo", '#!/bin/sh\nexec "$@"\n')):
+        (fake / name).write_text(text, encoding="utf-8", newline="\n")
+        (fake / name).chmod(0o755)
+    log = tmp_path / "docker.log"
+    env = {"CAVE_FAKE_LOG": log.as_posix(),
+           "CAVE_FAKE_PASSWD": (tmp_path / "cave" / "secrets" / "mosquitto_passwd").as_posix()}
+    install(tmp_path, dry_run=False, extra_env=env)
+    r = install(tmp_path, dry_run=False, extra_env=env)  # and again: nothing new
+    assert r.returncode == 0, r.stderr
+    calls = log.read_text(encoding="utf-8")
+    password = (tmp_path / "cave" / "secrets" / "mqtt_password").read_text(encoding="utf-8").strip()
+    assert "eclipse-mosquitto:2@sha256:abc" in calls and password not in calls
+    assert calls.count("docker run") == 1  # the cave user is created once
+    assert "AAAA-BBBB" in r.stdout
