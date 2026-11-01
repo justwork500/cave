@@ -32,7 +32,8 @@ def main(argv: list[str] | None = None) -> None:
     if len(token) < MIN_TOKEN:
         sys.exit(f"The runner token must be at least {MIN_TOKEN} characters (--token-file or CAVE_RUNNER_TOKEN_FILE).")
     run_as = (args.script_uid, args.script_uid) if args.script_uid is not None else None
-    uvicorn.run(create_runner_app(args.scripts, token, run_as), host=args.host, port=args.port)
+    # asyncio, not uvloop (which uvicorn[standard] would pick): uvloop's subprocess_exec refuses user= and group=
+    uvicorn.run(create_runner_app(args.scripts, token, run_as), host=args.host, port=args.port, loop="asyncio")
 
 
 if __name__ == "__main__":
