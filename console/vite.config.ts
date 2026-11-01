@@ -15,5 +15,7 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["src/test/setup.ts"],
+    // dialog-heavy tests (the automation editor's save diff) run past 5 s on GitHub's shared runners
+    testTimeout: 15_000,
   },
 });
