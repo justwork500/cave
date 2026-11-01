@@ -95,8 +95,8 @@ describe("automation editor", () => {
     await userEvent.type(text, "#");
     await userEvent.click(screen.getByRole("button", { name: "Save" }));
     const dialog = await screen.findByRole("dialog");
-    expect(within(dialog).getByText("Before")).toBeInTheDocument();
-    await userEvent.click(within(dialog).getByRole("button", { name: "Save changes" }));
+    expect(await within(dialog).findByText("Before")).toBeInTheDocument();
+    await userEvent.click(await within(dialog).findByRole("button", { name: "Save changes" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("don't have access to: cover.garage");
     expect(calls.find((c) => c.method === "PUT")?.body).toEqual({ yaml: `${YAML}#` });
   });
