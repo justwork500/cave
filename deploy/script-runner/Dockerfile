@@ -4,7 +4,7 @@
 #
 # The runner runs as root inside the container only so it can start each script as the separate `script`
 # user (uid 10002): scripts then can't read the runner's memory, environment or token file. compose.yaml
-# adds the rest: read-only root, cap_drop ALL plus SETUID/SETGID/KILL/CHOWN, memory and CPU limits,
+# adds the rest: read-only root, cap_drop ALL plus SETUID/SETGID/KILL/CHOWN/DAC_OVERRIDE, memory and CPU limits,
 # scripts mounted read-only, no Docker socket, the token as a secret file, and a network only cave shares.
 
 FROM python:3.13-slim-trixie@sha256:2d44738ebf4ce5f63b9d9ea871e9c7cfdc0426f7b0c97cac915fd88ded1d86bb

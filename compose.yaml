@@ -45,7 +45,9 @@ services:
     read_only: true
     tmpfs: [/tmp, /work]
     cap_drop: [ALL]
-    cap_add: [SETUID, SETGID, KILL, CHOWN]  # to start each script as uid 10002 and stop it again
+    # SETUID/SETGID/KILL/CHOWN: start each script as uid 10002 and stop it. DAC_OVERRIDE: read the token (owned by
+    # cave's uid) and enter each run's 0700 folder before switching user; the script user doesn't keep it.
+    cap_add: [SETUID, SETGID, KILL, CHOWN, DAC_OVERRIDE]
     security_opt: ["no-new-privileges:true"]
     mem_limit: 512m
     cpus: 1.0

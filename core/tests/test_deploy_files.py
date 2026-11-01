@@ -26,6 +26,8 @@ def test_core_runs_as_non_root():
     users = re.findall(r"^USER\s+(\S+)", runtime, re.MULTILINE)
     assert users and users[-1] not in ("root", "0", "0:0")
     assert "HEALTHCHECK" in runtime and '"cave", "health"' in runtime
+    # stdout is a pipe in a container: unbuffered, or the setup code never reaches docker compose logs
+    assert "PYTHONUNBUFFERED=1" in runtime
 
 
 def test_runner_has_no_docker_socket_and_checks_pwsh_download():

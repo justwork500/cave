@@ -38,7 +38,9 @@ def test_hardening(compose):
         assert svc["read_only"] is True and svc["cap_drop"] == ["ALL"]
         assert "no-new-privileges:true" in svc["security_opt"]
     assert "cap_add" not in cave
-    assert set(runner["cap_add"]) == {"SETUID", "SETGID", "KILL", "CHOWN"}
+    # DAC_OVERRIDE: root in the runner reads the token (owned by cave's uid, 0400) and enters each run's 0700
+    # folder before switching to the script user, who doesn't keep it
+    assert set(runner["cap_add"]) == {"SETUID", "SETGID", "KILL", "CHOWN", "DAC_OVERRIDE"}
     assert runner["mem_limit"] and runner["cpus"] and runner["pids_limit"]
     assert "./config/scripts:/scripts:ro" in runner["volumes"]
 
