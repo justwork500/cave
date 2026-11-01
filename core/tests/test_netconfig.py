@@ -51,6 +51,18 @@ def test_seed_detects_when_no_settings(tmp_path, monkeypatch):
     app.state.db.close()
 
 
+def test_container_never_detects_its_own_network(tmp_path, monkeypatch):  # Plan 7 Review Focus 1
+    """Inside a container the detected /24 is Docker's bridge, which holds the gateway every proxied request comes
+    from: seeding it would make everyone "local". With no ranges given, seed none, so Local only fails closed."""
+    from cave.envconfig import settings_from_env
+
+    monkeypatch.setattr(netconfig, "detect_local_ranges", lambda: ["172.18.0.0/24"])
+    settings = settings_from_env(tmp_path, tmp_path, {"CAVE_IN_CONTAINER": "1", "CAVE_LOCAL_RANGES": ""})
+    app = create_app(settings)
+    assert netconfig.load(app.state.db).local_ranges == ()
+    app.state.db.close()
+
+
 def test_operator_cannot_change_networks(client, users):
     sign_in(client, "op", "pw-op-1234", users.op_totp)
     assert client.get("/api/v1/system/networks").status_code == 403

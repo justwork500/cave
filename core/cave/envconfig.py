@@ -39,10 +39,12 @@ def _ranges(name: str, environ: Mapping[str, str]) -> list[str]:
 
 
 def settings_from_env(data: Path, config: Path, environ: Mapping[str, str] = os.environ) -> Settings:
-    """Empty ranges keep first-run detection (netconfig.seed); after that the database decides."""
+    """Empty ranges keep first-run detection (netconfig.seed), except in a container (CAVE_IN_CONTAINER=1, set by
+    the image), where detection would find Docker's network. After the first run the database decides."""
     return Settings(db_path=data / "cave.db", config_dir=config,
                     local_ranges=_ranges("CAVE_LOCAL_RANGES", environ),
-                    trusted_proxies=_ranges("CAVE_TRUSTED_PROXIES", environ))
+                    trusted_proxies=_ranges("CAVE_TRUSTED_PROXIES", environ),
+                    detect_ranges=environ.get("CAVE_IN_CONTAINER") != "1")
 
 
 def _unique(items: list[str]) -> list[str]:

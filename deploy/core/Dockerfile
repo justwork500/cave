@@ -17,7 +17,7 @@ COPY --from=console /src/core/cave/web/console /src/core/cave/web/console
 RUN pip install --no-cache-dir /src/core && rm -rf /src \
     && groupadd --gid 10001 cave && useradd --uid 10001 --gid 10001 --no-create-home --shell /usr/sbin/nologin cave \
     && mkdir -p /data /config && chown cave:cave /data /config
-ENV PYTHONUNBUFFERED=1
+ENV PYTHONUNBUFFERED=1 CAVE_IN_CONTAINER=1
 USER cave
 WORKDIR /data
 EXPOSE 8443

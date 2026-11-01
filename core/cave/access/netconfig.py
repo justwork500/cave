@@ -80,4 +80,5 @@ def seed(db: Database, settings: Settings) -> None:
     """First run only: never overwrites what an Admin has saved."""
     if db.execute("SELECT count(*) FROM network_ranges").fetchone()[0]:
         return
-    save(db, "system", settings.local_ranges or detect_local_ranges(), settings.trusted_proxies)
+    detected = detect_local_ranges() if settings.detect_ranges else []  # none: Local only fails closed
+    save(db, "system", settings.local_ranges or detected, settings.trusted_proxies)

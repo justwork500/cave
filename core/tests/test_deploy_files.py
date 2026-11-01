@@ -28,6 +28,7 @@ def test_core_runs_as_non_root():
     assert "HEALTHCHECK" in runtime and '"cave", "health"' in runtime
     # stdout is a pipe in a container: unbuffered, or the setup code never reaches docker compose logs
     assert "PYTHONUNBUFFERED=1" in runtime
+    assert "CAVE_IN_CONTAINER=1" in runtime  # no LAN detection in here: it would find Docker's network
 
 
 def test_runner_has_no_docker_socket_and_checks_pwsh_download():
