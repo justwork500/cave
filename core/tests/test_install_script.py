@@ -1,6 +1,7 @@
 """deploy/install.sh --dry-run: the parts that need no Docker. Linux in CI; Git Bash on Windows (no file modes)."""
 
 import os
+import re
 import shutil
 import stat
 import subprocess
@@ -70,7 +71,7 @@ def test_secret_files_private(tmp_path):
     install(tmp_path)
     for name in ("runner_token", "mqtt_password"):
         f = tmp_path / "cave" / "secrets" / name
-        assert len(f.read_text(encoding="utf-8").strip()) >= 40
+        assert re.fullmatch(r"[0-9a-f]{64}", f.read_text(encoding="utf-8").strip())  # always 32 random bytes
         if sys.platform != "win32":
             assert stat.S_IMODE(f.stat().st_mode) == 0o400
     assert (tmp_path / "cave" / "secrets" / "mosquitto_passwd").exists()

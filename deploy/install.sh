@@ -86,7 +86,7 @@ mkdir -p data config/scripts secrets
 has_profile mqtt && mkdir -p data/mosquitto
 
 # ---- 4. Secrets: random, private, never in .env ----
-secret() { head -c 32 /dev/urandom | base64 | tr -d '/+=\n'; }
+secret() { od -An -tx1 -N32 /dev/urandom | tr -d ' \n'; }  # 32 random bytes as 64 hex characters
 new_secret() {  # new_secret FILE UID: only if missing
   [[ -e $1 ]] && return 0
   (umask 077; secret >"$1")
