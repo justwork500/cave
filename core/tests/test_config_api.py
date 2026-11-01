@@ -211,3 +211,15 @@ def test_schema_endpoint(app, users):
     c = sign_in(lan_client(app), "sam", "pw-sam-1234")
     assert c.get("/api/v1/schemas/automation.json").json()["title"] == "AutomationFile"
     assert c.get("/api/v1/schemas/nope.json").status_code == 404
+
+
+def test_create_refuses_an_existing_file(app, users):
+    """New automations and recipes save with ?create=true, so they can't silently replace one that exists."""
+    c = as_admin(app, users)
+    assert c.put("/api/v1/automations/kids-off?create=true", json={"yaml": KIDS_AUTOMATION}).status_code == 200
+    changed = KIDS_AUTOMATION.replace("20:00", "21:00")
+    r = c.put("/api/v1/automations/kids-off?create=true", json={"yaml": changed})
+    assert r.status_code == 409 and "already taken" in r.json()["detail"]
+    path = app.state.settings.config_dir / "automations" / "kids-off.yaml"
+    assert path.read_text(encoding="utf-8") == KIDS_AUTOMATION
+    assert c.put("/api/v1/automations/kids-off", json={"yaml": changed}).status_code == 200  # editing still works

@@ -70,6 +70,10 @@ def item_id(kind: Kind, ident: str) -> str:
     return f"{kind}:{ident}"
 
 
+class AlreadyExists(Exception):
+    pass
+
+
 @dataclass(frozen=True)
 class Loaded:
     doc: Doc
@@ -219,13 +223,17 @@ class ConfigStore:
 
     def save(
         self, kind: Kind, ident: str, text: str, p: Principal, ip: IPAddress, local_ranges: Seq[str],
+        *, create: bool = False,
     ) -> Loaded:
+        """create=True refuses to replace a file that's already there (new automations, recipes)."""
         doc = parse(kind, ident, text)
         new_refs = refs(doc)
         self.guard(p, new_refs, ip, local_ranges)
         old = self._loaded.get((kind, ident))
         path = self.config_dir / FOLDERS[kind] / f"{ident}.yaml"
         old_text = self._existing_text(kind, ident, old)
+        if create and old_text is not None:
+            raise AlreadyExists(f"{ident} is already taken. Choose another id.")
         if old_text is not None and not p.is_admin:
             self.guard(p, self._old_refs(kind, ident, old, old_text, "overwrite"), ip, local_ranges)
         write_atomic(path, text)

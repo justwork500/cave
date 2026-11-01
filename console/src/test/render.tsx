@@ -10,6 +10,8 @@ type Handler = unknown | ((body: unknown) => unknown);
 export interface Call {
   method: string;
   path: string;
+  /** The query string, like "?create=true", or "". */
+  query: string;
   body: unknown;
 }
 
@@ -22,7 +24,8 @@ export function mockApi(routes: Record<string, Handler>): Call[] {
       const method = init?.method ?? "GET";
       const path = decodeURIComponent(url.replace(/^\/api\/v1/, "").split("?")[0] ?? "");
       const body = init?.body ? JSON.parse(String(init.body)) : undefined;
-      calls.push({ method, path, body });
+      const query = url.includes("?") ? url.slice(url.indexOf("?")) : "";
+      calls.push({ method, path, query, body });
       const key = `${method} ${path}`;
       if (!(key in routes)) return new Response(JSON.stringify({ detail: `no mock for ${key}` }), { status: 404 });
       const handler = routes[key];

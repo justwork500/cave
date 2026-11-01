@@ -117,7 +117,8 @@ function RecipePicker({ onDone }: { onDone: () => void }) {
   const create = useMutation({
     mutationFn: async (r: Recipe) => {
       for (const doc of r.build(values)) {
-        await api.put(`/automations/${encodeURIComponent(doc.automation.id)}`, { yaml: toYaml(doc) });
+        // create=true: the server refuses rather than replacing an automation with the same id
+        await api.put(`/automations/${encodeURIComponent(doc.automation.id)}?create=true`, { yaml: toYaml(doc) });
       }
     },
     onSuccess: () => {
@@ -212,7 +213,7 @@ export function AutomationEditor() {
     }
   })();
   const save = useMutation({
-    mutationFn: () => api.put(`/${kinds}/${encodeURIComponent(id)}`, { yaml: text }),
+    mutationFn: () => api.put(`/${kinds}/${encodeURIComponent(id)}${isNew ? "?create=true" : ""}`, { yaml: text }),
     onSuccess: () => {
       setReviewing(false);
       void client.invalidateQueries({ queryKey: [kinds] });

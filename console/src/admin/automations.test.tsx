@@ -144,3 +144,42 @@ describe("test center", () => {
     await expectAccessible(container);
   });
 });
+
+describe("new automations", () => {
+  it("never replaces an existing file: saves with create, and shows the refusal", async () => {
+    const calls = mockApi({
+      ...LISTS,
+      "PUT /automations/new-automation": [409, { detail: "new-automation is already taken. Choose another id." }],
+    });
+    renderWith(
+      <Routes><Route path="/admin/automations/new" element={<AutomationEditor />} /></Routes>,
+      "/admin/automations/new",
+    );
+    await userEvent.click(await screen.findByRole("button", { name: "Start blank" }));
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+    const dialog = await screen.findByRole("dialog");
+    await userEvent.click(await within(dialog).findByText("Save changes"));
+    expect(await screen.findByRole("alert")).toHaveTextContent("new-automation is already taken");
+    expect(calls.find((c) => c.method === "PUT")?.query).toBe("?create=true");
+  });
+
+  it("creates recipes without replacing anything", async () => {
+    const calls = mockApi({ ...LISTS, "PUT /automations/washer-finished": { id: "washer-finished", name: "Washer finished" },
+                            "GET /automations": [] });
+    renderWith(
+      <Routes>
+        <Route path="/admin/automations/new" element={<AutomationEditor />} />
+        <Route path="/admin/automations" element={<p>List</p>} />
+      </Routes>,
+      "/admin/automations/new",
+    );
+    await userEvent.click(await screen.findByRole("button", { name: "Tell me when the washer finishes" }));
+    await screen.findByRole("option", { name: "UPS runtime" });
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Washer power sensor" }), "sensor.ups_runtime");
+    await userEvent.type(screen.getByRole("textbox", { name: "Finished below (watts)" }), "5");
+    await userEvent.click(screen.getByRole("button", { name: "Create" }));
+    expect(await screen.findByText("List")).toBeInTheDocument();
+    expect(calls.find((c) => c.method === "PUT")?.query).toBe("?create=true");
+  });
+});
+
