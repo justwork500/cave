@@ -1,7 +1,7 @@
 import { Button, Field, Input, MessageBar, MessageBarBody } from "@fluentui/react-components";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { useNavigate, useSearchParams } from "react-router";
+import { Navigate, useNavigate, useSearchParams } from "react-router";
 import { api, message } from "../api/client";
 import { Authenticator, type Enrollment } from "./Authenticator";
 
@@ -46,6 +46,9 @@ export function Login() {
   });
   const enroll = useMutation({ mutationFn: () => api.post<Enrollment>("/auth/mfa/setup") });
   const mfa = useMutation({ mutationFn: () => api.post("/auth/mfa", { code: code.trim() }), onSuccess: done });
+  const setup = useQuery({ queryKey: ["setup"], queryFn: () => api.get<{ needed: boolean }>("/setup") });
+
+  if (setup.data?.needed) return <Navigate to="/setup" replace />;
 
   if (enroll.data) {
     return (

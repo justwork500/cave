@@ -1,7 +1,7 @@
 import { createContext, useContext, useSyncExternalStore } from "react";
 import type { LiveFeed } from "../api/ws";
 
-export const LiveContext = createContext<Pick<LiveFeed, "onState" | "onNotification"> | null>(null);
+export const LiveContext = createContext<Pick<LiveFeed, "onState" | "onNotification" | "stop"> | null>(null);
 export const useLive = () => useContext(LiveContext);
 
 const NARROW = "(max-width: 600px)";

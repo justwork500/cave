@@ -11,6 +11,7 @@ const app = (
     <Route path="/login" element={<Login />} />
     <Route path="/" element={<p>Home page</p>} />
     <Route path="/admin" element={<p>Admin page</p>} />
+    <Route path="/setup" element={<p>Setup page</p>} />
   </Routes>
 );
 
@@ -58,6 +59,12 @@ describe("sign in", () => {
     await userEvent.click(screen.getByLabelText("I've saved these codes somewhere safe"));
     await userEvent.click(screen.getByRole("button", { name: "Go to CAVE" }));
     expect(await screen.findByText("Home page")).toBeInTheDocument();
+  });
+
+  it("sends you to setup when CAVE has no owner yet", async () => {
+    mockApi({ "GET /setup": { needed: true } });
+    renderWith(app, "/login");
+    expect(await screen.findByText("Setup page")).toBeInTheDocument();
   });
 
   it("shows the server's own error words", async () => {

@@ -1,4 +1,4 @@
-import { act, screen } from "@testing-library/react";
+import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "../../test/axe";
@@ -10,7 +10,7 @@ import type { NotificationEvent } from "../../api/ws";
 function fakeLive() {
   let push: ((e: NotificationEvent) => void) | undefined;
   return {
-    feed: { onState: () => () => undefined, onNotification: (cb: (e: NotificationEvent) => void) => {
+    feed: { onState: () => () => undefined, stop: vi.fn(), onNotification: (cb: (e: NotificationEvent) => void) => {
       push = cb;
       return () => undefined;
     } },
@@ -20,17 +20,18 @@ function fakeLive() {
 
 function bar(me: object) {
   const live = fakeLive();
-  mockApi({
+  const calls = mockApi({
     "GET /items": [{ id: "dashboard:home", kind: "dashboard", name: "Home", allowed: true },
                  { id: "dashboard:lab", kind: "dashboard", name: "Lab", allowed: false }],
     "GET /notifications": [],
+    "POST /auth/logout": [204, undefined],
   });
   const view = renderWith(
     <LiveContext.Provider value={live.feed as never}>
       <MenuBar me={me as never} />
     </LiveContext.Provider>,
   );
-  return { ...view, live };
+  return { ...view, live, calls };
 }
 
 describe("menu bar", () => {
@@ -66,5 +67,17 @@ describe("menu bar", () => {
     expect(screen.queryByRole("link", { name: "Admin console" })).not.toBeInTheDocument();
     await userEvent.click(menu);
     expect(await screen.findByRole("menuitem", { name: "Admin console" })).toBeInTheDocument();
+  });
+
+  it("stops the live feed before signing out, so its closing socket can't redirect mid-sign-in", async () => {
+    setNarrow(false);
+    const assign = vi.fn();
+    vi.stubGlobal("location", { ...window.location, assign });
+    const { live, calls } = bar(SAM);
+    await userEvent.click(await screen.findByRole("button", { name: "Sam" }));
+    await userEvent.click(await screen.findByRole("menuitem", { name: "Sign out" }));
+    await waitFor(() => expect(assign).toHaveBeenCalledWith("/login"));
+    expect(live.feed.stop).toHaveBeenCalled();
+    expect(calls.some((c) => c.path === "/auth/logout")).toBe(true);
   });
 });

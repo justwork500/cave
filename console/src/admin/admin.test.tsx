@@ -76,6 +76,10 @@ describe("access", () => {
     await waitFor(() => expect(calls.find((c) => c.method === "PUT")?.body).toEqual([
       { kind: "role", id: "admin" }, { kind: "group", id: "g1" }]));
     expect(await screen.findByText("Kids")).toBeInTheDocument();
+    // browsers drop focus from a natively disabled button; it must stay focusable (aria-disabled instead)
+    const added = within(dialog).getByRole("button", { name: "Add Kids" });
+    expect(added).toHaveAttribute("aria-disabled", "true");
+    expect(added).not.toHaveAttribute("disabled");
   });
 });
 

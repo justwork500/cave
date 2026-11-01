@@ -64,7 +64,7 @@ function Picker({ item, current, targets, onAdd, onClose }: {
               {targets[kind].map((t) => (
                 <li key={t.id}>
                   <Button
-                    disabled={has(t.id)}
+                    disabledFocusable={has(t.id)}
                     aria-label={`Add ${t.name}`}
                     onClick={() => onAdd({ kind, id: t.id })}
                   >

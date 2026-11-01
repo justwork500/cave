@@ -7,6 +7,7 @@
 * { box-sizing: border-box; }
 html, body, #root { margin: 0; min-height: 100%; }
 body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.root[data-theme="light"] { --cave-stone: #eef1f2; }
 .root { min-height: 100vh; background: var(--colorNeutralBackground2); color: var(--colorNeutralForeground1); }
 
 .bar {
@@ -95,14 +96,14 @@ button.tile:focus-visible { outline: 2px solid var(--colorStrokeFocus2); outline
 .entities { list-style: none; margin: 0; padding: 8px 16px; border-radius: 6px;
   background: var(--colorNeutralBackground1); border: 1px solid var(--colorNeutralStroke2); }
 
-.gauge { display: grid; justify-items: center; padding: 14px 16px; border-radius: 6px;
+.gauge { display: grid; justify-items: center; gap: 6px; padding: 14px 16px; border-radius: 6px;
   background: var(--colorNeutralBackground1); border: 1px solid var(--colorNeutralStroke2); }
 .gauge .tile-name { justify-self: start; }
 .gauge svg { width: min(220px, 100%); }
 .gauge-track, .gauge-fill { fill: none; stroke-width: 9; stroke-linecap: round; }
-.gauge-track { stroke: var(--colorNeutralBackground5); }
+.gauge-track { stroke: var(--colorNeutralStroke2); }
 .gauge-fill { stroke: var(--cave-teal); }
-.gauge-value { font-size: 26px; font-weight: 300; margin-top: -8px; }
+.gauge-value { font-size: 26px; font-weight: 300; margin-top: -14px; line-height: 1; }
 .gauge-level { font-size: 12px; font-weight: 600; padding: 1px 8px; border: 2px solid; border-radius: 10px; }
 
 .action { display: grid; align-content: center; gap: 6px; padding: 8px 0; }
@@ -115,11 +116,12 @@ button.tile:focus-visible { outline: 2px solid var(--colorStrokeFocus2); outline
 /* The admin console: stone nav on the left, white working surface */
 .main:has(.admin) { padding: 0; }
 .admin { display: grid; grid-template-columns: 220px minmax(0, 1fr); min-height: calc(100vh - 48px); }
-.admin-nav { background: #eef1f2; border-right: 1px solid var(--colorNeutralStroke2); padding: 12px 8px; }
+/* stone in light mode (#eef1f2 in the mockups); the theme's own surface in dark and high contrast */
+.admin-nav { background: var(--cave-stone, var(--colorNeutralBackground3)); border-right: 1px solid var(--colorNeutralStroke2); padding: 12px 8px; }
 .admin-nav ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
-.admin-nav a { display: block; padding: 7px 12px; border-radius: 4px; color: #1c2830; text-decoration: none; font-size: 14px; }
-.admin-nav a:hover { background: rgb(28 40 48 / 0.06); }
-.admin-nav a.active { background: #fff; font-weight: 600; box-shadow: inset 3px 0 0 var(--cave-teal); }
+.admin-nav a { display: block; padding: 7px 12px; border-radius: 4px; color: var(--colorNeutralForeground1); text-decoration: none; font-size: 14px; }
+.admin-nav a:hover { background: var(--colorNeutralBackground1Hover); }
+.admin-nav a.active { background: var(--colorNeutralBackground1); font-weight: 600; box-shadow: inset 3px 0 0 var(--cave-teal); }
 .admin-nav a:focus-visible { outline: 2px solid var(--cave-teal); outline-offset: 1px; }
 .admin-main { padding: 16px 24px 32px; min-width: 0; }
 @media (max-width: 600px) {

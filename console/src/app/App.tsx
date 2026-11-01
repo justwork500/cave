@@ -14,7 +14,7 @@ export function App() {
   return (
     <ThemeContext.Provider value={{ theme, setTheme }}>
       <QueryClientProvider client={client}>
-        <FluentProvider theme={themes[theme]} className="root">
+        <FluentProvider theme={themes[theme]} className="root" data-theme={theme}>
           <BrowserRouter>
             <AppRoutes />
           </BrowserRouter>

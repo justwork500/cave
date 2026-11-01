@@ -4,18 +4,20 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, NavLink, useNavigate } from "react-router";
 import { api } from "../../api/client";
 import type { Item, Me } from "../../api/types";
-import { useNarrow } from "../live";
+import { useLive, useNarrow } from "../live";
 import { Bell } from "./Bell";
 
 export const dashboardPath = (id: string) => (id === "dashboard:home" ? "/" : `/d/${id.replace(/^dashboard:/, "")}`);
 
-async function signOut() {
+async function signOut(live: ReturnType<typeof useLive>) {
+  live?.stop(); // otherwise the server closing its socket redirects too, racing this one
   await api.post("/auth/logout").catch(() => undefined);
   location.assign("/login");
 }
 
 export function MenuBar({ me }: { me: Me }) {
   const narrow = useNarrow();
+  const live = useLive();
   const navigate = useNavigate();
   const items = useQuery({ queryKey: ["items"], queryFn: () => api.get<Item[]>("/items") });
   const dashboards = (items.data ?? []).filter((i) => i.kind === "dashboard");
@@ -35,7 +37,7 @@ export function MenuBar({ me }: { me: Me }) {
     <MenuItem key="profile" onClick={() => navigate("/profile")}>
       Profile and theme
     </MenuItem>,
-    <MenuItem key="out" onClick={() => void signOut()}>
+    <MenuItem key="out" onClick={() => void signOut(live)}>
       Sign out
     </MenuItem>,
   ];
