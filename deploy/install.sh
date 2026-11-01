@@ -36,8 +36,13 @@ cd "$ROOT"
 as_root() { if [[ $(id -u) -eq 0 ]]; then "$@"; else sudo "$@"; fi; }
 own() {  # own UID MODE PATH...: ownership the containers need (Review Focus 3)
   local uid=$1 mode=$2; shift 2
-  [[ $mode == - ]] || chmod "$mode" "$@"  # first: once chowned, a non-root user can't chmod it
-  [[ -n ${CAVE_SKIP_CHOWN:-} ]] || as_root chown -R "$uid:$uid" "$@"
+  if [[ -n ${CAVE_SKIP_CHOWN:-} ]]; then
+    [[ $mode == - ]] || chmod "$mode" "$@"
+    return 0
+  fi
+  # as root: on a re-run, or after mosquitto_passwd, the file already belongs to the container's uid
+  [[ $mode == - ]] || as_root chmod "$mode" "$@"
+  as_root chown -R "$uid:$uid" "$@"
 }
 
 # ---- 1. Docker ----
@@ -135,7 +140,7 @@ if has_profile mqtt && [[ $DRY -eq 0 ]] && ! as_root grep -q '^cave:' secrets/mo
   [[ -n $image ]] || die "can't read the Mosquitto image from compose.yaml."
   printf 'cave:%s\n' "$(as_root cat secrets/mqtt_password)" |
     as_root docker run --rm -i -v "$ROOT/secrets/mosquitto_passwd:/passwd" "$image" \
-      sh -c 'cat >/tmp/p && mosquitto_passwd -U /tmp/p && cat /tmp/p >>/passwd'
+      sh -c 'umask 077 && cat >/tmp/p && mosquitto_passwd -U /tmp/p && cat /tmp/p >>/passwd'
   own "$MOSQUITTO_UID" 0400 secrets/mosquitto_passwd
 fi
 
