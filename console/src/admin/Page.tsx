@@ -1,5 +1,6 @@
 import {
-  Button, Input, MessageBar, MessageBarActions, MessageBarBody, ToggleButton,
+  Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, DialogTrigger, Input,
+  MessageBar, MessageBarActions, MessageBarBody, ToggleButton,
 } from "@fluentui/react-components";
 import { ArrowSortDownRegular, ArrowSortUpRegular, SearchRegular } from "@fluentui/react-icons";
 import { type ReactNode, useState } from "react";
@@ -32,6 +33,33 @@ export function ErrorBar({ error }: { error: unknown }) {
     <MessageBar intent="error" role="alert">
       <MessageBarBody>{message(error)}</MessageBarBody>
     </MessageBar>
+  );
+}
+
+/** Delete, after a plain question: it can't be undone. */
+export function DeleteButton({ what, name, onDelete, pending }: {
+  what: string;
+  name: string;
+  onDelete: () => void;
+  pending: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Dialog open={open} onOpenChange={(_, d) => setOpen(d.open)}>
+      <DialogTrigger disableButtonEnhancement>
+        <Button>Delete</Button>
+      </DialogTrigger>
+      <DialogSurface>
+        <DialogBody>
+          <DialogTitle>Delete {name}?</DialogTitle>
+          <DialogContent>This removes the {what} for everyone. It can't be undone.</DialogContent>
+          <DialogActions>
+            <Button onClick={() => setOpen(false)}>Keep it</Button>
+            <Button appearance="primary" disabled={pending} onClick={onDelete}>Delete {what}</Button>
+          </DialogActions>
+        </DialogBody>
+      </DialogSurface>
+    </Dialog>
   );
 }
 

@@ -10,7 +10,7 @@ import { parse } from "yaml";
 import { api, message } from "../api/client";
 import type { Listed, Trace } from "../api/types";
 import { YamlEditor } from "../editor/YamlEditor";
-import { DataTable, ErrorBar, Page } from "./Page";
+import { DataTable, DeleteButton, ErrorBar, Page } from "./Page";
 import { RECIPES, type Recipe } from "./recipes";
 import { SentenceBuilder, useChoices } from "./SentenceBuilder";
 import { fromYaml, toYaml } from "./sentence";
@@ -223,6 +223,14 @@ export function AutomationEditor() {
     },
     onError: () => setReviewing(false),
   });
+  const remove = useMutation({
+    mutationFn: () => api.del(`/${kinds}/${encodeURIComponent(id)}`),
+    onSuccess: async () => {
+      client.removeQueries({ queryKey: ["doc", kinds, id] });
+      await client.invalidateQueries({ queryKey: [kinds] });
+      navigate("/admin/automations");
+    },
+  });
   const changed = text !== original && text !== "";
   const blockedHere = tab === "simple" && !sentence;
 
@@ -230,13 +238,19 @@ export function AutomationEditor() {
     <Page
       title={doc.data?.name ?? (isNew ? "New automation" : "Automation")}
       commands={
-        <Button appearance="primary" disabled={!changed || blockedHere || !id || save.isPending}
-                onClick={() => setReviewing(true)}>
-          Save
-        </Button>
+        <>
+          <Button appearance="primary" disabled={!changed || blockedHere || !id || save.isPending}
+                  onClick={() => setReviewing(true)}>
+            Save
+          </Button>
+          {!isNew && doc.data && (
+            <DeleteButton what={kinds === "sequences" ? "routine" : "automation"} name={doc.data.name}
+                          pending={remove.isPending} onDelete={() => remove.mutate()} />
+          )}
+        </>
       }
     >
-      <ErrorBar error={doc.error ?? save.error} />
+      <ErrorBar error={doc.error ?? save.error ?? remove.error} />
       <TabList selectedValue={tab} onTabSelect={(_, d) => setTab(String(d.value))}>
         <Tab value="simple">Simple</Tab>
         <Tab value="advanced">Advanced</Tab>

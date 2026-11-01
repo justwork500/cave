@@ -57,6 +57,7 @@ a { color: var(--accent); }
 .stack { display: grid; gap: var(--gap); }
 .stack.tight { gap: 8px; }
 .row { display: flex; gap: 8px; justify-content: flex-end; align-items: center; }
+.greeting-head { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; }
 .row.start { justify-content: flex-start; flex-wrap: wrap; }
 
 /* Controls: pills for buttons, 10px fields, near-black primary (the theme), no shadows */

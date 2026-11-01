@@ -1,7 +1,7 @@
 import { Spinner, Tab, TabList } from "@fluentui/react-components";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { useOutletContext, useParams } from "react-router";
+import { Link, useOutletContext, useParams } from "react-router";
 import { ApiError, api, message } from "../api/client";
 import type { Card, DashboardView, EntityView, Me } from "../api/types";
 import { ActionButton } from "../cards/Button";
@@ -82,7 +82,12 @@ function Greeting({ view }: { view: DashboardView }) {
   const strip = rooms(all);
   return (
     <header className="greeting">
-      <h1>{greeting(new Date(), me?.display_name)}</h1>
+      <div className="greeting-head">
+        <h1>{greeting(new Date(), me?.display_name)}</h1>
+        {me?.sections.includes("section:dashboards") && (
+          <Link to={`/admin/dashboards/${view.slug}`} aria-label="Edit dashboard">Edit</Link>
+        )}
+      </div>
       <p className="finding">{view.title === "Home" ? line : `${view.title}. ${line}`}</p>
       {strip.length > 1 && (
         <ul className="glance" aria-label="Rooms">

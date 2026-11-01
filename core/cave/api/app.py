@@ -11,7 +11,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from cave.access import netconfig
-from cave.access.items import seed_builtins
+from cave.access.items import get_item, seed_builtins
 from cave.api import admin, auth, entities, screens, system, ws
 from cave.api import areas as areas_api
 from cave.api import automations as automations_api
@@ -22,7 +22,7 @@ from cave.api import setup as setup_api
 from cave.api import views as views_api
 from cave.automation.effects import LiveEffects
 from cave.automation.manager import AutomationManager
-from cave.config.store import ConfigStore
+from cave.config.store import ConfigStore, write_atomic
 from cave.db import Database
 from cave.envconfig import env_secret
 from cave.integrations.mqtt import config as mqtt_config
@@ -34,6 +34,18 @@ from cave.state import EventBus, StateMachine
 
 WEB = Path(__file__).resolve().parent.parent / "web"
 log = logging.getLogger(__name__)
+STARTER_HOME = """dashboard:
+  title: Home
+  icon: home
+  views:
+    - id: main
+      title: Main
+      sections:
+        - title: Getting started
+          cards:
+            - type: markdown
+              content: "This is your Home dashboard. An Admin can change it under Dashboards, Home, Edit."
+"""
 
 
 def _report_mqtt_exit(task: "asyncio.Task[None]") -> None:
@@ -81,7 +93,11 @@ def create_app(settings: Settings) -> FastAPI:
     app.state.automations = None
     app.state.rearm = None
     app.state.db = Database.open(settings.db_path)
+    fresh = get_item(app.state.db, "dashboard:home") is None
     seed_builtins(app.state.db)
+    home = settings.config_dir / "dashboards" / "home.yaml"
+    if fresh and not home.exists():  # first start only: a Home an Admin deleted stays deleted
+        write_atomic(home, STARTER_HOME)
     netconfig.seed(app.state.db, settings)
     app.state.pending_mfa = {}
     app.state.bus = EventBus()
