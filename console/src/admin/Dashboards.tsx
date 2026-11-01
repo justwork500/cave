@@ -6,7 +6,7 @@ import { api } from "../api/client";
 import type { DashboardView, Listed } from "../api/types";
 import { YamlEditor } from "../editor/YamlEditor";
 import { DashboardBody } from "../pages/Dashboard";
-import { dashboardPath } from "../app/shell/MenuBar";
+import { dashboardPath } from "../app/nav";
 import { DataTable, ErrorBar, Page } from "./Page";
 
 export function Dashboards() {

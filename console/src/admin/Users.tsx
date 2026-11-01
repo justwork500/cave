@@ -107,7 +107,7 @@ export function Users() {
   const name = (u: User) => u.display_name || u.username;
 
   return (
-    <Page title="Users" commands={<NewUser />}>
+    <Page title="People" commands={<NewUser />}>
       <ErrorBar error={users.error ?? patch.error} />
       <DataTable<User>
         label="Users"

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { NavLink, Outlet, useOutletContext } from "react-router";
+import { Outlet, useOutletContext } from "react-router";
 import type { Me } from "../api/types";
 import { NoAccess } from "../pages/NoAccess";
 import { Access } from "./Access";
@@ -47,7 +47,7 @@ export const ADMIN_PAGES: { path: string; title: string; section: string | null;
 
 function System() {
   return (
-    <Page title="System">
+    <Page title="Network and certificate">
       <Networks />
       <Certificate />
       <ConfigErrors />
@@ -66,23 +66,5 @@ export function Guard({ section, children }: { section: string | null; children:
 export function AdminLayout() {
   const me = useMe();
   if (me.sections.length === 0) return <NoAccess />;
-  const pages = ADMIN_PAGES.filter((p) => p.inNav !== false && (p.section === null || me.sections.includes(p.section)));
-  return (
-    <div className="admin">
-      <nav aria-label="Admin console" className="admin-nav">
-        <ul>
-          {pages.map((p) => (
-            <li key={p.path}>
-              <NavLink to={`/admin/${p.path}`} end>
-                {p.title}
-              </NavLink>
-            </li>
-          ))}
-        </ul>
-      </nav>
-      <div className="admin-main">
-        <Outlet context={me} />
-      </div>
-    </div>
-  );
+  return <Outlet context={me} />;  // the sidebar (MenuBar) lists these pages, from app/nav.ts
 }

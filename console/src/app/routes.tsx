@@ -41,10 +41,12 @@ function Shell() {
   if (!me.data) return <Spinner label="Loading" />;
   return (
     <LiveContext.Provider value={feed}>
-      <MenuBar me={me.data} />
-      <main className="main">
-        <Outlet context={me.data} />
-      </main>
+      <div className="app">
+        <MenuBar me={me.data} />
+        <main className="main">
+          <Outlet context={me.data} />
+        </main>
+      </div>
     </LiveContext.Provider>
   );
 }

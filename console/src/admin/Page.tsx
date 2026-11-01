@@ -3,18 +3,22 @@ import {
 } from "@fluentui/react-components";
 import { ArrowSortDownRegular, ArrowSortUpRegular, SearchRegular } from "@fluentui/react-icons";
 import { type ReactNode, useState } from "react";
-import { Link } from "react-router";
 import { message } from "../api/client";
 
-/** Breadcrumb, title and command bar, the same on every admin page. */
-export function Page({ title, commands, children }: { title: string; commands?: ReactNode; children: ReactNode }) {
+/** Title, one line about the data, and the actions, the same on every admin page. */
+export function Page({ title, lead, commands, children }: {
+  title: string;
+  lead?: string;
+  commands?: ReactNode;
+  children: ReactNode;
+}) {
   return (
     <div className="admin-page">
-      <nav aria-label="Breadcrumb" className="crumbs">
-        <Link to="/admin">Admin console</Link> <span aria-hidden="true">›</span> <span>{title}</span>
-      </nav>
       <div className="page-head">
-        <h1>{title}</h1>
+        <div className="lead">
+          <h1>{title}</h1>
+          {lead && <p>{lead}</p>}
+        </div>
         {commands && <div className="commands">{commands}</div>}
       </div>
       {children}
@@ -181,4 +185,19 @@ export function DataTable<T>({ label, rows, columns, rowKey, search, filters = [
   );
 }
 
-export const when = (iso: string | null) => (iso ? new Date(iso).toLocaleString() : "");
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const two = (n: number) => String(n).padStart(2, "0");
+const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
+
+/** "07:37" today, "Yesterday 21:10", "23 Oct, 14:02", and the year only when it isn't this one. */
+export function when(iso: string | null, now = new Date()): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const time = `${two(d.getHours())}:${two(d.getMinutes())}`;
+  if (sameDay(d, now)) return time;
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (sameDay(d, yesterday)) return `Yesterday ${time}`;
+  const year = d.getFullYear() === now.getFullYear() ? "" : ` ${d.getFullYear()}`;
+  return `${d.getDate()} ${MONTHS[d.getMonth()] ?? ""}${year}, ${time}`;
+}

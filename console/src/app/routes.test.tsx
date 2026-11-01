@@ -17,7 +17,7 @@ describe("routes", () => {
     setNarrow(false);
     mockApi({ "GET /me": ADMIN, "GET /items": [], "GET /notifications": [], "GET /summary": {} });
     renderWith(<AppRoutes />, "/admin");
-    expect(await screen.findByRole("heading", { name: "Home" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Overview" })).toBeInTheDocument();
   });
 
   it("sends signed-out people to setup or sign in", async () => {

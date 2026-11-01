@@ -22,12 +22,10 @@
     },
     {
       "name": "console-dev",
-      "runtimeExecutable": "corepack",
+      "runtimeExecutable": "node",
       "runtimeArgs": [
-        "pnpm",
-        "--dir",
+        "console/node_modules/vite/bin/vite.js",
         "console",
-        "dev",
         "--port",
         "5173",
         "--strictPort"
