@@ -103,7 +103,9 @@ function Confirm({ screen, verb, onClose }: { screen: Screen; verb: "approve" | 
   const client = useQueryClient();
   const [match, setMatch] = useState(false);
   const act = useMutation({
-    mutationFn: () => api.post(`/screens/${encodeURIComponent(screen.id)}/${verb}`),
+    // spelled out, so the console/server contract test can check both paths
+    mutationFn: () => api.post(verb === "approve" ? `/screens/${encodeURIComponent(screen.id)}/approve`
+                                                  : `/screens/${encodeURIComponent(screen.id)}/revoke`),
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: ["screens"] });
       onClose();

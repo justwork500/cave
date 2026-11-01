@@ -86,8 +86,8 @@ describe("dashboards", () => {
 describe("networks", () => {
   it("shows the API's 422 next to the field", async () => {
     mockApi({
-      "GET /networks": { local_ranges: ["192.168.1.0/24"], trusted_proxies: [] },
-      "PUT /networks": [422, { detail: "'192.168.1.300/24' isn't a network range." }],
+      "GET /system/networks": { local_ranges: ["192.168.1.0/24"], trusted_proxies: [] },
+      "PUT /system/networks": [422, { detail: "'192.168.1.300/24' isn't a network range." }],
     });
     const { container } = renderWith(<Networks />);
     const ranges = await screen.findByRole("textbox", { name: "Local network ranges" });

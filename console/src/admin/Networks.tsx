@@ -14,12 +14,12 @@ const lines = (s: string) => s.split(/[\n,]/).map((x) => x.trim()).filter(Boolea
 /** Which addresses count as "local network", and which proxies CAVE believes. */
 export function Networks() {
   const client = useQueryClient();
-  const nets = useQuery({ queryKey: ["networks"], queryFn: () => api.get<Nets>("/networks") });
+  const nets = useQuery({ queryKey: ["networks"], queryFn: () => api.get<Nets>("/system/networks") });
   const [edit, setEdit] = useState<{ ranges: string; proxies: string }>();
   const ranges = edit?.ranges ?? nets.data?.local_ranges.join("\n") ?? "";
   const proxies = edit?.proxies ?? nets.data?.trusted_proxies.join("\n") ?? "";
   const save = useMutation({
-    mutationFn: () => api.put<Nets>("/networks", { local_ranges: lines(ranges), trusted_proxies: lines(proxies) }),
+    mutationFn: () => api.put<Nets>("/system/networks", { local_ranges: lines(ranges), trusted_proxies: lines(proxies) }),
     onSuccess: (n) => {
       client.setQueryData(["networks"], n);
       setEdit(undefined);
