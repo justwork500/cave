@@ -60,4 +60,15 @@ describe("live feed", () => {
     expect(assign).toHaveBeenCalledWith("/login?next=%2F");
     vi.unstubAllGlobals();
   });
+
+  it("sends a kiosk screen to its key sign-in on 4401", () => {
+    const assign = vi.fn();
+    vi.stubGlobal("location", { pathname: "/", search: "", assign });
+    localStorage.setItem("cave-screen-id", "scr1");
+    new LiveFeed("wss://x", FakeSocket as never, vi.fn()).start();
+    FakeSocket.last.onclose?.({ code: 4401 });
+    expect(assign).toHaveBeenCalledWith("/enroll");
+    localStorage.removeItem("cave-screen-id");
+    vi.unstubAllGlobals();
+  });
 });

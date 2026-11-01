@@ -43,6 +43,14 @@ describe("api client", () => {
     expect(assign).toHaveBeenCalledWith("/login?next=%2Fadmin%2Fusers%3Fq%3D1");
   });
 
+  it("sends a kiosk screen back to its key sign-in, not the password page", async () => {
+    localStorage.setItem("cave-screen-id", "scr1");
+    vi.stubGlobal("fetch", reply(401, { detail: "Sign in to continue." }));
+    await expect(api.get("/me")).rejects.toBeInstanceOf(ApiError);
+    expect(assign).toHaveBeenCalledWith("/enroll");
+    localStorage.removeItem("cave-screen-id");
+  });
+
   it("doesn't redirect from the sign-in page itself", async () => {
     vi.stubGlobal("location", { pathname: "/login", search: "", assign });
     vi.stubGlobal("fetch", reply(401, { detail: "Wrong username or password." }));

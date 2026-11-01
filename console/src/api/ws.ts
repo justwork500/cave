@@ -1,4 +1,5 @@
 /** One live connection per tab: device state changes and notifications, reconnecting on its own. */
+import { signInAgain } from "./client";
 
 export interface StateEvent {
   entity_id: string;
@@ -72,7 +73,7 @@ export class LiveFeed {
     socket.onclose = (e) => {
       if (this.stopped) return;
       if (e.code === UNAUTHORIZED) {
-        location.assign(`/login?next=${encodeURIComponent(location.pathname + location.search)}`);
+        signInAgain();
         return;
       }
       const wait = e.code === RESYNC ? 0 : backoff(this.attempt);

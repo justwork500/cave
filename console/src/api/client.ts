@@ -12,6 +12,17 @@ export class ApiError extends Error {
 const FALLBACK = "Something went wrong. Try again.";
 const NO_REDIRECT = ["/login", "/setup", "/enroll"];
 
+/** After a session ends: a kiosk screen signs back in with its key on /enroll; people get the sign-in page. */
+export function signInAgain(): void {
+  let screen: string | null = null;
+  try {
+    screen = localStorage.getItem("cave-screen-id"); // set by /enroll on the tablet
+  } catch {
+    // storage blocked: treat it as a person's browser
+  }
+  location.assign(screen ? "/enroll" : `/login?next=${encodeURIComponent(location.pathname + location.search)}`);
+}
+
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const response = await fetch(`/api/v1${path}`, {
     method,
@@ -24,9 +35,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   if (!response.ok) {
     const detail =
       data && typeof data === "object" && "detail" in data && typeof data.detail === "string" ? data.detail : FALLBACK;
-    if (response.status === 401 && !NO_REDIRECT.includes(location.pathname)) {
-      location.assign(`/login?next=${encodeURIComponent(location.pathname + location.search)}`);
-    }
+    if (response.status === 401 && !NO_REDIRECT.includes(location.pathname)) signInAgain();
     throw new ApiError(response.status, detail);
   }
   return data as T;
