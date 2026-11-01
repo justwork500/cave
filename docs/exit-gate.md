@@ -79,14 +79,14 @@ These steps are done by hand, because they need real hardware: a Debian 13 machi
 
 | Box | Architecture | Date | Result |
 | --- | --- | --- | --- |
-| VM `cave-test` on Proxmox VE 9.2: Debian 13.7, amd64, 2 cores, 4 GB, 20 GB | amd64 | 2026-11-01 | Items 3 and 4 passed. Item 1 passed through the real broker; the physical lamp is still to do. Item 2 is still to do (needs tablets). |
+| A test VM: Debian 13.7, amd64, 2 cores, 4 GB, 20 GB | amd64 | 2026-11-01 | Items 3 and 4 passed. Item 1 passed through the real broker; the physical lamp is still to do. Item 2 is still to do (needs tablets). |
 
 ### What that run checked
 
 1. **Install:**
    - `docker.io`, `docker-compose` and `docker-buildx` from Debian's packages, then `deploy/install.sh --profiles mqtt,scripts`
    - all three containers up, CAVE healthy, the setup code and fingerprint printed
-   - `.env` held the real LAN (`10.10.1.0/24`)
+   - `.env` held the real LAN range (a /24)
    - ownership as designed: `data`/`config` 10001, Mosquitto 1883, secrets `0400`
 2. **`deploy/smoke.py`:** all ten checks passed, including:
    - setup with the printed code and an authenticator
@@ -96,7 +96,7 @@ These steps are done by hand, because they need real hardware: a Debian 13 machi
    - no secret in `docker compose config` or `docker inspect`
 3. **Restart:** after `docker compose restart cave`, the owner still signs in.
 4. **Upgrade:** pull, then `deploy/install.sh` again. It kept `.env` and the secrets, rebuilt, and restarted.
-5. **Offline:** the default route was removed (netplan `use-routes: false`), so neither the registry nor the internet could be reached. One leftover host route to the DHCP's DNS server (1.1.1.1) stayed up. After a reboot:
+5. **Offline:** the default route was removed (netplan `use-routes: false`), so neither the registry nor the internet could be reached. One leftover host route to the DHCP-provided DNS server stayed up. After a reboot:
    - the stack came back by itself, healthy
    - `docker compose up -d` succeeded with no downloads
    - the owner signed in
