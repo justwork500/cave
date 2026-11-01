@@ -16,6 +16,28 @@ def _migrations() -> list[tuple[int, str]]:
     return sorted(found)
 
 
+class Result:
+    """A statement's rows and cursor facts, all read while the connection was locked."""
+
+    def __init__(self, cur: sqlite3.Cursor) -> None:
+        self._rows: list[sqlite3.Row] = cur.fetchall()
+        self.rowcount, self.lastrowid = cur.rowcount, cur.lastrowid
+        self._next = 0
+
+    def fetchone(self) -> Any:
+        if self._next >= len(self._rows):
+            return None
+        self._next += 1
+        return self._rows[self._next - 1]
+
+    def fetchall(self) -> list[Any]:
+        rest, self._next = self._rows[self._next:], len(self._rows)
+        return rest
+
+    def __iter__(self) -> Iterator[Any]:
+        return iter(self.fetchall())
+
+
 class Database:
     """One SQLite connection shared across threads, serialized by a lock."""
 
@@ -48,9 +70,10 @@ class Database:
         with self._lock:
             self._conn.close()
 
-    def execute(self, sql: str, params: Sequence[Any] = ()) -> sqlite3.Cursor:
+    def execute(self, sql: str, params: Sequence[Any] = ()) -> "Result":
         with self._lock:
-            return self._conn.execute(sql, params)
+            # rows are read before the lock is released: a cursor stepped later would race other threads
+            return Result(self._conn.execute(sql, params))
 
     @contextmanager
     def transaction(self) -> Iterator[sqlite3.Connection]:
