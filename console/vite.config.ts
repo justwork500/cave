@@ -8,6 +8,8 @@ export default defineConfig({
   build: { outDir: "../core/cave/web/console", emptyOutDir: true, assetsDir: "assets" },
   server: {
     proxy: { "/api": { target: "http://127.0.0.1:8098", ws: true } },
+    // the recipe tests read the repo's JSON schemas; nothing else outside the console is reachable
+    fs: { allow: [".", "../schemas"] },
   },
   test: {
     environment: "jsdom",
