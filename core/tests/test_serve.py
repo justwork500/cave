@@ -11,5 +11,6 @@ def test_screen_js_served(client):
 
 
 def test_static_does_not_serve_outside_web_dir(client):
-    assert client.get("/static/../db.py").status_code == 404
+    r = client.get("/static/../db.py")  # clients normalise this to /db.py, which is just the console page
+    assert "class Database" not in r.text
     assert client.get("/static/%2e%2e/db.py").status_code == 404

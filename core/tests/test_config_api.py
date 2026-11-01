@@ -168,7 +168,8 @@ def test_id_must_match_filename(app, users):
 
 def test_bad_url_id_refused(app, users):
     assert as_admin(app, users).put("/api/v1/automations/..%2Fevil", json={"yaml": KIDS_AUTOMATION}).status_code in (
-        404, 422)
+        404, 405, 422)  # 405: the decoded path only matches the console's GET-only fallback
+    assert not list(app.state.settings.config_dir.rglob("evil*"))
 
 
 def test_invalid_yaml_422_with_line(app, users):

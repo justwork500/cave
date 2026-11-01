@@ -66,7 +66,7 @@ def test_household_cannot_edit(app, users):
 def test_path_tricks_404(app, users):  # Review Focus 1
     c = as_admin(app, users)
     for name in ("..%2Fx.sh", "x.exe", "a..b.py", "..sh"):
-        assert c.put(f"/api/v1/scripts/{name}", json={"text": PLAIN}).status_code == 404, name
+        assert c.put(f"/api/v1/scripts/{name}", json={"text": PLAIN}).status_code in (404, 405), name
         assert c.get(f"/api/v1/scripts/{name}").status_code == 404, name
     assert not (app.state.settings.config_dir / "x.sh").exists()
 
