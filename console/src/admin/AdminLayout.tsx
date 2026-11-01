@@ -4,10 +4,16 @@ import type { Me } from "../api/types";
 import { NoAccess } from "../pages/NoAccess";
 import { Access } from "./Access";
 import { AutomationEditor, Automations } from "./Automations";
+import { Certificate } from "./Certificate";
+import { ConfigErrors } from "./ConfigErrors";
+import { DashboardEditor, Dashboards } from "./Dashboards";
 import { Audit, SignIns } from "./Logs";
 import { Devices } from "./Devices";
 import { Groups } from "./Groups";
 import { Home } from "./Home";
+import { Networks } from "./Networks";
+import { Page } from "./Page";
+import { ScriptEditor, Scripts } from "./Scripts";
 import { Screens } from "./Screens";
 import { TestCenter } from "./TestCenter";
 import { Tokens } from "./Tokens";
@@ -28,12 +34,26 @@ export const ADMIN_PAGES: { path: string; title: string; section: string | null;
   { path: "automations/:kinds/:id", title: "Automation", section: "section:automations", element: <AutomationEditor />,
     inNav: false },
   { path: "test-center", title: "Test Center", section: "section:automations", element: <TestCenter />, inNav: false },
-  { path: "scripts", title: "Scripts", section: "section:scripts", element: <h1>Scripts</h1> },
-  { path: "dashboards", title: "Dashboards", section: "section:dashboards", element: <h1>Dashboards</h1> },
-  { path: "system", title: "System", section: "section:system", element: <h1>System</h1> },
+  { path: "scripts", title: "Scripts", section: "section:scripts", element: <Scripts /> },
+  { path: "scripts/:file", title: "Script", section: "section:scripts", element: <ScriptEditor />, inNav: false },
+  { path: "dashboards", title: "Dashboards", section: "section:dashboards", element: <Dashboards /> },
+  { path: "dashboards/:slug", title: "Dashboard", section: "section:dashboards", element: <DashboardEditor />,
+    inNav: false },
+  // shortcut: no General page in Phase 1; time zone comes from the host
+  { path: "system", title: "System", section: "section:system", element: <System /> },
   { path: "audit", title: "Audit log", section: "section:audit", element: <Audit /> },
   { path: "signins", title: "Sign-in log", section: "section:signin_log", element: <SignIns /> },
 ];
+
+function System() {
+  return (
+    <Page title="System">
+      <Networks />
+      <Certificate />
+      <ConfigErrors />
+    </Page>
+  );
+}
 
 export const useMe = () => useOutletContext<Me>();
 

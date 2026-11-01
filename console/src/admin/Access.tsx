@@ -3,7 +3,8 @@ import {
 } from "@fluentui/react-components";
 import { DismissRegular } from "@fluentui/react-icons";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useLocation } from "react-router";
 import { api } from "../api/client";
 import type { Assignment, Item } from "../api/types";
 import type { Group } from "./Groups";
@@ -101,6 +102,10 @@ export function Access() {
   const { targets, nameOf } = useTargets();
   const [picking, setPicking] = useState<Item | null>(null);
   const [undo, setUndo] = useState<{ item: Item; field: Field; old: string } | null>(null);
+  const { hash } = useLocation();
+  useEffect(() => {  // links like /admin/access#dashboard:kids land on that row
+    if (hash && items.data) document.getElementById(decodeURIComponent(hash.slice(1)))?.scrollIntoView({ block: "center" });
+  }, [hash, items.data]);
 
   const patch = useMutation({
     mutationFn: ({ item, field, value }: { item: Item; field: Field; value: string }) =>
@@ -139,6 +144,8 @@ export function Access() {
         label="Access"
         rows={rows}
         rowKey={(i) => i.id}
+        rowId={(i) => i.id}
+        rowClass={(i) => (hash === `#${i.id}` ? "target" : undefined)}
         search={(i) => `${i.name} ${TYPE[i.kind]}`}
         filters={[
           { id: "dashboard", label: "Dashboards", test: (i) => i.kind === "dashboard" },

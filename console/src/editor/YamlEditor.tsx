@@ -9,11 +9,13 @@ let models = 0;
  * A YAML editor: Monaco with schema hints once it has loaded, a plain text box until then (and if it can't load).
  * Text only ever goes in as a model value, never as markup.
  */
-export function YamlEditor({ label, value, onChange, schema = "automation" }: {
+export function YamlEditor({ label, value, onChange, schema = "automation", language = "yaml" }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   schema?: "automation" | "sequence" | "dashboard";
+  /** Scripts reuse the editor with their own highlighting and no schema. */
+  language?: "yaml" | "powershell" | "python" | "shell";
 }) {
   const host = useRef<HTMLDivElement>(null);
   const editor = useRef<import("monaco-editor").editor.IStandaloneCodeEditor>(undefined);
@@ -33,7 +35,8 @@ export function YamlEditor({ label, value, onChange, schema = "automation" }: {
         if (disposed || !host.current) return;
         models += 1;
         // the file name picks the schema (see monacoSetup's fileMatch)
-        const model = monaco.editor.createModel(initial.current, "yaml", monaco.Uri.parse(`file:///${schema}-${models}.yaml`));
+        const name = language === "yaml" ? `${schema}-${models}.yaml` : `script-${models}`;
+        const model = monaco.editor.createModel(initial.current, language, monaco.Uri.parse(`file:///${name}`));
         const ed = monaco.editor.create(host.current, {
           model, automaticLayout: true, minimap: { enabled: false }, tabSize: 2, fontSize: 13,
           ariaLabel: label, scrollBeyondLastLine: false,
@@ -49,7 +52,7 @@ export function YamlEditor({ label, value, onChange, schema = "automation" }: {
       editor.current?.getModel()?.dispose();
       editor.current?.dispose();
     };
-  }, [label, schema]);
+  }, [label, schema, language]);
 
   useEffect(() => {
     const ed = editor.current;

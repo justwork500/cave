@@ -64,7 +64,7 @@ export interface Filter<T> {
 const PAGE = 50;
 
 /** The list pattern: search, filter pills, sortable columns, 50 rows a page. */
-export function DataTable<T>({ label, rows, columns, rowKey, search, filters = [], initialFilter, rowClass }: {
+export function DataTable<T>({ label, rows, columns, rowKey, search, filters = [], initialFilter, rowClass, rowId }: {
   label: string;
   rows: T[];
   columns: Column<T>[];
@@ -73,6 +73,8 @@ export function DataTable<T>({ label, rows, columns, rowKey, search, filters = [
   filters?: Filter<T>[];
   initialFilter?: string | null;
   rowClass?: (row: T) => string | undefined;
+  /** An id for the row, so a link can jump to it. */
+  rowId?: (row: T) => string;
 }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState(initialFilter ?? null);
@@ -152,7 +154,7 @@ export function DataTable<T>({ label, rows, columns, rowKey, search, filters = [
           </thead>
           <tbody>
             {shown.slice(at * PAGE, (at + 1) * PAGE).map((r) => (
-              <tr key={rowKey(r)} className={rowClass?.(r)}>
+              <tr key={rowKey(r)} id={rowId?.(r)} className={rowClass?.(r)}>
                 {columns.map((c, i) => (
                   <td key={i}>{c.render(r)}</td>
                 ))}

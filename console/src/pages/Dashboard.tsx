@@ -41,14 +41,12 @@ function useSlug(): { slug: string | null | undefined; pending: boolean } {
 }
 
 export function Dashboard() {
-  const narrow = useNarrow();
   const { slug, pending } = useSlug();
   const view = useQuery({
     queryKey: ["dashboards", slug, "view"],
     queryFn: () => api.get<DashboardView>(`/dashboards/${encodeURIComponent(slug ?? "")}/view`),
     enabled: Boolean(slug),
   });
-  const [tab, setTab] = useState<string>();
 
   if (pending || (slug && view.isPending)) return <Spinner label="Loading" />;
   if (!slug) {
@@ -62,11 +60,21 @@ export function Dashboard() {
   if (view.error instanceof ApiError && view.error.status === 403) return <NoAccess />;
   if (view.isError || !view.data) return <p role="alert">{message(view.error)}</p>;
 
-  const d = view.data;
-  const current = d.views.find((v) => v.id === tab) ?? d.views[0];
   return (
     <section className="page">
-      <h1>{d.title}</h1>
+      <h1>{view.data.title}</h1>
+      <DashboardBody view={view.data} />
+    </section>
+  );
+}
+
+/** The views, sections and cards; also the dashboard editor's preview. */
+export function DashboardBody({ view: d }: { view: DashboardView }) {
+  const narrow = useNarrow();
+  const [tab, setTab] = useState<string>();
+  const current = d.views.find((v) => v.id === tab) ?? d.views[0];
+  return (
+    <>
       {d.views.length > 1 && (
         <TabList selectedValue={current?.id} onTabSelect={(_, t) => setTab(String(t.value))}>
           {d.views.map((v) => (
@@ -92,6 +100,6 @@ export function Dashboard() {
           </div>
         </section>
       ))}
-    </section>
+    </>
   );
 }
