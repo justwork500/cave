@@ -146,3 +146,12 @@ def test_unproven_authenticator_takes_no_recovery_code(app):
     c, code = fresh(app)
     codes = owner(c, code).json()["recovery_codes"]
     assert c.post("/api/v1/auth/mfa", json={"code": codes[0]}).status_code == 401
+
+
+def test_password_change_is_rate_limited(app, users):
+    """A stolen session can't be used to guess the current password without limit."""
+    a = sign_in(lan_client(app), "sam", "pw-sam-1234")
+    for _ in range(5):
+        assert a.post("/api/v1/me/password", json={"current": "guess", "new": "a-brand-new-password"}).status_code == 403
+    r = a.post("/api/v1/me/password", json={"current": "pw-sam-1234", "new": "a-brand-new-password"})
+    assert r.status_code == 429 and "Too many attempts" in r.json()["detail"]

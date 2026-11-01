@@ -32,9 +32,9 @@ class User:
 
 
 class LoginError(Exception):
-    def __init__(self, message: str) -> None:
+    def __init__(self, message: str, locked: bool = False) -> None:
         super().__init__(message)
-        self.message = message
+        self.message, self.locked = message, locked
 
 
 def _to_user(row: sqlite3.Row) -> User:
@@ -90,7 +90,7 @@ def check_password(db: Database, username: str, password: str, ip: str, now: dat
 
     if _recent_failures(db, username, now) >= LOCKOUT_ATTEMPTS:
         log(BLOCKED)  # logged, but not counted: attempts while locked must not extend the lockout
-        raise LoginError("Too many attempts. Try again in 15 minutes.")
+        raise LoginError("Too many attempts. Try again in 15 minutes.", locked=True)
     row = db.execute("SELECT * FROM users WHERE username=?", (username,)).fetchone()
     ok = verify_password(row["password_hash"] if row else DUMMY_HASH, password)
     user = _to_user(row) if row else None

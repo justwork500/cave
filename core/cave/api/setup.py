@@ -24,9 +24,9 @@ from cave.api.deps import (
     now,
 )
 from cave.auth import sessions
-from cave.auth.passwords import hash_password, verify_password
+from cave.auth.passwords import hash_password
 from cave.auth.screens import get_screen
-from cave.auth.users import FAILED, User, get_user, record_attempt, setup_totp
+from cave.auth.users import LoginError, User, check_password, get_user, setup_totp
 from cave.db import Database
 
 router = APIRouter(prefix="/api/v1")
@@ -133,10 +133,12 @@ def change_password(body: PasswordBody, request: Request, user: Annotated[User, 
     session_id = request.cookies.get(SESSION_COOKIE)
     if session_id is None:
         raise HTTPException(403, "Change your password from a signed-in browser, not with an API token.")
-    stored = db.execute("SELECT password_hash FROM users WHERE id=?", (user.id,)).fetchone()["password_hash"]
-    if not verify_password(stored, body.current):
-        record_attempt(db, user.username, request.client.host if request.client else "", now(), FAILED)
-        raise HTTPException(403, "That's not your current password.")
+    try:  # the sign-in check, lockout included, so a stolen session can't guess the password freely
+        check_password(db, user.username, body.current, request.client.host if request.client else "", now())
+    except LoginError as e:
+        if e.locked:
+            raise HTTPException(429, e.message) from e
+        raise HTTPException(403, "That's not your current password.") from e
     db.execute("UPDATE users SET password_hash=? WHERE id=?", (hash_password(body.new), user.id))
     sessions.end_others(db, user.id, session_id)
     audit.record(db, f"user:{user.id}", "user.password_changed", f"user:{user.id}")
