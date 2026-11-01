@@ -1,3 +1,5 @@
+import stat
+import sys
 from datetime import time, timedelta
 from pathlib import Path
 
@@ -127,3 +129,13 @@ def test_refs_dashboard_and_markdown_template():
 def test_refs_dynamic_template():
     a = automation(BASE + "    - type: notify\n      message: \"{{ states(x) }}\"\n")
     assert refs(a).dynamic_template
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX file modes")
+def test_saved_files_are_readable_by_other_users(tmp_path):
+    """Scripts run as their own uid in the runner, so a script saved by cave (another uid) must be readable."""
+    from cave.config.store import write_atomic
+
+    path = tmp_path / "scripts" / "backup.sh"
+    write_atomic(path, "#!/bin/sh\necho hi\n")
+    assert stat.S_IMODE(path.stat().st_mode) == 0o644

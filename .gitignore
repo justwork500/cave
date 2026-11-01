@@ -11,3 +11,4 @@ node_modules/
 core/cave/web/console/
 console/node_modules/
 console/dist/
+.smoke-state.json

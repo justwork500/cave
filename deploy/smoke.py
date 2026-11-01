@@ -4,7 +4,8 @@
 Standard library only. Prints one line per check and stops at the first failure (exit 1).
   python3 deploy/smoke.py                   first run: sets up an owner and checks the stack
   python3 deploy/smoke.py --after-restart   the owner from the first run can still sign in
-The owner's test credentials are kept in --state (default: data/smoke-state.json, readable by you only).
+The owner's test credentials are kept in --state (default: .smoke-state.json, readable by you only). Not data/:
+the installer gives that folder to the container's user.
 """
 
 import argparse
@@ -38,6 +39,9 @@ AUTOMATION = """automation:
     - type: notify
       message: "Smoke test"
 """
+
+
+STATE_DEFAULT = Path(".smoke-state.json")
 
 
 class Failed(Exception):
@@ -149,7 +153,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--url", default="https://127.0.0.1:8443")
     parser.add_argument("--after-restart", action="store_true")
-    parser.add_argument("--state", type=Path, default=Path("data/smoke-state.json"))
+    parser.add_argument("--state", type=Path, default=STATE_DEFAULT)
     args = parser.parse_args()
     c = Client(args.url)
     try:
