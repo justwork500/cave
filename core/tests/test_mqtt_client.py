@@ -103,11 +103,12 @@ def test_publish_while_disconnected_is_refused(db):
 def test_live_broker_roundtrip(db):
     host, port = os.environ["CAVE_MQTT_TEST_BROKER"].rsplit(":", 1)
     states = StateMachine(EventBus())
-    service = MqttService(MqttConfig(Broker(host, int(port))), db, states, os.environ.get("CAVE_MQTT_PASSWORD"))
+    user, password = os.environ.get("CAVE_MQTT_TEST_USER"), os.environ.get("CAVE_MQTT_PASSWORD")  # the Compose broker
+    service = MqttService(MqttConfig(Broker(host, int(port), username=user)), db, states, password)
 
     async def go():
         task = asyncio.create_task(service.run())
-        async with aiomqtt.Client(host, int(port), password=os.environ.get("CAVE_MQTT_PASSWORD")) as pub:
+        async with aiomqtt.Client(host, int(port), username=user, password=password) as pub:
             await asyncio.sleep(0.5)
             topic, payload = fixture("z2m_light_json")
             await pub.publish(topic, payload, retain=True)

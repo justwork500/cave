@@ -14,5 +14,6 @@ jobs:
       - run: pwsh --version  # preinstalled on GitHub's Ubuntu runners; the script tests use it
       - run: pip install -e ".[dev]"
       - run: ruff check .
+      - run: shellcheck ../deploy/install.sh  # preinstalled on GitHub's Ubuntu runners
       - run: mypy --strict cave
       - run: pytest
