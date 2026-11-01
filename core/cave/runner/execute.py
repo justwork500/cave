@@ -21,6 +21,12 @@ from typing import Any, TypeVar
 
 from cave.scripts.header import Language
 
+# a statement, not an inline conditional, so type checkers on Linux don't see the Windows-only name
+if sys.platform == "win32":
+    _NEW_PROCESS_GROUP = subprocess.CREATE_NEW_PROCESS_GROUP
+else:
+    _NEW_PROCESS_GROUP = 0
+
 MAX_OUTPUT = 1024 * 1024
 LOG_LINES = 200
 MASK = "•••"
@@ -211,7 +217,7 @@ async def execute(
             cwd=workdir,
             env=_env(workdir, params, secrets),
             start_new_session=sys.platform != "win32",
-            creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if sys.platform == "win32" else 0,
+            creationflags=_NEW_PROCESS_GROUP,
             limit=1024 * 1024,
             **extra,
         )

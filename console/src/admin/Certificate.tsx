@@ -9,7 +9,7 @@ interface Cert {
 }
 
 export function Certificate() {
-  const cert = useQuery({ queryKey: ["certificate"], queryFn: () => api.get<Cert>("/certificate") });
+  const cert = useQuery({ queryKey: ["certificate"], queryFn: () => api.get<Cert>("/system/certificate") });
   const c = cert.data;
   return (
     <section className="stack">

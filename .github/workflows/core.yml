@@ -16,4 +16,5 @@ jobs:
       - run: ruff check .
       - run: shellcheck ../deploy/install.sh  # preinstalled on GitHub's Ubuntu runners
       - run: mypy --strict cave
+      - run: mypy --strict --platform win32 cave  # contributors run it on Windows too
       - run: pytest
