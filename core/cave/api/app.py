@@ -24,6 +24,7 @@ from cave.automation.effects import LiveEffects
 from cave.automation.manager import AutomationManager
 from cave.config.store import ConfigStore
 from cave.db import Database
+from cave.envconfig import env_secret
 from cave.integrations.mqtt import config as mqtt_config
 from cave.integrations.mqtt.client import MqttService
 from cave.scripts.service import RunnerClient, ScriptService
@@ -52,7 +53,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         app.state.mqtt_error = str(e)
         cfg = None
     if cfg is not None:
-        service = MqttService(cfg, app.state.db, app.state.states, os.environ.get("CAVE_MQTT_PASSWORD"))
+        service = MqttService(cfg, app.state.db, app.state.states, env_secret("CAVE_MQTT_PASSWORD"))
         app.state.mqtt = service
         task = asyncio.create_task(service.run())
         task.add_done_callback(_report_mqtt_exit)
@@ -89,7 +90,7 @@ def create_app(settings: Settings) -> FastAPI:
     app.state.config.load_all()
     app.state.scripts = ScriptStore(settings.config_dir, app.state.db, app.state.bus)
     app.state.scripts.load_all()
-    runner_url, runner_token = os.environ.get("CAVE_RUNNER_URL"), os.environ.get("CAVE_RUNNER_TOKEN")
+    runner_url, runner_token = os.environ.get("CAVE_RUNNER_URL"), env_secret("CAVE_RUNNER_TOKEN")
     runner = RunnerClient(runner_url, runner_token).post if runner_url and runner_token else None
     app.state.script_service = ScriptService(app.state.scripts, app.state.db, runner)
 

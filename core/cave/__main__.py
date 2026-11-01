@@ -1,20 +1,21 @@
-"""`python -m cave serve` runs CAVE over HTTPS (there is no plain-HTTP listener); `schemas` writes JSON Schemas."""
+"""`python -m cave serve` runs CAVE over HTTPS (there is no plain-HTTP listener); `schemas` writes JSON Schemas;
+`health` checks a running CAVE on this machine (the container health check)."""
 
 import argparse
 import asyncio
 import json
-import socket
+import ssl
 import sys
+import urllib.request
 from pathlib import Path
 
 import uvicorn
 
 from cave import tls
-from cave.access import netconfig
 from cave.api.app import create_app
 from cave.api.setup import ensure_setup_code
 from cave.config.models import schema_files
-from cave.settings import Settings
+from cave.envconfig import cert_names, cert_paths, settings_from_env
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -29,7 +30,12 @@ def main(argv: list[str] | None = None) -> None:
     serve.add_argument("--key", type=Path, help="Private key for --cert (PEM).")
     schemas = sub.add_parser("schemas", help="Write JSON Schemas for the YAML config files")
     schemas.add_argument("--out", type=Path, default=Path(__file__).resolve().parents[2] / "schemas")
+    health = sub.add_parser("health", help="Exit 0 if CAVE on this machine answers its health check")
+    health.add_argument("--port", type=int, default=8443)
     args = parser.parse_args(argv)
+
+    if args.command == "health":
+        sys.exit(0 if _healthy(args.port) else 1)
 
     if args.command == "schemas":
         args.out.mkdir(parents=True, exist_ok=True)
@@ -39,22 +45,16 @@ def main(argv: list[str] | None = None) -> None:
             print(f"wrote {args.out / name}")
         return
 
-    if bool(args.cert) != bool(args.key):
-        parser.error("--cert and --key go together")
+    own = cert_paths(args.cert, args.key)
     args.data.mkdir(parents=True, exist_ok=True)
-    ip = netconfig.host_ipv4()
-    if args.cert:
-        cert, key = args.cert, args.key
-    else:
-        cert, key = tls.ensure_certificate(
-            args.data / "tls", [socket.gethostname(), "localhost"], [a for a in (ip, "127.0.0.1") if a]
-        )
-    app = create_app(Settings(db_path=args.data / "cave.db", config_dir=args.config))
+    names, ips = cert_names()
+    cert, key = own or tls.ensure_certificate(args.data / "tls", names, ips)
+    app = create_app(settings_from_env(args.data, args.config))
     app.state.cert_path = cert
     code = ensure_setup_code(app.state.db)
     if code:
         print(f"CAVE isn't set up yet. Open it in a browser and use this one-time setup code: {code}")
-    print(f"CAVE is running at https://{ip or 'localhost'}:{args.port}")
+    print(f"CAVE is running at https://{ips[0] if ips[0] != '127.0.0.1' else 'localhost'}:{args.port}")
     print(f"Certificate fingerprint (SHA-256): {tls.fingerprint(cert)}")
     config = uvicorn.Config(app, host=args.host, port=args.port, ssl_certfile=str(cert), ssl_keyfile=str(key))
     server = uvicorn.Server(config)
@@ -64,6 +64,17 @@ def main(argv: list[str] | None = None) -> None:
         asyncio.run(server.serve(), loop_factory=asyncio.SelectorEventLoop)
     else:
         server.run()
+
+
+def _healthy(port: int) -> bool:
+    # loopback only, and the certificate is CAVE's own, so not checking it here proves nothing away
+    context = ssl.create_default_context()
+    context.check_hostname, context.verify_mode = False, ssl.CERT_NONE
+    try:
+        with urllib.request.urlopen(f"https://127.0.0.1:{port}/api/v1/health", timeout=5, context=context) as r:
+            return bool(r.status == 200 and json.load(r) == {"status": "ok"})
+    except (OSError, ValueError):  # URLError, timeouts and refused connections are OSErrors
+        return False
 
 
 if __name__ == "__main__":
