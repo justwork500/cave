@@ -5,6 +5,7 @@ import { Navigate, Outlet, Route, Routes, useOutletContext } from "react-router"
 import { ApiError, api } from "../api/client";
 import type { Me } from "../api/types";
 import { LiveFeed } from "../api/ws";
+import { Dashboard } from "../pages/Dashboard";
 import { Login } from "../pages/Login";
 import { NoAccess } from "../pages/NoAccess";
 import { Profile } from "../pages/Profile";
@@ -78,7 +79,8 @@ export function AppRoutes() {
       <Route path="/login" element={<Login />} />
       <Route path="/setup" element={<Setup />} />
       <Route element={<Shell />}>
-        <Route index element={<h1 className="page">Dashboard</h1>} />
+        <Route index element={<Dashboard />} />
+        <Route path="/d/:slug" element={<Dashboard />} />
         <Route path="/profile" element={<Profile />} />
         {ADMIN.map((p) => (
           <Route

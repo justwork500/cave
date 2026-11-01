@@ -1,0 +1,97 @@
+import { Spinner, Tab, TabList } from "@fluentui/react-components";
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useParams } from "react-router";
+import { ApiError, api, message } from "../api/client";
+import type { Card, DashboardView } from "../api/types";
+import { ActionButton } from "../cards/Button";
+import { Gauge } from "../cards/Gauge";
+import { Markdown } from "../cards/Markdown";
+import { Entities, Tile } from "../cards/Tile";
+import { useNarrow } from "../app/live";
+import { load } from "../app/prefs";
+import { NoAccess } from "./NoAccess";
+
+function CardBody({ card }: { card: Card }) {
+  switch (card.type) {
+    case "tile":
+      return <Tile entity={card.entity} tapAction={card.locked ? "none" : card.tap_action} />;
+    case "gauge":
+      return <Gauge card={card} />;
+    case "entities":
+      return <Entities entities={card.entities} />;
+    case "button":
+      return <ActionButton card={card} />;
+    case "markdown":
+      return <Markdown text={card.text} />;
+  }
+}
+
+function useSlug(): { slug: string | null | undefined; pending: boolean } {
+  const params = useParams();
+  const preferred = load("defaultDashboard")?.replace(/^dashboard:/, "");
+  const fallback = useQuery({
+    queryKey: ["dashboards", "default"],
+    queryFn: () => api.get<{ slug: string | null }>("/dashboards/default"),
+    enabled: !params.slug && !preferred,
+  });
+  if (params.slug) return { slug: params.slug, pending: false };
+  if (preferred) return { slug: preferred, pending: false };
+  return { slug: fallback.data?.slug, pending: fallback.isPending };
+}
+
+export function Dashboard() {
+  const narrow = useNarrow();
+  const { slug, pending } = useSlug();
+  const view = useQuery({
+    queryKey: ["dashboards", slug, "view"],
+    queryFn: () => api.get<DashboardView>(`/dashboards/${encodeURIComponent(slug ?? "")}/view`),
+    enabled: Boolean(slug),
+  });
+  const [tab, setTab] = useState<string>();
+
+  if (pending || (slug && view.isPending)) return <Spinner label="Loading" />;
+  if (!slug) {
+    return (
+      <section className="page narrow">
+        <h1>No dashboards for you yet</h1>
+        <p>Ask an Admin to share a dashboard with you.</p>
+      </section>
+    );
+  }
+  if (view.error instanceof ApiError && view.error.status === 403) return <NoAccess />;
+  if (view.isError || !view.data) return <p role="alert">{message(view.error)}</p>;
+
+  const d = view.data;
+  const current = d.views.find((v) => v.id === tab) ?? d.views[0];
+  return (
+    <section className="page">
+      <h1>{d.title}</h1>
+      {d.views.length > 1 && (
+        <TabList selectedValue={current?.id} onTabSelect={(_, t) => setTab(String(t.value))}>
+          {d.views.map((v) => (
+            <Tab key={v.id} value={v.id}>
+              {v.title}
+            </Tab>
+          ))}
+        </TabList>
+      )}
+      {current?.sections.map((s, i) => (
+        <section key={i} className="dash-section">
+          {s.title && <h2>{s.title}</h2>}
+          <div className={`grid${narrow ? " one-column" : ""}`}>
+            {s.cards.map((c, j) => (
+              <div
+                key={j}
+                className={`card card-${c.type}`}
+                style={narrow ? undefined : { gridColumn: `span ${c.w}`, gridRow: `span ${c.h}` }}
+              >
+                <CardBody card={c} />
+              </div>
+            ))}
+          </div>
+        </section>
+      ))}
+    </section>
+  );
+}
