@@ -2,7 +2,7 @@
  * The Simple view's shape: one trigger, at most one condition, and notify/call/routine/script actions.
  * A sentence is the parsed file itself, so converting back can't lose anything the shape allows.
  */
-import { isMap, isScalar, parseDocument, stringify, visit } from "yaml";
+import { isNode, isScalar, parseDocument, stringify, visit } from "yaml";
 
 export type Trigger =
   | { type: "state"; entity: string; from?: string; to?: string; for?: string | number }
@@ -42,10 +42,14 @@ const TOP = ["id", "name", "mode", "max", "enabled", "triggers", "conditions", "
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 
+/** Values the Simple view shows and edits as text; anything else there is outside its shape. */
+const TEXT = ["entity", "target", "command", "ref", "from", "to", "state", "at", "after", "before", "message", "title"];
+
 function fits(v: unknown, part: keyof typeof KEYS): boolean {
   if (!isObj(v) || typeof v.type !== "string") return false;
   const allowed = KEYS[part]?.[v.type];
-  return Boolean(allowed) && Object.keys(v).every((k) => k === "type" || allowed?.includes(k));
+  return Boolean(allowed) && Object.entries(v).every(([k, x]) =>
+    k === "type" || (allowed?.includes(k) && (!TEXT.includes(k) || typeof x === "string")));
 }
 
 /** The server reads YAML 1.1, so this does too: unquoted on/off are booleans there. */
@@ -54,11 +58,16 @@ const PARSE = { version: "1.1" } as const;
 export function fromYaml(text: string): Sentence | null {
   const doc = parseDocument(text, PARSE);
   if (doc.errors.length) return null;
-  let commented = Boolean(doc.commentBefore || doc.comment);
+  let unsafe = Boolean(doc.commentBefore || doc.comment);
   visit(doc, (_, node) => {
-    if ((isScalar(node) || isMap(node)) && (node.commentBefore || node.comment)) commented = true;
+    // rebuilding the text would drop the comments the user wrote
+    if (isNode(node) && (node.commentBefore || node.comment)) unsafe = true;
+    // a plain 07:00, on or 0700 turns into something else here, and not always the same thing on the server
+    if (isScalar(node) && node.type === "PLAIN" && typeof node.value !== "string" && String(node.value) !== node.source) {
+      unsafe = true;
+    }
   });
-  if (commented) return null; // rebuilding the text would drop the comments the user wrote
+  if (unsafe) return null;
   const root: unknown = doc.toJS();
   if (!isObj(root) || Object.keys(root).join() !== "automation") return null;
   const a = root.automation;

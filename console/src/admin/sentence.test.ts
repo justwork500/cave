@@ -54,6 +54,23 @@ describe("sentence <-> YAML", () => {
       .toBeNull();
   });
 
+  it("gives null when a plain value means different things to the server and to the browser", () => {
+    // yaml (1.1) reads 07:00 as 420; the server's PyYAML keeps "07:00". Showing either would be a guess.
+    expect(fromYaml(UPS.replace('for: "00:02:00"', "for: 00:02:00"))).toBeNull();
+    expect(fromYaml(UPS.replace('to: "on"', "to: on"))).toBeNull();
+    expect(fromYaml(UPS.replace("below: 15", "below: 0700"))).toBeNull(); // octal 448 to both: still a surprise
+    expect(fromYaml(UPS.replace("below: 15", "below: 20"))).not.toBeNull(); // a plain number is fine
+  });
+
+  it("gives null for a time or message that isn't text", () => {
+    expect(fromYaml(UPS.replace('to: "on"', "to: 5"))).toBeNull();
+  });
+
+  it("notices comments anywhere, including on lists", () => {
+    expect(fromYaml(UPS.replace("  triggers:\n", "  triggers: # why\n"))).toBeNull();
+    expect(fromYaml(UPS.replace("  actions:\n", "  actions:\n    # first we tell people\n"))).toBeNull();
+  });
+
   it.each(RECIPES.filter((r) => !r.later).map((r) => [r.id, r] as const))("recipe %s builds valid simple YAML",
     (_, recipe) => {
       const docs = recipe.build(Object.fromEntries(recipe.blanks.map((b) => [b.id, b.example])));
