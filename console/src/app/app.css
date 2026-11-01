@@ -1,0 +1,62 @@
+/* Layout only. Colours come from the Fluent theme variables so light, dark and high contrast all work. */
+:root {
+  --cave-bar: #1c2830;
+  --cave-bar-ink: #e8eef1;
+  --cave-teal: #0b6a8a;
+}
+* { box-sizing: border-box; }
+html, body, #root { margin: 0; min-height: 100%; }
+body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.root { min-height: 100vh; background: var(--colorNeutralBackground2); color: var(--colorNeutralForeground1); }
+
+.bar {
+  display: flex; align-items: center; gap: 4px;
+  height: 48px; padding: 0 12px;
+  background: var(--cave-bar); color: var(--cave-bar-ink);
+}
+.logo {
+  color: var(--cave-bar-ink); text-decoration: none;
+  font-weight: 700; font-size: 18px; letter-spacing: 0.08em;
+  padding: 6px 10px 6px 12px; border-left: 4px solid var(--cave-teal);
+}
+.bar-nav { display: flex; align-items: center; gap: 4px; flex: 1; min-width: 0; }
+.bar .bar-button, .bar-link { color: var(--cave-bar-ink); }
+.bar-link { text-decoration: none; padding: 6px 10px; border-radius: 4px; font-size: 14px; }
+.bar-link:hover, .bar-link.active { background: rgb(255 255 255 / 0.1); }
+.bar-link:focus-visible, .logo:focus-visible { outline: 2px solid var(--cave-bar-ink); outline-offset: 2px; }
+.bell { position: relative; display: inline-flex; font-size: 20px; }
+.bell .fui-CounterBadge { position: absolute; top: -6px; right: -8px; }
+
+.notes { width: min(340px, 90vw); }
+.notes ul { list-style: none; margin: 0; padding: 0; }
+.notes li { display: grid; gap: 2px; padding: 8px 4px; border-bottom: 1px solid var(--colorNeutralStroke2); }
+.notes li.unread { border-left: 3px solid var(--colorBrandStroke1); padding-left: 8px; }
+
+.main { padding: 24px 16px; }
+.page { max-width: 1200px; margin: 0 auto; }
+.page.narrow { max-width: 560px; }
+.stack { display: grid; gap: 16px; }
+.row { display: flex; gap: 8px; justify-content: flex-end; }
+h1 { font-size: 28px; font-weight: 600; margin: 0 0 8px; }
+h2 { font-size: 18px; font-weight: 600; margin: 8px 0 0; }
+
+/* Sign-in and setup: a slate band with the panel set into it */
+.auth {
+  min-height: 100vh; display: grid; place-items: start center; padding: 10vh 16px 32px;
+  background: linear-gradient(var(--cave-bar) 0 38vh, var(--colorNeutralBackground2) 38vh);
+}
+.auth-panel {
+  width: min(420px, 100%); padding: 28px;
+  background: var(--colorNeutralBackground1); border-radius: 8px;
+  border-top: 4px solid var(--cave-teal);
+  box-shadow: var(--shadow16);
+}
+.wordmark { margin: 0 0 20px; font-weight: 800; font-size: 14px; letter-spacing: 0.3em; color: var(--colorBrandForeground1); }
+.qr { justify-self: center; image-rendering: pixelated; background: #fff; padding: 8px; border-radius: 4px; }
+.secret { font-size: 15px; word-break: break-all; }
+.codes {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px 16px;
+  margin: 0; padding: 12px 16px; list-style: none;
+  font-family: ui-monospace, Consolas, monospace; font-size: 15px;
+  background: var(--colorNeutralBackground3); border-radius: 4px;
+}
