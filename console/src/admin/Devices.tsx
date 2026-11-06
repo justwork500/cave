@@ -8,6 +8,7 @@ import { useSearchParams } from "react-router";
 import { api } from "../api/client";
 import type { EntityView, FullEntity } from "../api/types";
 import { isFull, stateText } from "../cards/entity";
+import { AddDevice } from "./AddDevice";
 import { DataTable, ErrorBar, Page } from "./Page";
 
 interface Area {
@@ -108,10 +109,14 @@ export function Devices() {
   const states = useQuery({ queryKey: ["states"], queryFn: () => api.get<EntityView[]>("/states") });
   const areas = useQuery({ queryKey: ["areas"], queryFn: () => api.get<Area[]>("/areas") });
   const [editing, setEditing] = useState<FullEntity | null>(null);
+  const [adding, setAdding] = useState(false);
   const roomName = (id: string | null) => areas.data?.find((a) => a.id === id)?.name ?? "";
 
   return (
-    <Page title="Devices">
+    <Page
+      title="Devices"
+      commands={<Button appearance="primary" onClick={() => setAdding(true)}>Add device</Button>}
+    >
       <ErrorBar error={states.error ?? areas.error} />
       <DataTable<EntityView>
         label="Devices"
@@ -154,6 +159,7 @@ export function Devices() {
       />
       <Rooms areas={areas.data ?? []} />
       {editing && <EditPanel entity={editing} areas={areas.data ?? []} onClose={() => setEditing(null)} />}
+      {adding && <AddDevice onClose={() => setAdding(false)} />}
     </Page>
   );
 }

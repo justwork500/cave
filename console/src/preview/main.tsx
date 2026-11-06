@@ -37,6 +37,7 @@ window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
   const url = new URL(String(input), location.origin);
   const path = decodeURIComponent(url.pathname.replace(/^\/api\/v1/, ""));
   const method = init?.method ?? "GET";
+  if (path === "/kasa/scan") return reply(F.kasaScan);
   if (method !== "GET") return reply({ ok: true });
   if (path.startsWith("/items/") && path.endsWith("/assignments")) {
     return reply(F.assignments[path.split("/")[2] ?? ""] ?? []);

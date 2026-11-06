@@ -9,7 +9,6 @@ import type { Screen } from "./Screens";
 import type { User } from "./Users";
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
-const MQTT_GUIDE = "https://github.com/justwork500/cave/blob/main/docs/integrations/mqtt.md";
 
 interface Attention {
   key: string;
@@ -55,8 +54,8 @@ export function Home() {
   }
 
   const steps = [
-    { done: deviceCount > 0, title: "Connect your devices", to: MQTT_GUIDE, link: "How devices connect",
-      text: "Zigbee2MQTT, Tasmota, Shelly and ESPHome devices appear on their own once they reach CAVE's MQTT broker." },
+    { done: deviceCount > 0, title: "Connect your devices", to: "/admin/devices", link: "Add a device",
+      text: "Add Kasa plugs from Devices. Zigbee2MQTT, Tasmota, Shelly and ESPHome devices appear on their own." },
     { done: (areas.data?.length ?? 0) > 0, title: "Put devices in rooms", to: "/admin/devices", link: "Devices",
       text: "Rooms group devices on dashboards and in the house at a glance." },
     { done: (dashboards.data?.length ?? 0) > 1, title: "Make a dashboard for a room or a person", to: "/admin/dashboards",

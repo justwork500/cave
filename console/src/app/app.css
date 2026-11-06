@@ -58,6 +58,9 @@ a { color: var(--accent); }
 .stack.tight { gap: 8px; }
 .row { display: flex; gap: 8px; justify-content: flex-end; align-items: center; }
 .greeting-head { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; }
+.found { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.found li { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.found li > span { display: grid; min-width: 0; }
 .row.start { justify-content: flex-start; flex-wrap: wrap; }
 
 /* Controls: pills for buttons, 10px fields, near-black primary (the theme), no shadows */

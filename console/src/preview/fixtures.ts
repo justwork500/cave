@@ -190,3 +190,12 @@ export const networks = { local_ranges: ["192.168.1.0/24"], trusted_proxies: [] 
 export const certificate = { fingerprint: "2E:DB:F2:82:23:42:65:0E:A9:89:10:E4:46:73:32:9A", not_after: "2028-12-04T00:00:00Z",
                              self_signed: true };
 export const configErrors = { "automations/porch-at-dusk.yaml": "automations/porch-at-dusk.yaml:6: triggers.0.at: expected a time like 07:30" };
+
+export const kasaScan = {
+  signed_in: false,
+  login_ok: null,
+  devices: [
+    { mac: "aabbccddee01", host: "10.10.1.191", model: "HS103(US)", added: false, name: null },
+    { mac: "aabbccddee02", host: "10.10.1.141", model: "KS225(US)", added: false, name: null },
+  ],
+};
