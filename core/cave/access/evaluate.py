@@ -60,6 +60,14 @@ def can_control(db: Database, p: Principal, entity_id: str, client_ip: IPAddress
     return False
 
 
+def can_run_script(db: Database, p: Principal, file: str, client_ip: IPAddress, local_ranges: Sequence[str]) -> bool:
+    """The Scripts section covers every script, until an Admin assigns or disables one: then its item alone decides."""
+    item, section = get_item(db, f"script:{file}"), get_item(db, "section:scripts")
+    if item is not None and (item.status == "disabled" or get_assignments(db, item.id)):
+        return evaluate(db, p, item, client_ip, local_ranges).allowed
+    return any(i is not None and evaluate(db, p, i, client_ip, local_ranges).allowed for i in (item, section))
+
+
 def assert_can_save(
     db: Database, p: Principal, targeted_entity_ids: Iterable[str], client_ip: IPAddress, local_ranges: Sequence[str]
 ) -> None:
