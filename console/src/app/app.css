@@ -348,3 +348,30 @@ pre.output { margin: 0; padding: 10px 12px; font-size: 12px; white-space: pre-wr
   .tile, .tile .switch, .tile .switch::after { transition: none; }
   button.tile:active { transform: none; }
 }
+
+/* the dashboard builder */
+.page:has(.builder) { max-width: 1500px; }
+.builder { display: grid; grid-template-columns: 260px minmax(0, 1fr) 280px; gap: 16px; align-items: start; }
+.builder-panel { display: grid; gap: 12px; position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow: auto;
+  padding: 14px; border: 1px solid var(--border); border-radius: var(--radius-card); background: var(--raised); }
+.builder-panel h2 { margin: 0; font-size: 16px; }
+.builder-panel h3 { margin: 4px 0; font-size: 12px; font-weight: 500; color: var(--muted); }
+.palette-list { list-style: none; margin: 0; padding: 0; }
+.palette-list li { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 0;
+  border-bottom: 1px solid var(--rule); }
+.palette-list li[draggable] { cursor: grab; }
+.builder-canvas { display: grid; gap: 14px; min-width: 0; }
+.builder-group { display: grid; gap: 10px; padding: 12px; border: 1px dashed var(--control); border-radius: var(--radius-card); }
+.builder-group.selected { border: 2px solid var(--accent); }
+.builder-group header { display: flex; align-items: center; gap: 6px; cursor: grab; }
+.builder-group header button { border: 0; background: none; padding: 0; font: inherit; font-size: 16px; font-weight: 500;
+  color: var(--text); cursor: pointer; }
+.builder-tile { position: relative; cursor: grab; }
+.builder-tile > [inert] { flex: 1; min-width: 0; display: flex; }
+.builder-tile > [inert] > * { flex: 1; min-width: 0; }
+.builder-select { position: absolute; inset: 0; border: 0; padding: 0; background: none; border-radius: var(--radius-card);
+  cursor: inherit; }
+.builder-tile.selected .builder-select { outline: 2px solid var(--accent); outline-offset: 1px; }
+.builder-select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.builder-remove { position: absolute; top: 4px; right: 4px; }
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
