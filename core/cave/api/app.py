@@ -17,6 +17,7 @@ from cave.api import areas as areas_api
 from cave.api import automations as automations_api
 from cave.api import config as config_api
 from cave.api import console as console_api
+from cave.api import kasa as kasa_api
 from cave.api import scripts as scripts_api
 from cave.api import setup as setup_api
 from cave.api import views as views_api
@@ -25,6 +26,7 @@ from cave.automation.manager import AutomationManager
 from cave.config.store import ConfigStore, write_atomic
 from cave.db import Database
 from cave.envconfig import env_secret
+from cave.integrations.kasa.service import KasaService
 from cave.integrations.mqtt import config as mqtt_config
 from cave.integrations.mqtt.client import MqttService
 from cave.scripts.service import RunnerClient, ScriptService
@@ -75,9 +77,13 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.automations = manager
     app.state.rearm = manager.rearm
     await manager.start()
+    kasa_task = asyncio.create_task(app.state.kasa.run())
     try:
         yield
     finally:
+        kasa_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await kasa_task
         await manager.stop()
         if task is not None:
             task.cancel()
@@ -102,6 +108,8 @@ def create_app(settings: Settings) -> FastAPI:
     app.state.pending_mfa = {}
     app.state.bus = EventBus()
     app.state.states = StateMachine(app.state.bus)
+    app.state.kasa = KasaService(app.state.db, app.state.states)
+    app.state.kasa.load()
     app.state.config = ConfigStore(settings.config_dir, app.state.db, app.state.bus)
     app.state.config.load_all()
     app.state.scripts = ScriptStore(settings.config_dir, app.state.db, app.state.bus)
@@ -128,6 +136,7 @@ def create_app(settings: Settings) -> FastAPI:
     app.include_router(setup_api.router)
     app.include_router(entities.router)
     app.include_router(areas_api.router)
+    app.include_router(kasa_api.router)
     app.include_router(views_api.router)
     app.include_router(ws.router)
     app.include_router(admin.router)

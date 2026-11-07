@@ -94,7 +94,9 @@ describe("automation editor", () => {
     const text = await screen.findByRole("textbox", { name: "YAML" });
     await userEvent.type(text, "#");
     await userEvent.click(screen.getByRole("button", { name: "Save" }));
-    const dialog = await screen.findByRole("dialog", {}, { timeout: 5000 });  // slow CI runners
+    // a text lookup: role queries compute styles for the whole page and ran out of time on CI
+    const title = await screen.findByText("Save these changes?", {}, { timeout: 5000 });
+    const dialog = title.closest<HTMLElement>('[role="dialog"]')!;
     expect(await within(dialog).findByText("Before")).toBeInTheDocument();
     // a text lookup: role queries compute styles for every diff line and time out under load
     await userEvent.click(await within(dialog).findByText("Save changes"));
@@ -157,7 +159,9 @@ describe("new automations", () => {
     );
     await userEvent.click(await screen.findByRole("button", { name: "Start blank" }));
     await userEvent.click(screen.getByRole("button", { name: "Save" }));
-    const dialog = await screen.findByRole("dialog", {}, { timeout: 5000 });  // slow CI runners
+    // a text lookup: role queries compute styles for the whole page and ran out of time on CI
+    const title = await screen.findByText("Save these changes?", {}, { timeout: 5000 });
+    const dialog = title.closest<HTMLElement>('[role="dialog"]')!;
     await userEvent.click(await within(dialog).findByText("Save changes"));
     expect(await screen.findByRole("alert")).toHaveTextContent("new-automation is already taken");
     expect(calls.find((c) => c.method === "PUT")?.query).toBe("?create=true");

@@ -58,6 +58,9 @@ a { color: var(--accent); }
 .stack.tight { gap: 8px; }
 .row { display: flex; gap: 8px; justify-content: flex-end; align-items: center; }
 .greeting-head { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; }
+.found { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.found li { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.found li > span { display: grid; min-width: 0; }
 .row.start { justify-content: flex-start; flex-wrap: wrap; }
 
 /* Controls: pills for buttons, 10px fields, near-black primary (the theme), no shadows */
@@ -167,6 +170,7 @@ button.tile:active { transform: scale(0.985); }
 .tile.locked { background: var(--surface); border: 1px dashed var(--control); color: var(--muted); }
 .tile.locked .tile-state { font-size: 14px; font-weight: 500; display: inline-flex; gap: 6px; align-items: center; }
 .tile-error { font-size: 12px; color: var(--negative); }
+.device-switch { margin: -4px 0 -4px -8px; } /* line up with the plain state text, keep rows their height */
 .tile.row { border: 0; border-radius: 0; padding: 10px 0; background: none;
   grid-template-columns: 1fr auto; align-items: baseline; border-bottom: 1px solid var(--rule); }
 .tile.row .tile-name { padding-right: 0; }
