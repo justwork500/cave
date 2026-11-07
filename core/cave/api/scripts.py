@@ -56,7 +56,8 @@ def list_scripts(request: Request, p: Caller) -> list[dict[str, Any]]:
         item = get_item(db, f"script:{s.file}")
         if item is not None:
             d = evaluate(db, p, item, ip, ranges)
-            out.append({"file": s.file, "name": s.header.name, "language": s.language, "allowed": d.allowed})
+            out.append({"file": s.file, "name": s.header.name, "language": s.language, "allowed": d.allowed,
+                        "runnable": all(q.default is not None for q in s.header.params.values())})
     return out
 
 

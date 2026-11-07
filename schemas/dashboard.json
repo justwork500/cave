@@ -6,7 +6,7 @@
         "action": {
           "anyOf": [
             {
-              "pattern": "^(automation|sequence)\\.[a-z0-9_-]{1,64}$",
+              "pattern": "^(automation|sequence)\\.[a-z0-9_-]{1,64}$|^script\\.[A-Za-z0-9_.-]{1,64}\\.(ps1|py|sh)$",
               "type": "string"
             },
             {
@@ -15,6 +15,25 @@
           ],
           "default": null,
           "title": "Action"
+        },
+        "color": {
+          "anyOf": [
+            {
+              "enum": [
+                "blue",
+                "green",
+                "amber",
+                "red",
+                "purple"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Color"
         },
         "command": {
           "anyOf": [
@@ -60,6 +79,40 @@
           "minimum": 1,
           "title": "H",
           "type": "integer"
+        },
+        "icon": {
+          "anyOf": [
+            {
+              "enum": [
+                "lightbulb",
+                "plug",
+                "power",
+                "wind",
+                "fire",
+                "temperature",
+                "drop",
+                "sun",
+                "snow",
+                "door",
+                "lock",
+                "shield",
+                "camera",
+                "speaker",
+                "tv",
+                "home",
+                "bed",
+                "clock",
+                "play",
+                "battery"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Icon"
         },
         "name": {
           "maxLength": 100,
@@ -126,6 +179,25 @@
     "EntitiesCard": {
       "additionalProperties": false,
       "properties": {
+        "color": {
+          "anyOf": [
+            {
+              "enum": [
+                "blue",
+                "green",
+                "amber",
+                "red",
+                "purple"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Color"
+        },
         "entities": {
           "items": {
             "pattern": "^[a-z_]+\\.[a-z0-9_]+$",
@@ -140,6 +212,53 @@
           "minimum": 1,
           "title": "H",
           "type": "integer"
+        },
+        "icon": {
+          "anyOf": [
+            {
+              "enum": [
+                "lightbulb",
+                "plug",
+                "power",
+                "wind",
+                "fire",
+                "temperature",
+                "drop",
+                "sun",
+                "snow",
+                "door",
+                "lock",
+                "shield",
+                "camera",
+                "speaker",
+                "tv",
+                "home",
+                "bed",
+                "clock",
+                "play",
+                "battery"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Icon"
+        },
+        "label": {
+          "anyOf": [
+            {
+              "maxLength": 100,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Label"
         },
         "type": {
           "const": "entities",
@@ -164,6 +283,25 @@
     "GaugeCard": {
       "additionalProperties": false,
       "properties": {
+        "color": {
+          "anyOf": [
+            {
+              "enum": [
+                "blue",
+                "green",
+                "amber",
+                "red",
+                "purple"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Color"
+        },
         "entity": {
           "pattern": "^[a-z_]+\\.[a-z0-9_]+$",
           "title": "Entity",
@@ -175,6 +313,53 @@
           "minimum": 1,
           "title": "H",
           "type": "integer"
+        },
+        "icon": {
+          "anyOf": [
+            {
+              "enum": [
+                "lightbulb",
+                "plug",
+                "power",
+                "wind",
+                "fire",
+                "temperature",
+                "drop",
+                "sun",
+                "snow",
+                "door",
+                "lock",
+                "shield",
+                "camera",
+                "speaker",
+                "tv",
+                "home",
+                "bed",
+                "clock",
+                "play",
+                "battery"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Icon"
+        },
+        "label": {
+          "anyOf": [
+            {
+              "maxLength": 100,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Label"
         },
         "max": {
           "default": 100,
@@ -224,6 +409,25 @@
     "MarkdownCard": {
       "additionalProperties": false,
       "properties": {
+        "color": {
+          "anyOf": [
+            {
+              "enum": [
+                "blue",
+                "green",
+                "amber",
+                "red",
+                "purple"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Color"
+        },
         "content": {
           "maxLength": 10000,
           "title": "Content",
@@ -235,6 +439,40 @@
           "minimum": 1,
           "title": "H",
           "type": "integer"
+        },
+        "icon": {
+          "anyOf": [
+            {
+              "enum": [
+                "lightbulb",
+                "plug",
+                "power",
+                "wind",
+                "fire",
+                "temperature",
+                "drop",
+                "sun",
+                "snow",
+                "door",
+                "lock",
+                "shield",
+                "camera",
+                "speaker",
+                "tv",
+                "home",
+                "bed",
+                "clock",
+                "play",
+                "battery"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Icon"
         },
         "type": {
           "const": "markdown",
@@ -307,6 +545,25 @@
     "TileCard": {
       "additionalProperties": false,
       "properties": {
+        "color": {
+          "anyOf": [
+            {
+              "enum": [
+                "blue",
+                "green",
+                "amber",
+                "red",
+                "purple"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Color"
+        },
         "entity": {
           "pattern": "^[a-z_]+\\.[a-z0-9_]+$",
           "title": "Entity",
@@ -318,6 +575,53 @@
           "minimum": 1,
           "title": "H",
           "type": "integer"
+        },
+        "icon": {
+          "anyOf": [
+            {
+              "enum": [
+                "lightbulb",
+                "plug",
+                "power",
+                "wind",
+                "fire",
+                "temperature",
+                "drop",
+                "sun",
+                "snow",
+                "door",
+                "lock",
+                "shield",
+                "camera",
+                "speaker",
+                "tv",
+                "home",
+                "bed",
+                "clock",
+                "play",
+                "battery"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Icon"
+        },
+        "label": {
+          "anyOf": [
+            {
+              "maxLength": 100,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Label"
         },
         "tap_action": {
           "default": "toggle",
