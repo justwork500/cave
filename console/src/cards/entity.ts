@@ -20,6 +20,9 @@ export function roomText(areaId: string | null): string {
   return areaId ? stateText(areaId, {}) : "";
 }
 
+/** What has an on/off switch. */
+export const SWITCHABLE = new Set(["switch", "light"]);
+
 export const isFull = (e: EntityView): e is FullEntity => !e.restricted && "state" in e;
 
 /** The entity's state, kept current by the live feed. */
