@@ -198,7 +198,14 @@ describe("the builder", () => {
     const first = screen.getByRole("button", { name: "Select Hidden" }).closest("[draggable]")!;
     const onto = screen.getByRole("button", { name: "Select Goodnight" }).closest("[draggable]")!;
     drag(first, onto);
-    expect(names(1)).toEqual(["Go", "switch.hidden", "Goodnight"]);
+    expect(names(1)).toEqual(["Go", "Goodnight", "switch.hidden"]);
+  });
+
+  it("swaps a tile with its right-hand neighbour by dragging", async () => {
+    show();
+    const first = (await screen.findByRole("button", { name: "Select Left fan" })).closest("[draggable]")!;
+    drag(first, screen.getByRole("button", { name: "Select UPS load" }).closest("[draggable]")!);
+    expect(names(0)).toEqual(["sensor.load", "switch.left"]);
   });
 
   it("adds by dragging from the list", async () => {

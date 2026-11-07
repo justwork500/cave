@@ -84,7 +84,7 @@ One draft, held as YAML text. Visual parses it with the `yaml` package the conso
 
 ## Access
 
-No new access rules. The left panel lists only what the person can use: entities from `/states` that aren't restricted, and allowed automations, routines and scripts. Those lists need the matching console section, so someone without Scripts access simply doesn't see the Scripts heading. Restricted tiles already in a dashboard stay in place and show as locked, and can be moved or removed. The server remains the real check.
+No new access rules. The left panel lists only what the person can use: entities from `/states` that aren't restricted, and allowed automations, routines and scripts. Those lists need the matching console section, so someone without Scripts access simply doesn't see the Scripts heading. Restricted tiles already in a dashboard stay in place and show as locked. Someone who isn't an Admin can't save a dashboard holding something they can't use, even after removing it, because the existing save check also covers the old version. The server remains the real check.
 
 ## Accessibility
 

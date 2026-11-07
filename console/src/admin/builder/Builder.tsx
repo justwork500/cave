@@ -80,8 +80,7 @@ export function Builder({ draft, onChange }: { draft: Draft; onChange: (d: Draft
       const from = what.spot;
       const same = from.group === target.group;
       const end = cardsIn(target.group).length - (same ? 1 : 0);
-      // dropped on a tile it lands in that tile's place, counted after it has left its own
-      const card = target.card === undefined ? end : target.card - (same && from.card < target.card ? 1 : 0);
+      const card = target.card ?? end; // it takes the place of the tile it's dropped on
       if (same && card === from.card) return;
       move(from, { view, group: target.group, card }, same ? "" : ` to ${groupName(target.group)}`);
     }

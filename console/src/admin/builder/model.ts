@@ -36,9 +36,13 @@ export function parseDraft(text: string): { draft: Draft } | { reason: string } 
     for (const section of sections as unknown[]) {
       const cards = isObject(section) ? (section.cards ?? []) : null;
       if (!Array.isArray(cards)) return { reason: "Each section needs a list of cards." };
+      if (typeof (section as { title?: unknown }).title !== "string") return { reason: "Each section's title needs to be text." };
       for (const card of cards as unknown[]) {
         const type = isObject(card) ? String(card.type) : "unnamed";
         if (!CARD_TYPES.has(type)) return { reason: `The builder doesn't know a "${type}" card.` };
+        if (type === "entities" && !Array.isArray((card as { entities?: unknown }).entities)) {
+          return { reason: "A list tile's entities need to be a list." };
+        }
       }
     }
   }
@@ -46,7 +50,7 @@ export function parseDraft(text: string): { draft: Draft } | { reason: string } 
 }
 
 export function writeDraft(draft: Draft): string {
-  return stringify(draft, { lineWidth: 0 });
+  return stringify(draft, { lineWidth: 0, compat: "yaml-1.1" }); // the server reads YAML 1.1, where a bare On is true
 }
 
 export function hasComments(text: string): boolean {

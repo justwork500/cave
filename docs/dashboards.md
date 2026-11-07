@@ -28,6 +28,6 @@ The builder keeps every setting it doesn't show, but it rewrites the file, so co
 
 ## What you'll see
 
-The Add list shows only what you can use, and needs the matching section: without access to Scripts, there's no Scripts heading. A tile you can't use stays locked, and you can still move or remove it.
+The Add list shows only what you can use, and needs the matching section: without access to Scripts, there's no Scripts heading. A tile you can't use stays locked. If a dashboard holds something you can't use, only an Admin can save changes to it.
 
 Closing or reloading the tab with unsaved changes asks first. Moving to another page in the console doesn't, so save before you leave.

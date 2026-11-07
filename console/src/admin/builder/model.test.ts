@@ -69,6 +69,30 @@ describe("the draft", () => {
     expect("reason" in out && out.reason).toContain(reason);
   });
 
+  it.each([
+    ["a list that isn't a list", "- { type: entities, entities: switch.a }", "list"],
+    ["a group title that isn't text", "- { type: tile, entity: switch.a }", "title", "12"],
+  ])("refuses to draw %s", (_name, card, reason, title = "S") => {
+    const text = `dashboard:
+  title: A
+  views:
+    - id: m
+      title: M
+      sections:
+` +
+      `        - title: ${title}
+          cards:
+            ${card}
+`;
+    const out = parseDraft(text);
+    expect("reason" in out && out.reason).toContain(reason);
+  });
+
+  it.each(["On", "Off", "No", "yes", "12:30", "~"])("keeps %s as text for the server's YAML reader", (word) => {
+    const d = renameGroup(addGroup(draft("dashboard:\n  title: Gate\n"), 0, "x"), 0, 0, word);
+    expect(writeDraft(d)).toContain(`title: "${word}"`);
+  });
+
   it("adds a view when the dashboard has none", () => {
     const d = addGroup(draft("dashboard:\n  title: Gate\n"), 0, "Doors");
     expect(d.dashboard.views).toEqual([{ id: "main", title: "Main", sections: [{ title: "Doors", cards: [] }] }]);
