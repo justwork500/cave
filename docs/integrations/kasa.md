@@ -8,6 +8,8 @@ CAVE controls Kasa plugs and switches directly on your network. Commands and sta
 2. Sign in with the email and password from your Kasa app. Current Kasa firmware only takes commands from the account a device is set up with, so this is needed even though everything stays local. You only do this once.
 3. Choose **Add** next to each device. It appears in Devices under the name it has in the Kasa app, and you can rename it, put it in a room and use it on dashboards and in automations.
 
+Each device has an on/off switch in its row on **Devices**, so you can try it straight away.
+
 To take a device out of CAVE, open **Add device** again and choose **Remove**.
 
 ## What CAVE stores

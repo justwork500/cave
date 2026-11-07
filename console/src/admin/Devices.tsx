@@ -1,13 +1,13 @@
 import {
-  Button, DrawerBody, DrawerFooter, DrawerHeader, DrawerHeaderTitle, Field, Input, OverlayDrawer, Select,
+  Button, DrawerBody, DrawerFooter, DrawerHeader, DrawerHeaderTitle, Field, Input, OverlayDrawer, Select, Switch,
 } from "@fluentui/react-components";
 import { DeleteRegular, EditRegular, LockClosedRegular } from "@fluentui/react-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useSearchParams } from "react-router";
-import { api } from "../api/client";
+import { api, message } from "../api/client";
 import type { EntityView, FullEntity } from "../api/types";
-import { isFull, stateText } from "../cards/entity";
+import { isFull, stateText, useLiveState } from "../cards/entity";
 import { AddDevice } from "./AddDevice";
 import { DataTable, ErrorBar, Page } from "./Page";
 
@@ -15,6 +15,31 @@ interface Area {
   id: string;
   name: string;
   floor: string | null;
+}
+
+const SWITCHABLE = new Set(["switch", "light"]);
+
+/** The device's live state, with an on/off switch when it's a device that has one and is answering. */
+function DeviceState({ entity }: { entity: FullEntity }) {
+  const { state, attributes } = useLiveState(entity);
+  const power = useMutation({
+    mutationFn: (command: string) => api.post(`/entities/${encodeURIComponent(entity.entity_id)}/commands/${command}`),
+  });
+  const text = stateText(state, attributes);
+  if (!SWITCHABLE.has(entity.capability) || (state !== "on" && state !== "off")) return text;
+  return (
+    <>
+      <Switch
+        className="device-switch"
+        label={text}
+        aria-label={`${entity.name} power`}
+        checked={state === "on"}
+        disabled={power.isPending}
+        onChange={(_, d) => power.mutate(d.checked ? "turn_on" : "turn_off")}
+      />
+      {power.isError && <span className="tile-error" role="alert">{message(power.error)}</span>}
+    </>
+  );
 }
 
 function EditPanel({ entity, areas, onClose }: { entity: FullEntity; areas: Area[]; onClose: () => void }) {
@@ -136,7 +161,7 @@ export function Devices() {
             label: "State",
             render: (e) =>
               isFull(e) ? (
-                stateText(e.state, e.attributes)
+                <DeviceState entity={e} />
               ) : (
                 <span className="locked-text">
                   <LockClosedRegular aria-hidden /> Restricted

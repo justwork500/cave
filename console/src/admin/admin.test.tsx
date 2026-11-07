@@ -1,6 +1,8 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { StateEvent } from "../api/ws";
+import { LiveContext } from "../app/live";
 import { AppRoutes } from "../app/routes";
 import { expectAccessible } from "../test/axe";
 import { mockApi, renderWith, setNarrow } from "../test/render";
@@ -161,5 +163,60 @@ describe("devices", () => {
     await waitFor(() => expect(calls.find((c) => c.method === "PATCH")?.body).toEqual({
       name: "Front porch", area_id: "garage" }));
     await expectAccessible(container);
+  });
+
+  const entity = (entity_id: string, name: string, capability: string, state: string) => ({
+    entity_id, name, area_id: null, capability, state, attributes: {}, last_changed: null });
+
+  function power(routes: Record<string, unknown>) {
+    let push: (e: StateEvent) => void = () => undefined;
+    const feed = { onState: (id: string, cb: (e: StateEvent) => void) => {
+      if (id === "switch.lamp") push = cb;
+      return () => undefined;
+    } };
+    const calls = mockApi({ "GET /areas": [], ...routes });
+    const view = renderWith(<LiveContext.Provider value={feed as never}><Devices /></LiveContext.Provider>);
+    return { calls, view, push: (e: StateEvent) => push(e) };
+  }
+
+  it("switches a device on and off and follows its live state", async () => {
+    const { calls, view, push } = power({
+      "GET /states": [entity("switch.lamp", "Lamp", "switch", "off")],
+      "POST /entities/switch.lamp/commands/turn_on": [202, { accepted: true }],
+      "POST /entities/switch.lamp/commands/turn_off": [202, { accepted: true }],
+    });
+    const lamp = await screen.findByRole("switch", { name: "Lamp power" });
+    expect(lamp).not.toBeChecked();
+    await userEvent.click(lamp);
+    await waitFor(() => expect(calls.at(-1)).toMatchObject({ method: "POST",
+                                                             path: "/entities/switch.lamp/commands/turn_on" }));
+    act(() => push({ entity_id: "switch.lamp", old: "off", new: "on", attributes: {} }));
+    expect(await screen.findByRole("switch", { name: "Lamp power" })).toBeChecked();
+    expect(within(lamp.closest("tr") as HTMLElement).getByText("On")).toBeInTheDocument();
+    await waitFor(() => expect(lamp).toBeEnabled());
+    await userEvent.click(lamp);
+    await waitFor(() => expect(calls.at(-1)).toMatchObject({ method: "POST",
+                                                             path: "/entities/switch.lamp/commands/turn_off" }));
+    await expectAccessible(view.container);
+  });
+
+  it("says why a device didn't switch", async () => {
+    power({
+      "GET /states": [entity("switch.lamp", "Lamp", "switch", "off")],
+      "POST /entities/switch.lamp/commands/turn_on": [409, { detail: "This device isn't responding." }],
+    });
+    await userEvent.click(await screen.findByRole("switch", { name: "Lamp power" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("This device isn't responding.");
+  });
+
+  it("offers no switch for what can't be switched", async () => {
+    power({ "GET /states": [
+      entity("switch.gone", "Gone", "switch", "unavailable"),
+      entity("lock.door", "Door", "lock", "locked"),
+      entity("binary_sensor.ups", "On battery", "binary_sensor", "off"),
+    ] });
+    expect(await screen.findByText("Locked")).toBeInTheDocument();
+    expect(within(screen.getByText("Gone").closest("tr") as HTMLElement).getByText("Not responding")).toBeInTheDocument();
+    expect(screen.queryByRole("switch")).not.toBeInTheDocument();
   });
 });
