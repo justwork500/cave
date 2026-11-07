@@ -350,13 +350,16 @@ pre.output { margin: 0; padding: 10px 12px; font-size: 12px; white-space: pre-wr
 }
 
 /* the dashboard builder */
-.page:has(.builder) { max-width: 1500px; }
-.builder { display: grid; grid-template-columns: 260px minmax(0, 1fr) 280px; gap: 16px; align-items: start; }
-.builder-panel { display: grid; gap: 12px; position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow: auto;
+.admin-page:has(.builder) { max-width: 1600px; }
+.builder { display: grid; grid-template-columns: 230px minmax(0, 1fr) 250px; gap: 16px; align-items: start; }
+.builder.folded { grid-template-columns: minmax(0, 1fr); }
+.fui-DrawerBody .builder-panel { position: static; max-height: none; border: 0; padding: 0; background: none; }
+.builder-panel { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow: auto;
   padding: 14px; border: 1px solid var(--border); border-radius: var(--radius-card); background: var(--raised); }
 .builder-panel h2 { margin: 0; font-size: 16px; }
 .builder-panel h3 { margin: 4px 0; font-size: 12px; font-weight: 500; color: var(--muted); }
 .palette-list { list-style: none; margin: 0; padding: 0; }
+.palette-list li > span:first-child { min-width: 0; overflow-wrap: anywhere; }
 .palette-list li { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 0;
   border-bottom: 1px solid var(--rule); }
 .palette-list li[draggable] { cursor: grab; }
@@ -373,5 +376,5 @@ pre.output { margin: 0; padding: 10px 12px; font-size: 12px; white-space: pre-wr
   cursor: inherit; }
 .builder-tile.selected .builder-select { outline: 2px solid var(--accent); outline-offset: 1px; }
 .builder-select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-.builder-remove { position: absolute; top: 4px; right: 4px; }
+.builder-remove { position: absolute; top: -8px; right: -8px; min-width: 24px; height: 24px; padding: 0; border-radius: 50%; }
 .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

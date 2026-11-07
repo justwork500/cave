@@ -2,6 +2,7 @@ import { Button, Tab, TabList } from "@fluentui/react-components";
 import { AddRegular, DismissRegular, ReOrderDotsVerticalRegular } from "@fluentui/react-icons";
 import type { DragEvent } from "react";
 import type { EntityView } from "../../api/types";
+import { useNarrow } from "../../app/live";
 import { CardBody } from "../../pages/Dashboard";
 import { type Draft, type Spot, nameOf, viewCard } from "./model";
 import { DRAG_TYPE } from "./Palette";
@@ -21,6 +22,7 @@ export function Canvas({ draft, view, states, selected, onView, onSelect, onDrop
   onRemove: (at: Spot) => void;
   onAddGroup: () => void;
 }) {
+  const narrow = useNarrow();
   const views = draft.dashboard.views ?? [];
   const groups = views[view]?.sections ?? [];
 
@@ -59,7 +61,7 @@ export function Canvas({ draft, view, states, selected, onView, onSelect, onDrop
             </button>
           </header>
           {(g.cards ?? []).length === 0 && <p className="muted">Drag something here, or use its Add button.</p>}
-          <div className="grid">
+          <div className={`grid${narrow ? " one-column" : ""}`}>
             {(g.cards ?? []).map((card, i) => {
               const name = nameOf(card, states);
               const shown = viewCard(card, states);
@@ -71,14 +73,26 @@ export function Canvas({ draft, view, states, selected, onView, onSelect, onDrop
                   draggable
                   className={`card card-${card.type} builder-tile${isSelected ? " selected" : ""}${
                     shown.color ? ` tint-${shown.color}` : ""}`}
-                  style={{ gridColumn: `span ${shown.w}`, gridRow: `span ${shown.h}` }}
+                  style={narrow ? undefined : { gridColumn: `span ${shown.w}`, gridRow: `span ${shown.h}` }}
                   onDragStart={(e) => start(e, { spot: at })}
                   {...target({ group, card: i })}
                 >
                   {/* inert: nothing on the canvas switches a device or starts a run */}
                   <div inert><CardBody card={shown} section={g.title} /></div>
-                  <button type="button" className="builder-select" aria-label={`Select ${name}`} aria-pressed={isSelected}
-                          onClick={() => onSelect({ group, card: i })} />
+                  {/* a div, because Firefox won't start a drag from a button */}
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    className="builder-select"
+                    aria-label={`Select ${name}`}
+                    aria-pressed={isSelected}
+                    onClick={() => onSelect({ group, card: i })}
+                    onKeyDown={(e) => {
+                      if (e.key !== "Enter" && e.key !== " ") return;
+                      e.preventDefault();
+                      onSelect({ group, card: i });
+                    }}
+                  />
                   <Button className="builder-remove" size="small" icon={<DismissRegular />} aria-label={`Remove ${name}`}
                           onClick={() => onRemove(at)} />
                 </div>

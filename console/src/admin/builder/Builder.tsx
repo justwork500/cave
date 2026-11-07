@@ -1,8 +1,11 @@
-import { Spinner } from "@fluentui/react-components";
+import {
+  Button, DrawerBody, DrawerFooter, DrawerHeader, DrawerHeaderTitle, OverlayDrawer, Spinner,
+} from "@fluentui/react-components";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { api } from "../../api/client";
 import type { EntityView } from "../../api/types";
+import { useFolded } from "../../app/live";
 import { Canvas, type Selected, type Target } from "./Canvas";
 import {
   type Draft, type DraftCard, type Source, type Spot, addCard, addGroup, afterRemove, cardFor, moveCard, moveGroup,
@@ -32,6 +35,8 @@ export function Builder({ draft, onChange }: { draft: Draft; onChange: (d: Draft
   const [view, setView] = useState(0);
   const [selected, setSelected] = useState<Selected>(null);
   const [status, setStatus] = useState("");
+  const folded = useFolded();
+  const [drawer, setDrawer] = useState<"add" | "settings" | null>(null);
 
   const groups = draft.dashboard.views?.[view]?.sections ?? [];
   const cardsIn = (g: number) => groups[g]?.cards ?? [];
@@ -102,9 +107,23 @@ export function Builder({ draft, onChange }: { draft: Draft; onChange: (d: Draft
   const group = selected ? groups[selected.group] : undefined;
   const card = selected?.card !== undefined ? group?.cards?.[selected.card] : undefined;
 
+  const panel = (which: "add" | "settings", title: string, body: ReactNode) => (folded ? (
+    <OverlayDrawer position="end" open={drawer === which} onOpenChange={(_, d) => !d.open && setDrawer(null)}>
+      <DrawerHeader><DrawerHeaderTitle>{title}</DrawerHeaderTitle></DrawerHeader>
+      <DrawerBody>{body}</DrawerBody>
+      <DrawerFooter><Button onClick={() => setDrawer(null)}>Done</Button></DrawerFooter>
+    </OverlayDrawer>
+  ) : body);
+
   return (
-    <div className="builder">
-      <Palette states={all} onAdd={(s) => add(s)} />
+    <div className={`builder${folded ? " folded" : ""}`}>
+      {folded && (
+        <div className="row start">
+          <Button appearance="primary" onClick={() => setDrawer("add")}>Add</Button>
+          <Button disabled={!selected} onClick={() => setDrawer("settings")}>Settings</Button>
+        </div>
+      )}
+      {panel("add", "Add to dashboard", <Palette states={all} onAdd={(s) => add(s)} />)}
       <Canvas
         draft={draft}
         view={view}
@@ -119,7 +138,7 @@ export function Builder({ draft, onChange }: { draft: Draft; onChange: (d: Draft
         onRemove={remove}
         onAddGroup={newGroup}
       />
-      <aside className="builder-panel" aria-label="Settings">
+      {panel("settings", "Settings", <aside className="builder-panel" aria-label="Settings">
         {selected && card && selected.card !== undefined ? (
           <TileSettings
             key={`${view}-${selected.group}-${selected.card}`}
@@ -155,7 +174,7 @@ export function Builder({ draft, onChange }: { draft: Draft; onChange: (d: Draft
         ) : (
           <p className="muted">Select a tile or group to change it.</p>
         )}
-      </aside>
+      </aside>)}
       <p className="sr-only" role="status">{status}</p>
     </div>
   );

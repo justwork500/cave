@@ -59,7 +59,7 @@ describe("visual and YAML", () => {
     open(BOARD);
     await addLight();
     await userEvent.click(screen.getByRole("tab", { name: "YAML" }));
-    expect(await yamlBox()).toHaveValue(expect.stringContaining("switch.gate"));
+    expect(((await yamlBox()) as HTMLTextAreaElement).value).toContain("switch.gate");
     await userEvent.click(screen.getByRole("tab", { name: "Visual" }));
     expect(await screen.findByRole("button", { name: "Select Gate light" })).toBeInTheDocument();
   });
@@ -86,8 +86,9 @@ ${BOARD}`);
     const dialog = await screen.findByRole("dialog");
     expect(within(dialog).getByText("Remove the comments in this YAML?")).toBeInTheDocument();
     await userEvent.click(within(dialog).getByRole("button", { name: "Keep editing in YAML" }));
-    expect(await yamlBox()).toHaveValue(expect.stringContaining("# mine"));
-    expect(screen.getByRole("textbox", { name: "YAML" })).not.toHaveValue(expect.stringContaining("switch.gate"));
+    const text = ((await yamlBox()) as HTMLTextAreaElement).value;
+    expect(text).toContain("# mine");
+    expect(text).not.toContain("switch.gate");
   });
 
   it("goes ahead once you agree to remove comments", async () => {

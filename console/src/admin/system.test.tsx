@@ -70,6 +70,7 @@ describe("dashboards", () => {
       </LiveContext.Provider>,
       "/admin/dashboards/kids",
     );
+    await userEvent.click(await screen.findByRole("tab", { name: "YAML" }));
     const text = await screen.findByRole("textbox", { name: "YAML" });
     await userEvent.type(text, "#");
     await userEvent.click(screen.getByRole("button", { name: "Save and preview" }));

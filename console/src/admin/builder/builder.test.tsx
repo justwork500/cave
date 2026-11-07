@@ -118,6 +118,13 @@ describe("the builder", () => {
     expect(screen.queryByRole("button", { name: "Add Left fan" })).not.toBeInTheDocument();
   });
 
+  it("selects a tile by keyboard", async () => {
+    show();
+    (await screen.findByRole("button", { name: "Select UPS load" })).focus();
+    await userEvent.keyboard("{Enter}");
+    expect(screen.getByLabelText("Label")).toHaveAttribute("placeholder", "UPS load");
+  });
+
   it("never switches or runs anything from the canvas", async () => {
     const { calls } = show();
     await select("Left fan");
@@ -346,6 +353,21 @@ describe("the builder", () => {
     await waitFor(() => expect(screen.getByText("Restricted")).toBeInTheDocument());
     await userEvent.click(screen.getByRole("button", { name: "Move later" }));
     expect(names(1)).toEqual(["Go", "switch.hidden"]);
+  });
+
+  it("folds the side panels into drawers on a narrow screen", async () => {
+    setNarrow(true);
+    show();
+    await screen.findByRole("button", { name: "Select Left fan" });
+    expect(screen.queryByRole("button", { name: "Add Left fan" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Settings" })).toBeDisabled();
+    await userEvent.click(screen.getByRole("button", { name: "Add" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Add Office Lamp" }));
+    expect(names(1).at(-1)).toBe("switch.lamp");
+    await userEvent.click(screen.getByRole("button", { name: "Done" }));
+    await select("UPS load");
+    await userEvent.click(screen.getByRole("button", { name: "Settings" }));
+    expect(await screen.findByLabelText("Label")).toBeInTheDocument();
   });
 
   it("passes an accessibility check", async () => {
