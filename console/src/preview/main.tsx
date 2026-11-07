@@ -16,7 +16,7 @@ import * as F from "./fixtures";
 
 const GET: Record<string, unknown> = {
   "/me": F.me, "/items": F.items, "/notifications": F.notifications, "/summary": F.summary,
-  "/dashboards/default": { slug: "home" }, "/dashboards/home/view": F.dashboardView, "/states": F.states,
+  "/dashboards/default": { slug: "home" }, "/dashboards/home": F.dashboardDoc, "/dashboards/home/view": F.dashboardView, "/states": F.states,
   "/areas": F.areas,
   "/users": F.users, "/groups": F.groups, "/screens": F.screens, "/tokens": F.tokens, "/audit": F.audit,
   "/signin-log": F.signins, "/automations": F.listed.automations, "/sequences": F.listed.sequences,

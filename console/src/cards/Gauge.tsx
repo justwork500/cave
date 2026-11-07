@@ -1,6 +1,7 @@
 import { LockClosedRegular } from "@fluentui/react-icons";
 import type { GaugeCard } from "../api/types";
 import { isFull, stateText, useLiveState } from "./entity";
+import { CardIcon } from "./look";
 
 const LEVELS: Record<string, { label: string; colour: string }> = {
   green: { label: "Normal", colour: "#2e7d32" },
@@ -16,10 +17,12 @@ export function level(value: number, severity: Record<string, number> | null) {
 
 export function Gauge({ card }: { card: GaugeCard }) {
   const { state, attributes } = useLiveState(card.entity);
+  const name = card.label || card.entity.name;
+  const title = <span className="tile-name"><CardIcon name={card.icon} />{name}</span>;
   if (!isFull(card.entity)) {
     return (
       <div className="tile locked">
-        <span className="tile-name">{card.entity.name}</span>
+        {title}
         <span className="tile-state">
           <LockClosedRegular aria-hidden /> Restricted
         </span>
@@ -40,13 +43,13 @@ export function Gauge({ card }: { card: GaugeCard }) {
     <div
       className="gauge"
       role="meter"
-      aria-label={card.entity.name}
+      aria-label={name}
       aria-valuemin={card.min}
       aria-valuemax={card.max}
       aria-valuenow={known ? value : undefined}
       aria-valuetext={sev ? `${text}, ${sev.label}` : text}
     >
-      <span className="tile-name">{card.entity.name}</span>
+      {title}
       <svg viewBox="0 0 100 56" aria-hidden="true">
         <path d="M10 50 A40 40 0 0 1 90 50" className="gauge-track" />
         {fraction > 0 && (

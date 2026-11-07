@@ -101,7 +101,10 @@ def refs(doc: Automation | Sequence | Dashboard) -> Refs:
                     entities.add(x.entity)
                 if x.action:
                     kind, ident = x.action.split(".", 1)
-                    (sequences if kind == "sequence" else automations).add(ident)
+                    if kind == "script":
+                        scripts.add(f"scripts/{ident}")
+                    else:
+                        (sequences if kind == "sequence" else automations).add(ident)
             elif isinstance(x, MarkdownCard):
                 template(x.content)
 

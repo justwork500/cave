@@ -35,16 +35,20 @@ export type EntityView = FullEntity | RestrictedEntity;
 interface CardBase {
   w: number;
   h: number;
+  icon?: string | null;
+  color?: string | null;
 }
 export interface TileCard extends CardBase {
   type: "tile";
   entity: EntityView;
+  label?: string | null;
   tap_action: "toggle" | "none";
   locked: boolean;
 }
 export interface GaugeCard extends CardBase {
   type: "gauge";
   entity: EntityView;
+  label?: string | null;
   min: number;
   max: number;
   severity: Record<string, number> | null;
@@ -53,6 +57,7 @@ export interface GaugeCard extends CardBase {
 export interface EntitiesCard extends CardBase {
   type: "entities";
   entities: EntityView[];
+  label?: string | null;
 }
 export interface ButtonCard extends CardBase {
   type: "button";

@@ -7,7 +7,7 @@ import { useState } from "react";
 import { useSearchParams } from "react-router";
 import { api, message } from "../api/client";
 import type { EntityView, FullEntity } from "../api/types";
-import { isFull, stateText, useLiveState } from "../cards/entity";
+import { SWITCHABLE, isFull, stateText, useLiveState } from "../cards/entity";
 import { AddDevice } from "./AddDevice";
 import { DataTable, ErrorBar, Page } from "./Page";
 
@@ -16,8 +16,6 @@ interface Area {
   name: string;
   floor: string | null;
 }
-
-const SWITCHABLE = new Set(["switch", "light"]);
 
 /** The device's live state, with an on/off switch when it's a device that has one and is answering. */
 function DeviceState({ entity }: { entity: FullEntity }) {
