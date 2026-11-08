@@ -168,9 +168,13 @@ def script_row(client, file):
     return next(s for s in client.get("/api/v1/scripts").json() if s["file"] == file)
 
 
-def disable(app, file):
+def change_item(app, file, **changes):
     item = get_item(app.state.db, f"script:{file}")
-    upsert_item(app.state.db, "test", dataclasses.replace(item, status="disabled"))
+    upsert_item(app.state.db, "test", dataclasses.replace(item, **changes))
+
+
+def disable(app, file):
+    change_item(app, file, status="disabled")
 
 
 def test_section_holder_runs_an_unrestricted_script(app, users, monkeypatch):
@@ -207,6 +211,33 @@ def test_disabled_without_assignments_is_refused(app, users, monkeypatch):
     disable(app, "plain.py")
     op = sign_in(lan_client(app), "op", "pw-op-1234", users.op_totp)
     assert op.post("/api/v1/scripts/plain.py/run", json={}).status_code == 403
+
+
+def test_hidden_script_is_admin_only(app, users, monkeypatch):
+    setup(app, monkeypatch, "plain.py", PLAIN)
+    change_item(app, "plain.py", visibility="hide")
+    op = sign_in(lan_client(app), "op", "pw-op-1234", users.op_totp)
+    admin = sign_in(lan_client(app), "admin", "pw-admin-1234", users.admin_totp)
+    assert op.post("/api/v1/scripts/plain.py/run", json={}).status_code == 403
+    assert script_row(op, "plain.py")["allowed"] is False
+    assert admin.post("/api/v1/scripts/plain.py/run", json={}).status_code == 200
+
+
+def test_home_network_script_refuses_section_holders_outside(app, users, monkeypatch):
+    setup(app, monkeypatch, "plain.py", PLAIN)
+    change_item(app, "plain.py", network="local")
+    away = sign_in(lan_client(app, "203.0.113.9"), "op", "pw-op-1234", users.op_totp)
+    home = sign_in(lan_client(app), "op", "pw-op-1234", users.op_totp)
+    assert away.post("/api/v1/scripts/plain.py/run", json={}).status_code == 403
+    assert home.post("/api/v1/scripts/plain.py/run", json={}).status_code == 200
+
+
+def test_automations_do_not_run_a_disabled_script(app, users, monkeypatch):
+    service = setup(app, monkeypatch, "plain.py", PLAIN)
+    disable(app, "plain.py")
+    with pytest.raises(ValueError, match="turned off"):
+        asyncio.run(service.run("plain.py", {}, "automation:a"))
+    assert app.state.db.execute("SELECT count(*) FROM script_runs").fetchone()[0] == 0
 
 
 def test_runs_kept_100(app, users, monkeypatch):

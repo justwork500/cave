@@ -61,10 +61,13 @@ def can_control(db: Database, p: Principal, entity_id: str, client_ip: IPAddress
 
 
 def can_run_script(db: Database, p: Principal, file: str, client_ip: IPAddress, local_ranges: Sequence[str]) -> bool:
-    """The Scripts section covers every script, until an Admin assigns or disables one: then its item alone decides."""
+    """The Scripts section covers every script, until an Admin assigns, hides or disables one: then its item alone
+    decides. Home network only still applies to section holders."""
     item, section = get_item(db, f"script:{file}"), get_item(db, "section:scripts")
-    if item is not None and (item.status == "disabled" or get_assignments(db, item.id)):
+    if item is not None and (item.status == "disabled" or item.visibility == "hide" or get_assignments(db, item.id)):
         return evaluate(db, p, item, client_ip, local_ranges).allowed
+    if item is not None and item.network == "local" and not p.is_admin and not is_local(client_ip, local_ranges):
+        return False
     return any(i is not None and evaluate(db, p, i, client_ip, local_ranges).allowed for i in (item, section))
 
 

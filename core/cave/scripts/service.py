@@ -12,6 +12,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from cave import audit
+from cave.access.items import get_item
 from cave.db import Database
 from cave.runner.execute import mask_value, masker
 from cave.scripts.header import check_args
@@ -73,6 +74,9 @@ class ScriptService:
         loaded = self.store.get(file)
         if loaded is None:
             raise ValueError(f"There's no script called {file!r}.")
+        item = get_item(self.db, f"script:{file}")
+        if item is not None and item.status == "disabled":  # automations call here directly, without a person to check
+            raise ValueError(f"The script {file!r} is turned off.")
         try:
             params = check_args(loaded.header, args)
         except ValueError as e:
