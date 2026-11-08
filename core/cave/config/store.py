@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from cave import audit
-from cave.access.evaluate import AccessDenied, assert_can_save, evaluate
+from cave.access.evaluate import AccessDenied, assert_can_save, can_run_script, evaluate
 from cave.access.items import ensure_item, get_item, set_item_entities
 from cave.access.model import Principal
 from cave.access.network import IPAddress
@@ -217,8 +217,7 @@ class ConfigStore:
                     raise AccessDenied(f"You can't use the {kind} {ident!r}, so you can't save something that runs it.")
         for ref in sorted(r.scripts):
             file = ref.removeprefix("scripts/")
-            item = get_item(self.db, f"script:{file}")
-            if item is None or not evaluate(self.db, p, item, ip, local_ranges).allowed:
+            if get_item(self.db, f"script:{file}") is None or not can_run_script(self.db, p, file, ip, local_ranges):
                 raise AccessDenied(f"You can't run the script {file!r}, so you can't save something that runs it.")
 
     # ---- saving ----
