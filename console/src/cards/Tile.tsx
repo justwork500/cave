@@ -2,6 +2,7 @@ import { LockClosedRegular } from "@fluentui/react-icons";
 import { useMutation } from "@tanstack/react-query";
 import { api, message } from "../api/client";
 import type { EntityView } from "../api/types";
+import { Controls } from "./controls";
 import { isFull, roomText, stateText, useLiveState } from "./entity";
 
 /** One device: the state in big type. Locked devices show only that they exist. */
@@ -46,9 +47,17 @@ export function Tile({ entity, tapAction = "none", row = false, section }: {
       )}
     </>
   );
+  const withControls = ["media_player", "number", "select"].includes(entity.capability);
   const on = ACTIVE.has(state ?? "");
   const look = `${cls}${on ? " on" : ""}${state === "unavailable" ? " unavailable" : ""}`;
-  if (tapAction !== "toggle") return <div className={look}>{body}</div>;
+  if (tapAction !== "toggle") {
+    return (
+      <div className={look}>
+        {body}
+        {withControls && <Controls entity={entity} />}
+      </div>
+    );
+  }
   return (
     <button
       type="button"
