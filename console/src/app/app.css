@@ -170,6 +170,12 @@ button.tile:active { transform: scale(0.985); }
 .tile.locked { background: var(--surface); border: 1px dashed var(--control); color: var(--muted); }
 .tile.locked .tile-state { font-size: 14px; font-weight: 500; display: inline-flex; gap: 6px; align-items: center; }
 .tile-error { font-size: 12px; color: var(--negative); }
+.tile-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 4px; }
+.tile-control { display: flex; align-items: center; gap: 8px; flex: 1 1 140px; min-width: 0; }
+.tile-control .fui-Slider { flex: 1; min-width: 0; }
+.tile-control span { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.tile-controls .fui-Dropdown { flex: 1 1 100%; min-width: 0; }
+.tile-controls .tile-error { flex: 1 1 100%; }
 .device-switch { margin: -4px 0 -4px -8px; } /* line up with the plain state text, keep rows their height */
 .tile.row { border: 0; border-radius: 0; padding: 10px 0; background: none;
   grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; border-bottom: 1px solid var(--rule); }

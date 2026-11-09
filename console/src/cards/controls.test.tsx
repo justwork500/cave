@@ -1,5 +1,6 @@
 import userEvent from "@testing-library/user-event";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { useState } from "react";
 import { describe, expect, it } from "vitest";
 import type { EntityView } from "../api/types";
 import { expectAccessible } from "../test/axe";
@@ -109,5 +110,36 @@ describe("controls on toggle tiles", () => {
     await userEvent.keyboard("{ArrowRight}");
     await waitFor(() => expect(calls).toHaveLength(1));
     expect(calls[0]?.body).toEqual({ level: 11 });
+  });
+});
+
+describe("slider follows the device", () => {
+  it("moves when the entity's volume changes", () => {
+    mockApi({});
+    function Host() {
+      const [volume, setVolume] = useState(10);
+      return (
+        <>
+          <button type="button" onClick={() => setVolume(55)}>Elsewhere</button>
+          <Controls entity={tv("on", { volume })} />
+        </>
+      );
+    }
+    renderWith(<Host />);
+    expect(screen.getByRole("slider", { name: "Volume" })).toHaveValue("10");
+    fireEvent.click(screen.getByRole("button", { name: "Elsewhere" }));
+    expect(screen.getByRole("slider", { name: "Volume" })).toHaveValue("55");
+  });
+
+  it("snaps back after a refused command", async () => {
+    mockApi({
+      "POST /entities/media_player.living_tv/commands/volume_set": [409, { detail: "This device can't take commands right now." }],
+    });
+    renderWith(<Controls entity={tv("on", { volume: 10 })} />);
+    const slider = screen.getByRole("slider", { name: "Volume" });
+    fireEvent.change(slider, { target: { value: "40" } });
+    fireEvent.pointerUp(slider);
+    await screen.findByText("This device can't take commands right now.");
+    expect(slider).toHaveValue("10");
   });
 });

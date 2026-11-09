@@ -11,14 +11,24 @@ const list = (v: unknown) => (Array.isArray(v) ? v.map(String) : []);
 /** A slider that sends its value once, when the person lets go. */
 function Level({ label, min, max, step, start, unit, send }: {
   label: string; min: number; max: number; step: number; start: number; unit?: string;
-  send: (value: number) => void;
+  send: (value: number, revert: () => void) => void;
 }) {
   const [value, setValue] = useState(start);
   const [sent, setSent] = useState(start);
+  // Follow the device when its value changes elsewhere.
+  const [seen, setSeen] = useState(start);
+  if (seen !== start) {
+    setSeen(start);
+    setValue(start);
+    setSent(start);
+  }
   const release = () => {
     if (value === sent) return;
     setSent(value);
-    send(value);
+    send(value, () => {
+      setValue(start);
+      setSent(start);
+    });
   };
   return (
     <div className="tile-control">
@@ -60,7 +70,8 @@ export function Controls({ entity }: { entity: EntityView }) {
       api.post(`/entities/${encodeURIComponent(entity.entity_id)}/commands/${c.command}`, c.args),
   });
   if (!isFull(entity)) return null;
-  const run = (command: string, args?: Record<string, unknown>) => send.mutate({ command, args });
+  const run = (command: string, args?: Record<string, unknown>, revert?: () => void) =>
+    send.mutate({ command, args }, { onError: revert });
 
   let controls = null;
   if (entity.capability === "media_player") {
@@ -75,7 +86,7 @@ export function Controls({ entity }: { entity: EntityView }) {
         )}
         {typeof attributes.volume === "number" && (
           <Level label="Volume" min={0} max={100} step={1} start={attributes.volume}
-                 send={(level) => run("volume_set", { level })} />
+                 send={(level, revert) => run("volume_set", { level }, revert)} />
         )}
         {sources.length > 0 && (
           <Choice label="Source" options={sources} selected={String(attributes.source ?? "")}
@@ -88,7 +99,7 @@ export function Controls({ entity }: { entity: EntityView }) {
       <Level label={entity.name} min={num(attributes.min, 0)} max={num(attributes.max, 100)}
              step={num(attributes.step, 1) || 1} start={num(Number(state), 0)}
              unit={typeof attributes.unit === "string" ? attributes.unit : undefined}
-             send={(value) => run("set_value", { value })} />
+             send={(value, revert) => run("set_value", { value }, revert)} />
     );
   } else if (entity.capability === "select") {
     controls = (
