@@ -4,6 +4,7 @@ Integrations call `check_command` first in their command handler. A `ValueError`
 carries a sentence a person can read; the API turns it into a 409.
 """
 
+import math
 from collections.abc import Callable, Mapping
 from typing import Any
 
@@ -14,9 +15,10 @@ def _num(raw: Any) -> float | None:
     if isinstance(raw, bool):
         return None
     try:
-        return float(raw)
+        result = float(raw)
     except (TypeError, ValueError):
         return None
+    return result if math.isfinite(result) else None
 
 
 def _volume_set(args: Mapping[str, Any], _attrs: Mapping[str, Any]) -> dict[str, Any]:
