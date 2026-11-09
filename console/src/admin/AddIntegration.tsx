@@ -20,7 +20,6 @@ const SECRET_LABEL = { password: "Password", key: "Encryption key", pin: "PIN" }
 /** Add and remove devices for one integration: address, check, pairing step, Add. */
 export function AddIntegration({ integration, onDone }: { integration: IntegrationInfo; onDone: () => void }) {
   const client = useQueryClient();
-  const base = `/integrations/${integration.domain}`;
   const [host, setHost] = useState("");
   const [secret, setSecret] = useState("");
   const [removing, setRemoving] = useState<IntegrationInfo["devices"][number] | null>(null);
@@ -31,9 +30,9 @@ export function AddIntegration({ integration, onDone }: { integration: Integrati
     void client.invalidateQueries({ queryKey: ["states"] });
   };
 
-  const probe = useMutation({ mutationFn: () => api.post<Probe>(`${base}/probe`, { host: host.trim() }) });
+  const probe = useMutation({ mutationFn: () => api.post<Probe>(`/integrations/${encodeURIComponent(integration.domain)}/probe`, { host: host.trim() }) });
   const add = useMutation({
-    mutationFn: () => api.post(`${base}/devices`, { host: host.trim(), ...(label ? { secret } : {}) }),
+    mutationFn: () => api.post(`/integrations/${encodeURIComponent(integration.domain)}/devices`, { host: host.trim(), ...(label ? { secret } : {}) }),
     onSuccess: () => {
       setSecret("");
       setHost("");
@@ -42,7 +41,7 @@ export function AddIntegration({ integration, onDone }: { integration: Integrati
     },
   });
   const remove = useMutation({
-    mutationFn: (id: string) => api.del(`${base}/devices/${id}`),
+    mutationFn: (id: string) => api.del(`/integrations/${encodeURIComponent(integration.domain)}/devices/${encodeURIComponent(id)}`),
     onSuccess: () => {
       setRemoving(null);
       changed();
