@@ -40,6 +40,28 @@ export const states = [
   e("lock.front_door", "Front door", "front_yard", "locked"),
 ];
 
+export const dashboardDoc = {
+  name: "Home",
+  yaml: `dashboard:
+  title: Home
+  views:
+    - id: main
+      title: Main
+      sections:
+        - title: Living room
+          cards:
+            - { type: tile, entity: light.living_room, tap_action: toggle, icon: lightbulb }
+            - { type: tile, entity: light.reading_lamp, tap_action: toggle, label: Lamp, color: amber }
+            - { type: gauge, entity: sensor.ups_load_pct, w: 3, h: 2 }
+            - { type: button, name: Back up photos, action: script.backup-photos.sh, confirm: true }
+        - title: Kitchen
+          cards:
+            - { type: tile, entity: sensor.kitchen_temperature, tap_action: none, w: 6, color: green }
+            - { type: entities, entities: [switch.kitchen_kettle, cover.garage_door], label: Around the house, w: 6, h: 2 }
+            - { type: markdown, content: "Bins go out on Tuesday." }
+`,
+};
+
 export const dashboardView = {
   slug: "home", title: "Home", icon: null,
   views: [{ id: "main", title: "Home", sections: [
@@ -153,8 +175,8 @@ export const traces = [
 ];
 
 export const scripts = [
-  { file: "Stop-LabHosts.ps1", name: "Stop lab hosts", language: "ps1", allowed: true },
-  { file: "backup-photos.sh", name: "Back up photos", language: "sh", allowed: true },
+  { file: "Stop-LabHosts.ps1", name: "Stop lab hosts", language: "ps1", allowed: true, runnable: true },
+  { file: "backup-photos.sh", name: "Back up photos", language: "sh", allowed: true, runnable: true },
 ];
 
 export const script = {

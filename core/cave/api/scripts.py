@@ -57,7 +57,8 @@ def list_scripts(request: Request, p: Caller) -> list[dict[str, Any]]:
     for s in scripts(request).list():
         if get_item(db, f"script:{s.file}") is not None:
             allowed = can_run_script(db, p, s.file, ip, ranges)
-            out.append({"file": s.file, "name": s.header.name, "language": s.language, "allowed": allowed})
+            out.append({"file": s.file, "name": s.header.name, "language": s.language, "allowed": allowed,
+                        "runnable": all(q.default is not None for q in s.header.params.values())})
     return out
 
 

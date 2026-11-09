@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Route, Routes } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -23,6 +23,122 @@ function at(path: string) {
   );
 }
 
+const BOARD = `dashboard:
+  title: Gate
+  views:
+    - id: main
+      title: Main
+      sections:
+        - title: Doors
+          cards: []
+`;
+
+const LISTS = {
+  "GET /states": [{ entity_id: "switch.gate", name: "Gate light", area_id: null, capability: "switch", state: "off",
+                    attributes: {}, last_changed: null }],
+  "GET /automations": [], "GET /sequences": [], "GET /scripts": [],
+};
+
+function open(yaml: string, routes: Record<string, unknown> = {}) {
+  const calls = mockApi({ ...LISTS, "GET /dashboards/gate": { name: "Gate", yaml }, ...routes });
+  at("/admin/dashboards/gate");
+  return calls;
+}
+
+const addLight = async () => userEvent.click(await screen.findByRole("button", { name: "Add Gate light" }));
+const yamlBox = () => screen.findByRole("textbox", { name: "YAML" });
+
+describe("visual and YAML", () => {
+  it("opens in Visual", async () => {
+    open(BOARD);
+    expect(await screen.findByRole("tab", { name: "Visual", selected: true })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Add Gate light" })).toBeInTheDocument();
+  });
+
+  it("carries unsaved changes from Visual to YAML and back", async () => {
+    open(BOARD);
+    await addLight();
+    await userEvent.click(screen.getByRole("tab", { name: "YAML" }));
+    expect(((await yamlBox()) as HTMLTextAreaElement).value).toContain("switch.gate");
+    await userEvent.click(screen.getByRole("tab", { name: "Visual" }));
+    expect(await screen.findByRole("button", { name: "Select Gate light" })).toBeInTheDocument();
+  });
+
+  it("disables Visual with the reason when the YAML can't be used", async () => {
+    open(BOARD);
+    await screen.findByRole("button", { name: "Add Gate light" });
+    await userEvent.click(screen.getByRole("tab", { name: "YAML" }));
+    fireEvent.change(await yamlBox(), { target: { value: "title: nope\n" } });
+    expect(screen.getByRole("tab", { name: "Visual" })).toBeDisabled();
+    expect(screen.getByText("There's no dashboard in this YAML.")).toBeInTheDocument();
+  });
+
+  it("opens YAML it can't draw straight in YAML", async () => {
+    open("dashboard: [");
+    expect(await screen.findByRole("tab", { name: "YAML", selected: true })).toBeInTheDocument();
+    expect(await yamlBox()).toHaveValue("dashboard: [");
+  });
+
+  it("warns before a visual change removes comments, and can stay in YAML", async () => {
+    open(`# mine
+${BOARD}`);
+    await addLight();
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText("Remove the comments in this YAML?")).toBeInTheDocument();
+    await userEvent.click(within(dialog).getByRole("button", { name: "Keep editing in YAML" }));
+    const text = ((await yamlBox()) as HTMLTextAreaElement).value;
+    expect(text).toContain("# mine");
+    expect(text).not.toContain("switch.gate");
+  });
+
+  it("goes ahead once you agree to remove comments", async () => {
+    open(`# mine
+${BOARD}`);
+    await addLight();
+    await userEvent.click(await screen.findByRole("button", { name: "Remove comments" }));
+    expect(await screen.findByRole("button", { name: "Select Gate light" })).toBeInTheDocument();
+  });
+
+  it("saves the draft through the normal route", async () => {
+    const calls = open(BOARD, { "PUT /dashboards/gate": { ok: true } });
+    await addLight();
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() => expect(calls.find((c) => c.method === "PUT")).toBeDefined());
+    expect((calls.find((c) => c.method === "PUT")?.body as { yaml: string }).yaml).toContain("switch.gate");
+  });
+
+  it("shows a save refusal and keeps the draft", async () => {
+    open(BOARD, { "PUT /dashboards/gate": [403, { detail: "You can't save this." }] });
+    await addLight();
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(await screen.findByText("You can't save this.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Select Gate light" })).toBeInTheDocument();
+  });
+
+  it("Discard goes back to the saved version", async () => {
+    open(BOARD);
+    await screen.findByRole("button", { name: "Add Gate light" });
+    expect(screen.getByRole("button", { name: "Discard" })).toBeDisabled();
+    await addLight();
+    await userEvent.click(screen.getByRole("button", { name: "Discard" }));
+    expect(await screen.findByRole("button", { name: "Add Gate light" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Select Gate light" })).not.toBeInTheDocument();
+  });
+
+  it("asks before closing with unsaved changes", async () => {
+    open(BOARD);
+    const closing = () => {
+      const e = new Event("beforeunload", { cancelable: true });
+      window.dispatchEvent(e);
+      return e.defaultPrevented;
+    };
+    await screen.findByRole("button", { name: "Add Gate light" });
+    expect(closing()).toBe(false);
+    await addLight();
+    expect(closing()).toBe(true);
+  });
+});
+
 describe("dashboards", () => {
   it("creates a new dashboard from its name and opens it for editing", async () => {
     const calls = mockApi({
@@ -37,6 +153,7 @@ describe("dashboards", () => {
     const put = calls.find((c) => c.method === "PUT")!;
     expect(put.query).toBe("?create=true");
     expect((put.body as { yaml: string }).yaml).toContain('title: "Garage tablet"');
+    expect((put.body as { yaml: string }).yaml).toContain("cards: []");
   });
 
   it("deletes a dashboard only after you confirm", async () => {

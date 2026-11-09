@@ -6,11 +6,14 @@ import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { api, message } from "../api/client";
 import type { ButtonCard } from "../api/types";
+import { CardIcon } from "./look";
 
 function run(card: ButtonCard) {
   if (card.action) {
-    const [kind, id = ""] = card.action.split(".", 2);
-    return api.post(`/${kind === "automation" ? "automations" : "sequences"}/${encodeURIComponent(id)}/run`);
+    const dot = card.action.indexOf("."); // a script's file name has dots of its own
+    const kind = card.action.slice(0, dot);
+    const id = encodeURIComponent(card.action.slice(dot + 1));
+    return api.post(`/${{ automation: "automations", sequence: "sequences" }[kind] ?? "scripts"}/${id}/run`);
   }
   return api.post(
     `/entities/${encodeURIComponent(card.entity ?? "")}/commands/${encodeURIComponent(card.command ?? "")}`,
@@ -38,7 +41,7 @@ export function ActionButton({ card }: { card: ButtonCard }) {
       <Button
         size="large"
         appearance="primary"
-        icon={<PlayRegular />}
+        icon={card.icon ? <CardIcon name={card.icon} /> : <PlayRegular />}
         disabled={go.isPending}
         onClick={() => (card.confirm ? setAsking(true) : go.mutate())}
       >

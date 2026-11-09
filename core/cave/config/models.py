@@ -284,34 +284,49 @@ class Sequence(_Strict):
     actions: list[Action] = Field(min_length=1)
 
 
+CardIcon = Literal["lightbulb", "plug", "power", "wind", "fire", "temperature", "drop", "sun", "snow", "door", "lock",
+                   "shield", "camera", "speaker", "tv", "home", "bed", "clock", "play", "battery"]
+CardColor = Literal["blue", "green", "amber", "red", "purple"]
+CardLabel = Annotated[str, Field(max_length=100)]
+
+
 class _Card(_Strict):
     w: Annotated[int, Field(ge=1, le=12)] = 3
     h: Annotated[int, Field(ge=1, le=8)] = 1
+    icon: CardIcon | None = None
+    color: CardColor | None = None
 
 
 class TileCard(_Card):
     type: Literal["tile"]
     entity: EntityId
+    label: CardLabel | None = None
     tap_action: Literal["toggle", "none"] = "toggle"
 
 
 class EntitiesCard(_Card):
     type: Literal["entities"]
     entities: list[EntityId]
+    label: CardLabel | None = None
 
 
 class GaugeCard(_Card):
     type: Literal["gauge"]
     entity: EntityId
+    label: CardLabel | None = None
     min: float = 0
     max: float = 100
     severity: dict[str, float] | None = None
 
 
+# the script branch is cave.scripts.header.FILE_NAME; Pydantic's patterns have no lookahead, so _target refuses ".."
+BUTTON_ACTION = r"^(automation|sequence)\.[a-z0-9_-]{1,64}$|^script\.[A-Za-z0-9_.-]{1,64}\.(ps1|py|sh)$"
+
+
 class ButtonCard(_Card):
     type: Literal["button"]
     name: str = Field(min_length=1, max_length=100)
-    action: Annotated[str, Field(pattern=r"^(automation|sequence)\.[a-z0-9_-]{1,64}$")] | None = None
+    action: Annotated[str, Field(pattern=BUTTON_ACTION)] | None = None
     entity: EntityId | None = None
     command: Ident | None = None
     confirm: bool | None = None
@@ -320,6 +335,8 @@ class ButtonCard(_Card):
     def _target(self) -> "ButtonCard":
         if (self.action is None) == (self.entity is None or self.command is None):
             raise ValueError("a button needs either an action, or an entity and a command")
+        if self.action and ".." in self.action:
+            raise ValueError("a script name can't contain two dots in a row")
         return self
 
 

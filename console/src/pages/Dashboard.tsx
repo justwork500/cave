@@ -13,14 +13,22 @@ import { load } from "../app/prefs";
 import { NoAccess } from "./NoAccess";
 import { finding, greeting, rooms } from "./glance";
 
-function CardBody({ card, section }: { card: Card; section: string }) {
+export function CardBody({ card, section }: { card: Card; section: string }) {
   switch (card.type) {
     case "tile":
-      return <Tile entity={card.entity} tapAction={card.locked ? "none" : card.tap_action} section={section} />;
+      return (
+        <Tile
+          entity={card.entity}
+          label={card.label}
+          icon={card.icon}
+          tapAction={card.locked ? "none" : card.tap_action}
+          section={section}
+        />
+      );
     case "gauge":
       return <Gauge card={card} />;
     case "entities":
-      return <Entities entities={card.entities} />;
+      return <Entities entities={card.entities} label={card.label} icon={card.icon} />;
     case "button":
       return <ActionButton card={card} />;
     case "markdown":
@@ -127,7 +135,7 @@ export function DashboardBody({ view: d }: { view: DashboardView }) {
             {s.cards.map((c, j) => (
               <div
                 key={j}
-                className={`card card-${c.type}`}
+                className={`card card-${c.type}${c.color ? ` tint-${c.color}` : ""}`}
                 style={narrow ? undefined : { gridColumn: `span ${c.w}`, gridRow: `span ${c.h}` }}
               >
                 <CardBody card={c} section={s.title} />
