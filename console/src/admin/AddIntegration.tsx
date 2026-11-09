@@ -89,6 +89,7 @@ export function AddIntegration({ integration, onDone }: { integration: Integrati
           <p>
             <b>{found.model}</b> <span className="muted">{found.name}</span>
           </p>
+          {found.added && <p>Already added. Adding it again updates its address.</p>}
           {label && (
             <Field label={label} hint={integration.pairing_hint} validationState={add.error ? "error" : "none"}
                    validationMessage={add.error ? message(add.error) : undefined}>
@@ -98,22 +99,30 @@ export function AddIntegration({ integration, onDone }: { integration: Integrati
           {kind === "button" && <p>{integration.pairing_hint}</p>}
           {!label && <ErrorBar error={add.error} />}
           <div>
-            <Button appearance="primary" type="submit" disabled={(label !== null && !secret) || add.isPending}>
+            <Button appearance="primary" type="submit" disabled={add.isPending}>
               Add
             </Button>
           </div>
         </form>
       )}
-      <ErrorBar error={remove.error} />
-      <Dialog open={removing !== null} onOpenChange={(_, d) => !d.open && setRemoving(null)}>
+      <Dialog open={removing !== null} onOpenChange={(_, d) => {
+        if (!d.open) {
+          setRemoving(null);
+          remove.reset();
+        }
+      }}>
         <DialogSurface>
           <DialogBody>
             <DialogTitle>{`Remove ${removing?.name ?? ""}?`}</DialogTitle>
-            <DialogContent>
-              CAVE stops controlling this device and forgets its saved key. You can add it again later.
+            <DialogContent className="stack">
+              <p>CAVE stops controlling this device and forgets its saved key. You can add it again later.</p>
+              <ErrorBar error={remove.error} />
             </DialogContent>
             <DialogActions>
-              <Button onClick={() => setRemoving(null)}>Cancel</Button>
+              <Button onClick={() => {
+                setRemoving(null);
+                remove.reset();
+              }}>Cancel</Button>
               <Button appearance="primary" disabled={remove.isPending}
                       onClick={() => removing && remove.mutate(removing.device_id)}>
                 Remove

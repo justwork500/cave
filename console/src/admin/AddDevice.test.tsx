@@ -142,18 +142,67 @@ describe("add device", () => {
     });
 
     it("never shows a saved secret", async () => {
+      let fail = true;
       mockApi({
         ...BASE, ...KASA, "GET /integrations": [HUE],
         "POST /integrations/hue/probe": BRIDGE,
-        "POST /integrations/hue/devices": [201, BRIDGE],
+        "POST /integrations/hue/devices": () => (fail ? [422, { detail: "That key was refused." }] : [201, BRIDGE]),
       });
-      const panel = await setUp("Philips Hue");
+      const { container } = renderWith(<Devices />);
+      await userEvent.click(await screen.findByRole("button", { name: "Add device" }));
+      const panel = await screen.findByRole("dialog");
+      await userEvent.click(await within(panel).findByRole("button", { name: "Set up Philips Hue" }));
       await check(panel);
       await userEvent.type(await within(panel).findByLabelText("Encryption key"), "the-key");
       await userEvent.click(within(panel).getByRole("button", { name: "Add" }));
-      await userEvent.click(await within(panel).findByRole("button", { name: "Set up Philips Hue" }));
-      for (const box of within(panel).getAllByRole("textbox")) expect(box).toHaveValue("");
-      expect(panel.querySelector("input[type=password]")).toBeNull();
+      expect(await within(panel).findByText("That key was refused.")).toBeInTheDocument();
+      await userEvent.click(within(panel).getByRole("button", { name: "Close Philips Hue" }));
+      await userEvent.click(within(panel).getByRole("button", { name: "Set up Philips Hue" }));
+      for (const i of document.body.querySelectorAll("input")) expect(i).not.toHaveValue("the-key");
+      expect(container.querySelector("input[type=password]")).toBeNull();
+      fail = false;
+    });
+
+    it("shows a failed remove inside the dialog", async () => {
+      mockApi({
+        ...BASE, ...KASA,
+        "GET /integrations": [{ ...HUE, devices: [{ device_id: "b1", host: "192.168.1.40", model: "Hue Bridge", name: "Hallway bridge" }] }],
+        "DELETE /integrations/hue/devices/b1": [404, { detail: "No such device." }],
+      });
+      const panel = await setUp("Philips Hue");
+      await userEvent.click(await within(panel).findByRole("button", { name: "Remove Hallway bridge" }));
+      const dialog = await screen.findByRole("dialog", { name: /Remove Hallway bridge/ });
+      await userEvent.click(within(dialog).getByRole("button", { name: "Remove" }));
+      expect(await within(dialog).findByText("No such device.")).toBeInTheDocument();
+    });
+
+    it("says when the device is already added, and refreshes the list after adding", async () => {
+      const calls = mockApi({
+        ...BASE, ...KASA, "GET /integrations": [HUE],
+        "POST /integrations/hue/probe": { ...BRIDGE, added: true },
+        "POST /integrations/hue/devices": [200, BRIDGE],
+      });
+      const panel = await setUp("Philips Hue");
+      await check(panel);
+      expect(await within(panel).findByText(/Already added/)).toBeInTheDocument();
+      const before = calls.filter((c) => c.method === "GET" && c.path === "/integrations").length;
+      await userEvent.type(within(panel).getByLabelText("Encryption key"), "k");
+      await userEvent.click(within(panel).getByRole("button", { name: "Add" }));
+      await vi.waitFor(() =>
+        expect(calls.filter((c) => c.method === "GET" && c.path === "/integrations").length).toBeGreaterThan(before));
+    });
+
+    it("posts no secret when no pairing is needed", async () => {
+      const calls = mockApi({
+        ...BASE, ...KASA, "GET /integrations": [SHELLY],
+        "POST /integrations/shelly/probe": BRIDGE,
+        "POST /integrations/shelly/devices": [201, BRIDGE],
+      });
+      const panel = await setUp("Shelly");
+      await check(panel);
+      await userEvent.click(await within(panel).findByRole("button", { name: "Add" }));
+      await vi.waitFor(() => expect(calls.some((c) => c.path === "/integrations/shelly/devices")).toBe(true));
+      expect(calls.find((c) => c.path === "/integrations/shelly/devices")?.body).toEqual({ host: "192.168.1.40" });
     });
 
     it("is accessible", async () => {
