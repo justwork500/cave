@@ -32,7 +32,7 @@ export function Mark({ size = 24 }: { size?: number }) {
 
 function Nav({ me, onGo }: { me: Me; onGo?: () => void }) {
   const items = useQuery({ queryKey: ["items"], queryFn: () => api.get<Item[]>("/items") });
-  const dashboards = (items.data ?? []).filter((i) => i.kind === "dashboard");
+  const dashboards = (items.data ?? []).filter((i) => i.kind === "dashboard" && !i.missing);
   return (
     <nav aria-label="Main" className="nav">
       {dashboards.length > 0 && (

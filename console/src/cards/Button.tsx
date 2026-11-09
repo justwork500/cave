@@ -20,6 +20,7 @@ function run(card: ButtonCard) {
   );
 }
 
+/** A dashboard button that runs an action, asking first when it's marked confirm; locked if not allowed. */
 export function ActionButton({ card }: { card: ButtonCard }) {
   const [asking, setAsking] = useState(false);
   const go = useMutation({ mutationFn: () => run(card) });

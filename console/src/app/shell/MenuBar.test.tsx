@@ -22,7 +22,8 @@ function bar(me: object) {
   const live = fakeLive();
   const calls = mockApi({
     "GET /items": [{ id: "dashboard:home", kind: "dashboard", name: "Home", allowed: true },
-                 { id: "dashboard:lab", kind: "dashboard", name: "Lab", allowed: false }],
+                 { id: "dashboard:lab", kind: "dashboard", name: "Lab", allowed: false },
+                 { id: "dashboard:gate", kind: "dashboard", name: "Gate", allowed: true, missing: true }],
     "GET /notifications": [],
     "POST /auth/logout": [204, undefined],
   });
@@ -51,6 +52,13 @@ describe("menu bar", () => {
     bar(ADMIN);
     expect(await screen.findByRole("link", { name: "Overview" })).toHaveAttribute("href", "/admin");
     expect(screen.getByRole("link", { name: "People" })).toHaveAttribute("href", "/admin/users");
+  });
+
+  it("leaves out dashboards whose file was deleted", async () => {
+    setNarrow(false);
+    bar(ADMIN);
+    expect(await screen.findByRole("link", { name: "Home" })).toBeInTheDocument();
+    expect(screen.queryByText("Gate")).not.toBeInTheDocument();
   });
 
   it("counts new notifications live", async () => {

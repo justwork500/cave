@@ -202,7 +202,3 @@ def screen_from_session(db: Database, session_id: str, now: datetime) -> Screen 
         return None
     screen = get_screen(db, row["screen_id"])
     return screen if screen is not None and screen.status == "approved" else None
-
-
-def end_session(db: Database, session_id: str) -> None:
-    db.execute("DELETE FROM screen_sessions WHERE id=?", (session_id,))

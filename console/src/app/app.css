@@ -193,9 +193,10 @@ button.tile:active { transform: scale(0.985); }
 .tile-error { font-size: 12px; color: var(--negative); }
 .device-switch { margin: -4px 0 -4px -8px; } /* line up with the plain state text, keep rows their height */
 .tile.row { border: 0; border-radius: 0; padding: 10px 0; background: none;
-  grid-template-columns: 1fr auto; align-items: baseline; border-bottom: 1px solid var(--rule); }
-.tile.row .tile-name { padding-right: 0; }
-.tile.row .tile-state { font-size: 16px; margin: 0; grid-row: 1 / span 2; grid-column: 2; font-variant-numeric: tabular-nums; }
+  grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; border-bottom: 1px solid var(--rule); }
+.tile.row .tile-name { padding-right: 0; overflow-wrap: anywhere; hyphens: auto; }
+.tile.row .tile-state { font-size: 16px; margin: 0; grid-row: 1 / span 2; grid-column: 2; font-variant-numeric: tabular-nums;
+  white-space: nowrap; }
 .tile.row.locked { background: none; border: 0; border-bottom: 1px solid var(--rule); }
 .entities { list-style: none; margin: 0; padding: 4px 16px; border-radius: var(--radius-card);
   background: var(--raised); border: 1px solid var(--border); }

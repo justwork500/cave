@@ -1,3 +1,5 @@
+"""System API: local network ranges and trusted proxies, the HTTPS certificate, and MQTT status."""
+
 from pathlib import Path
 from typing import Annotated, Any
 

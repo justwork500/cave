@@ -1,3 +1,5 @@
+"""Automation API: notifications, Test Center runs, running actions by hand, and run traces."""
+
 import dataclasses
 from datetime import datetime
 from typing import Annotated, Any, Literal

@@ -1,3 +1,5 @@
+"""The live websocket: state changes and notifications filtered per viewer, and device commands."""
+
 import asyncio
 import contextlib
 import time

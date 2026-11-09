@@ -75,6 +75,7 @@ function NewToken({ onClose }: { onClose: () => void }) {
   );
 }
 
+/** The API tokens page: create a token (shown once) and revoke tokens. */
 export function Tokens() {
   const client = useQueryClient();
   const tokens = useQuery({ queryKey: ["tokens"], queryFn: () => api.get<Token[]>("/tokens") });

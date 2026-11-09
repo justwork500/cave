@@ -1,3 +1,5 @@
+"""Screen API: enrolling, approving and revoking wall tablets, and their key-based sign-in."""
+
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response

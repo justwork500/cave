@@ -62,7 +62,7 @@ function NewUser() {
                 <Input value={form.display_name} onChange={set("display_name")} />
               </Field>
               <Field label="Username">
-                <Input value={form.username} onChange={set("username")} autoComplete="off" />
+                <Input value={form.username} onChange={set("username")} autoComplete="off" spellCheck={false} />
               </Field>
               <Field label="Password" hint={`At least ${MIN_PASSWORD} characters. They can change it later.`}>
                 <Input type="password" value={form.password} onChange={set("password")} autoComplete="new-password" />
@@ -97,6 +97,7 @@ function NewUser() {
   );
 }
 
+/** The People page: add people, change their role, and turn accounts on or off. */
 export function Users() {
   const client = useQueryClient();
   const users = useQuery({ queryKey: ["users"], queryFn: () => api.get<User[]>("/users") });

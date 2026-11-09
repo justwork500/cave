@@ -50,10 +50,12 @@ def as_admin(app, users):
     return sign_in(lan_client(app), "admin", "pw-admin-1234", users.admin_totp)
 
 
-def test_operator_needs_script_item_to_save_automation(app, users):
+def test_saving_an_automation_follows_the_script_run_rule(app, users):
     put(app, "scripts", "disk.sh", "# cave:\n#   name: Disk\necho '{}'\n")
     app.state.scripts.load_all()
     op = as_op(app, users)
+    assert op.put("/api/v1/automations/report", json={"yaml": CALLS_SCRIPT}).status_code == 200  # unrestricted
+    set_assignments(app.state.db, "test", "script:disk.sh", [("role", "household")])  # an Admin restricts it
     r = op.put("/api/v1/automations/report", json={"yaml": CALLS_SCRIPT})
     assert r.status_code == 403 and "disk.sh" in r.json()["detail"]
     set_assignments(app.state.db, "test", "script:disk.sh", [("role", "operator")])

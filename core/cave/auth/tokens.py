@@ -1,3 +1,5 @@
+"""API tokens: stored hashed, shown once, revocable."""
+
 import hashlib
 import secrets
 import uuid

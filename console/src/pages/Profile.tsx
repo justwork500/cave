@@ -10,10 +10,11 @@ import type { ThemeName } from "../app/theme";
 
 const MIN_PASSWORD = 12;
 
+/** The viewer's own settings, kept in this browser: theme and which dashboard opens first. */
 export function Profile() {
   const { theme, setTheme } = useTheme();
   const items = useQuery({ queryKey: ["items"], queryFn: () => api.get<Item[]>("/items") });
-  const dashboards = (items.data ?? []).filter((i) => i.kind === "dashboard" && i.allowed);
+  const dashboards = (items.data ?? []).filter((i) => i.kind === "dashboard" && i.allowed && !i.missing);
   const [home, setHome] = useState(load("defaultDashboard") ?? "");
   const [pw, setPw] = useState({ current: "", new: "" });
   const change = useMutation({

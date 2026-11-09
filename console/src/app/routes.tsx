@@ -16,7 +16,7 @@ import { MenuBar } from "./shell/MenuBar";
 
 function SignedOut() {
   const setup = useQuery({ queryKey: ["setup"], queryFn: () => api.get<{ needed: boolean }>("/setup") });
-  if (setup.isPending) return <Spinner label="Loading" />;
+  if (setup.isPending) return <Spinner label="Loading…" />;
   return <Navigate to={setup.data?.needed ? "/setup" : "/login"} replace />;
 }
 
@@ -38,7 +38,7 @@ function Shell() {
 
   if (me.error instanceof ApiError && me.error.status === 401) return <SignedOut />;
   if (me.isError) return <p role="alert">CAVE isn't answering. Check the server and reload.</p>;
-  if (!me.data) return <Spinner label="Loading" />;
+  if (!me.data) return <Spinner label="Loading…" />;
   return (
     <LiveContext.Provider value={feed}>
       <div className="app">

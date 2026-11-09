@@ -107,3 +107,10 @@ def test_script_list_says_which_can_run_from_a_button(app, users):
     app.state.scripts.load_all()
     rows = {s["file"]: s["runnable"] for s in admin(app, users).get("/api/v1/scripts").json()}
     assert rows == {"plain.sh": True, "input.sh": False}
+
+
+def test_script_button_follows_a_script_assignment_over_the_section(app, users):
+    with_script(app)  # the operator holds the Scripts section, but this script is now assigned to Admins only
+    set_assignments(app.state.db, "test", "script:backup-photos.sh", [("role", "admin")])
+    set_assignments(app.state.db, "test", "dashboard:board", [("role", "operator")])
+    assert [c["allowed"] for c in cards(op(app, users))] in ([], [False])

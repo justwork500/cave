@@ -8,7 +8,7 @@ import time
 import pytest
 from fastapi.testclient import TestClient
 
-from cave.access.items import set_assignments
+from cave.access.items import get_item, set_assignments, upsert_item
 from cave.automation.effects import LiveEffects
 from cave.automation.engine import Engine
 from cave.runner.app import create_runner_app
@@ -32,6 +32,7 @@ print("using token", os.environ["PROXMOX_TOKEN"])
 print(json.dumps({"hello": args["who"], "token": os.environ["PROXMOX_TOKEN"]}))
 """
 
+PLAIN = "# cave:\n#   name: Plain\nprint('{}')\n"
 FAILS = "# cave:\n#   name: Fails\nprint('step 1')\nraise SystemExit(4)\n"
 
 
@@ -161,6 +162,82 @@ def test_run_api_access(app, users, monkeypatch):
     r = sam.post("/api/v1/scripts/plain.py/run", json={})
     assert r.status_code == 200 and r.json() == {"result": {}}
     assert sam.get("/api/v1/scripts/plain.py/runs").status_code == 403
+
+
+def script_row(client, file):
+    return next(s for s in client.get("/api/v1/scripts").json() if s["file"] == file)
+
+
+def change_item(app, file, **changes):
+    item = get_item(app.state.db, f"script:{file}")
+    upsert_item(app.state.db, "test", dataclasses.replace(item, **changes))
+
+
+def disable(app, file):
+    change_item(app, file, status="disabled")
+
+
+def test_section_holder_runs_an_unrestricted_script(app, users, monkeypatch):
+    setup(app, monkeypatch, "plain.py", PLAIN)
+    op = sign_in(lan_client(app), "op", "pw-op-1234", users.op_totp)
+    assert op.post("/api/v1/scripts/plain.py/run", json={}).status_code == 200
+    assert script_row(op, "plain.py")["allowed"] is True
+
+
+def test_assignment_restricts_running_for_section_holders(app, users, monkeypatch):
+    setup(app, monkeypatch, "plain.py", PLAIN)
+    set_assignments(app.state.db, "test", "script:plain.py", [("role", "household")])
+    op = sign_in(lan_client(app), "op", "pw-op-1234", users.op_totp)
+    assert op.post("/api/v1/scripts/plain.py/run", json={}).status_code == 403
+    assert script_row(op, "plain.py")["allowed"] is False
+    assert app.state.db.execute("SELECT count(*) FROM script_runs").fetchone()[0] == 0
+    set_assignments(app.state.db, "test", "script:plain.py", [("role", "operator")])
+    assert op.post("/api/v1/scripts/plain.py/run", json={}).status_code == 200
+
+
+def test_disabled_script_is_refused_for_everyone(app, users, monkeypatch):
+    setup(app, monkeypatch, "plain.py", PLAIN)
+    set_assignments(app.state.db, "test", "script:plain.py", [("role", "operator")])
+    disable(app, "plain.py")
+    op = sign_in(lan_client(app), "op", "pw-op-1234", users.op_totp)
+    admin = sign_in(lan_client(app), "admin", "pw-admin-1234", users.admin_totp)
+    assert op.post("/api/v1/scripts/plain.py/run", json={}).status_code == 403
+    assert admin.post("/api/v1/scripts/plain.py/run", json={}).status_code == 403
+    assert script_row(op, "plain.py")["allowed"] is False
+
+
+def test_disabled_without_assignments_is_refused(app, users, monkeypatch):
+    setup(app, monkeypatch, "plain.py", PLAIN)
+    disable(app, "plain.py")
+    op = sign_in(lan_client(app), "op", "pw-op-1234", users.op_totp)
+    assert op.post("/api/v1/scripts/plain.py/run", json={}).status_code == 403
+
+
+def test_hidden_script_is_admin_only(app, users, monkeypatch):
+    setup(app, monkeypatch, "plain.py", PLAIN)
+    change_item(app, "plain.py", visibility="hide")
+    op = sign_in(lan_client(app), "op", "pw-op-1234", users.op_totp)
+    admin = sign_in(lan_client(app), "admin", "pw-admin-1234", users.admin_totp)
+    assert op.post("/api/v1/scripts/plain.py/run", json={}).status_code == 403
+    assert script_row(op, "plain.py")["allowed"] is False
+    assert admin.post("/api/v1/scripts/plain.py/run", json={}).status_code == 200
+
+
+def test_home_network_script_refuses_section_holders_outside(app, users, monkeypatch):
+    setup(app, monkeypatch, "plain.py", PLAIN)
+    change_item(app, "plain.py", network="local")
+    away = sign_in(lan_client(app, "203.0.113.9"), "op", "pw-op-1234", users.op_totp)
+    home = sign_in(lan_client(app), "op", "pw-op-1234", users.op_totp)
+    assert away.post("/api/v1/scripts/plain.py/run", json={}).status_code == 403
+    assert home.post("/api/v1/scripts/plain.py/run", json={}).status_code == 200
+
+
+def test_automations_do_not_run_a_disabled_script(app, users, monkeypatch):
+    service = setup(app, monkeypatch, "plain.py", PLAIN)
+    disable(app, "plain.py")
+    with pytest.raises(ValueError, match="turned off"):
+        asyncio.run(service.run("plain.py", {}, "automation:a"))
+    assert app.state.db.execute("SELECT count(*) FROM script_runs").fetchone()[0] == 0
 
 
 def test_runs_kept_100(app, users, monkeypatch):

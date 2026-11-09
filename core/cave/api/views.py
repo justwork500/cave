@@ -9,7 +9,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 
-from cave.access.evaluate import can_control, evaluate
+from cave.access.evaluate import can_control, can_run_script, evaluate
 from cave.access.items import get_item
 from cave.access.model import Principal
 from cave.api.deps import client_ip, current_principal, get_db, net
@@ -77,9 +77,9 @@ def _card(request: Request, p: Principal, card: Any) -> dict[str, Any] | None:
         if card.action:
             kind, ident = card.action.split(".", 1)
             allowed, listed = _allowed(request, p, f"{kind}:{ident}")
-            if (kind == "script" and get_item(get_db(request), f"script:{ident}") is not None
-                    and _allowed(request, p, "section:scripts")[0]):
-                allowed = listed = True  # the same rule as running it
+            if kind == "script" and get_item(get_db(request), f"script:{ident}") is not None:
+                allowed = can_run_script(get_db(request), p, ident, client_ip(request), net(request).local_ranges)
+                listed = listed or allowed  # the same rule as running it
             if not listed:
                 return None
             out["allowed"] = allowed

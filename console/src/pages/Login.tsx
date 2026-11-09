@@ -93,7 +93,7 @@ export function Login() {
       >
         <h1>Sign in</h1>
         <Field label="Username">
-          <Input value={username} onChange={(_, d) => setUsername(d.value)} autoComplete="username" />
+          <Input value={username} onChange={(_, d) => setUsername(d.value)} autoComplete="username" spellCheck={false} />
         </Field>
         <Field label="Password">
           <Input

@@ -1,3 +1,5 @@
+"""Sign-in API: password, second factor and sign-out, with the session cookie."""
+
 import secrets
 from dataclasses import dataclass
 from datetime import datetime, timedelta

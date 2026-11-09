@@ -47,6 +47,7 @@ interface Listed {
 
 const runs = (file: string) => api.get<Run[]>(`/scripts/${encodeURIComponent(file)}/runs`);
 
+/** The Scripts page: every script with its language and how its last run ended. */
 export function Scripts() {
   const list = useQuery({
     queryKey: ["scripts"],
@@ -144,6 +145,7 @@ function TestRun({ script }: { script: Script }) {
   );
 }
 
+/** Edit one script, test-run it with parameters, and see its recent runs. */
 export function ScriptEditor() {
   const { file = "" } = useParams();
   const client = useQueryClient();
