@@ -7,6 +7,7 @@ import type { Notification } from "../../api/types";
 import type { NotificationEvent } from "../../api/ws";
 import { useLive } from "../live";
 
+/** The notification bell: unread count, live updates over the websocket, and mark-as-read. */
 export function Bell() {
   const live = useLive();
   const client = useQueryClient();

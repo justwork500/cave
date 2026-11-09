@@ -1,3 +1,5 @@
+"""Entities, their current states, and the event bus that tells listeners when something changes."""
+
 import asyncio
 import logging
 import re

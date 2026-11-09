@@ -1,3 +1,5 @@
+"""Client address resolution behind trusted proxies, and the "home network only" range check."""
+
 from collections.abc import Sequence
 from ipaddress import IPv4Address, IPv6Address, ip_address, ip_network
 

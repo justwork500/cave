@@ -103,6 +103,17 @@ def test_deleted_file_keeps_item(app, users):
     assert get_item(app.state.db, "automation:kids-off") is not None and app.state.config.get("automation", "kids-off") is None
 
 
+def test_items_mark_a_deleted_dashboard_as_missing(app, users):
+    home = (FIX / "dashboards" / "home.yaml").read_text(encoding="utf-8").replace("title: Home", "title: Gate", 1)
+    put_file(app, "dashboard", "gate", home)
+    app.state.config.load_all()
+    c = as_admin(app, users)
+    assert {i["id"]: i for i in c.get("/api/v1/items").json()}["dashboard:gate"]["missing"] is False
+    assert c.delete("/api/v1/dashboards/gate").status_code == 204
+    gate = {i["id"]: i for i in c.get("/api/v1/items").json()}["dashboard:gate"]
+    assert gate["missing"] is True  # the item and its access settings stay, but menus skip it
+
+
 def test_save_guard_blocks_operator(app, users, garage):
     r = as_op(app, users).put("/api/v1/automations/close-garage", json={"yaml": GARAGE_AUTOMATION})
     assert r.status_code == 403 and "cover.garage_door" in r.json()["detail"]

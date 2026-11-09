@@ -43,7 +43,7 @@ function SignIn({ refused, onDone }: { refused: boolean; onDone: () => void }) {
           : "Kasa devices only take commands from the TP-Link account they're set up with. Use the sign-in from your Kasa app."}
       </p>
       <Field label="TP-Link email">
-        <Input type="email" autoComplete="off" value={username} onChange={(_, d) => setUsername(d.value)} />
+        <Input type="email" autoComplete="off" spellCheck={false} value={username} onChange={(_, d) => setUsername(d.value)} />
       </Field>
       <Field label="TP-Link password">
         <Input type="password" autoComplete="off" value={password} onChange={(_, d) => setPassword(d.value)} />
@@ -59,6 +59,7 @@ function SignIn({ refused, onDone }: { refused: boolean; onDone: () => void }) {
   );
 }
 
+/** Add a device: scans the LAN for Kasa plugs and switches, and links to the MQTT guide. */
 export function AddDevice({ onClose }: { onClose: () => void }) {
   const client = useQueryClient();
   const scan = useMutation({ mutationFn: () => api.post<Scan>("/kasa/scan") });

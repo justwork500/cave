@@ -1,3 +1,5 @@
+"""Device API: current states and sending commands, limited to what the caller can control."""
+
 from collections.abc import Sequence
 from typing import Annotated, Any
 

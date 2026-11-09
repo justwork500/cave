@@ -20,6 +20,7 @@ interface SignIn {
 
 const show = (v: unknown) => (v === null || v === undefined ? "" : JSON.stringify(v, null, 1));
 
+/** The audit log: every user, access and config change, newest first. */
 export function Audit() {
   const log = useQuery({ queryKey: ["audit"], queryFn: () => api.get<AuditEntry[]>("/audit?limit=1000") });
   return (
@@ -43,6 +44,7 @@ export function Audit() {
   );
 }
 
+/** The sign-in log: who signed in, from where, and failed attempts. */
 export function SignIns() {
   const log = useQuery({ queryKey: ["signins"], queryFn: () => api.get<SignIn[]>("/signin-log?limit=1000") });
   const results = [...new Set((log.data ?? []).map((s) => s.result))];

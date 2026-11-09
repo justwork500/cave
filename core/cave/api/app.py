@@ -1,3 +1,5 @@
+"""Builds the FastAPI app: database, stores, services and background tasks wired together at startup."""
+
 import asyncio
 import contextlib
 import logging

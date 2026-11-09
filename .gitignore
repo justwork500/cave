@@ -13,3 +13,8 @@ console/node_modules/
 console/dist/
 .smoke-state.json
 .taste-skill/
+*.tsbuildinfo
+# written by deploy/install.sh: settings, secrets and the live config never belong in git
+.env
+/secrets/
+/config/

@@ -14,7 +14,7 @@ CAVE runs on Debian 13 with Docker Compose. Nothing in it needs the internet.
 
 ## Status
 
-Phase 1 installs on Debian 13 with Docker Compose: see the [install guide](docs/install/debian.md). See also the [Phase 1 design](docs/superpowers/specs/2026-10-25-cave-phase1-design.md) and the longer-term [design framework](docs/CAVE-Design-Framework.md).
+Phase 1 installs on Debian 13 with Docker Compose: see the [install guide](docs/install/debian.md). See also the [Phase 1 design](docs/superpowers/specs/2026-10-25-cave-phase1-design.md) and the longer-term [design framework](docs/CAVE-Design-Framework.md). What's next, phase by phase: [roadmap](docs/roadmap.md).
 
 ## Develop
 

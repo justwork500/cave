@@ -1,3 +1,5 @@
+"""Admin API: users, groups, access items and their assignments, the audit log and API tokens."""
+
 import uuid
 from dataclasses import asdict, replace
 from datetime import datetime
@@ -186,11 +188,16 @@ class Assignment(BaseModel):
 @router.get("/items")
 def get_items(request: Request, p: Caller) -> list[dict[str, Any]]:
     db, ip, ranges = get_db(request), client_ip(request), net(request).local_ranges
+    config = request.app.state.config
     out = []
     for item in list_items(db):
         d = evaluate(db, p, item, ip, ranges)
         if d.listed:
             out.append({"id": item.id, "kind": item.kind, "name": item.name, "allowed": d.allowed} | (
+                # a deleted dashboard keeps its item and access settings; menus leave it out
+                {"missing": config.get("dashboard", item.id.removeprefix("dashboard:")) is None}
+                if item.kind == "dashboard" else {}
+            ) | (
                 {"status": item.status, "visibility": item.visibility, "others_see": item.others_see,
                  "network": item.network, "builtin": item.builtin} if p.is_admin else {}
             ))

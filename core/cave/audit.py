@@ -1,3 +1,5 @@
+"""The audit log: every user, access and config change, with old and new values."""
+
 import json
 from datetime import UTC, datetime
 from typing import Any

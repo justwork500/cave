@@ -1,3 +1,5 @@
+"""Config file API: list, read, save and delete automations, routines and dashboards, plus reload and schemas."""
+
 from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -58,7 +60,7 @@ def schema(name: str, p: Caller) -> dict[str, Any]:
 def list_docs(kinds: Plural, request: Request, p: Caller) -> list[dict[str, Any]]:
     db, ip, ranges = get_db(request), client_ip(request), net(request).local_ranges
     out = []
-    for ident, loaded in store(request).list(KINDS[kinds]):
+    for ident, _ in store(request).list(KINDS[kinds]):
         item = get_item(db, item_id(KINDS[kinds], ident))
         if item is None:
             continue

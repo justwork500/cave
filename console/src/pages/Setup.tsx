@@ -23,7 +23,7 @@ export function Setup() {
   const [owner, setOwner] = useState({ display_name: "", username: "", password: "" });
   const create = useMutation({ mutationFn: () => api.post<Enrollment>("/setup", { code: code.trim(), ...owner }) });
 
-  if (needed.isPending) return <Spinner label="Loading" />;
+  if (needed.isPending) return <Spinner label="Loading…" />;
   if (needed.data && !needed.data.needed) return <Navigate to="/login" replace />;
 
   if (create.data) {
@@ -74,7 +74,7 @@ export function Setup() {
           <Input value={owner.display_name} onChange={set("display_name")} autoComplete="name" />
         </Field>
         <Field label="Username">
-          <Input value={owner.username} onChange={set("username")} autoComplete="username" />
+          <Input value={owner.username} onChange={set("username")} autoComplete="username" spellCheck={false} />
         </Field>
         <Field
           label="Password"
