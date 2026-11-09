@@ -49,7 +49,7 @@ export function Dashboard() {
     enabled: Boolean(slug),
   });
 
-  if (pending || (slug && view.isPending)) return <Spinner label="Loading" />;
+  if (pending || (slug && view.isPending)) return <Spinner label="Loading…" />;
   if (!slug) {
     return (
       <section className="page narrow">

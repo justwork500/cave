@@ -11,7 +11,7 @@ const WORDS: Record<string, string> = {
 export function stateText(state: string | null, attributes: Record<string, unknown>): string {
   if (state === null) return "Unknown";
   const unit = typeof attributes.unit === "string" ? attributes.unit : "";
-  if (unit && state.trim() !== "" && !Number.isNaN(Number(state))) return `${state} ${unit}`;
+  if (unit && state.trim() !== "" && !Number.isNaN(Number(state))) return `${state}\u00a0${unit}`;  // no-break space: the unit never wraps away from its number
   return WORDS[state] ?? state.charAt(0).toUpperCase() + state.slice(1).replaceAll("_", " ");
 }
 

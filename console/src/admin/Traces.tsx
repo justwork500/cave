@@ -51,7 +51,7 @@ export function Traces({ kinds, id }: { kinds: string; id: string }) {
       {runs.data?.map((r) => (
         <details key={r.id} className="run">
           <summary>
-            {when(r.started_at)}: {OUTCOME[r.trace.outcome] ?? "Running"}
+            {when(r.started_at)}: {OUTCOME[r.trace.outcome] ?? "Running…"}
           </summary>
           <TraceView trace={r.trace} />
         </details>
