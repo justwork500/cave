@@ -71,7 +71,7 @@ def test_no_secrets_in_env(tmp_path):
 
 def test_secret_files_private(tmp_path):
     install(tmp_path)
-    for name in ("runner_token", "mqtt_password"):
+    for name in ("runner_token", "mqtt_password", "host_key"):
         f = tmp_path / "cave" / "secrets" / name
         assert re.fullmatch(r"[0-9a-f]{64}", f.read_text(encoding="utf-8").strip())  # always 32 random bytes
         if sys.platform != "win32":

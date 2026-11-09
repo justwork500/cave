@@ -26,6 +26,7 @@ from cave.api import views as views_api
 from cave.automation.effects import LiveEffects
 from cave.automation.manager import AutomationManager
 from cave.config.store import ConfigStore, write_atomic
+from cave.credentials import Credentials, load_host_key
 from cave.db import Database
 from cave.envconfig import env_secret
 from cave.integrations.kasa.service import KasaService
@@ -107,6 +108,7 @@ def create_app(settings: Settings) -> FastAPI:
     if fresh and not home.exists():  # first start only: a Home an Admin deleted stays deleted
         write_atomic(home, STARTER_HOME)
     netconfig.seed(app.state.db, settings)
+    app.state.credentials = Credentials(app.state.db, load_host_key(settings.db_path))
     app.state.pending_mfa = {}
     app.state.bus = EventBus()
     app.state.states = StateMachine(app.state.bus)

@@ -99,6 +99,7 @@ new_secret() {  # new_secret FILE UID: only if missing
 }
 new_secret secrets/runner_token "$CORE_UID"
 new_secret secrets/mqtt_password "$CORE_UID"
+new_secret secrets/host_key "$CORE_UID"
 if [[ ! -e secrets/mosquitto_passwd ]]; then
   : >secrets/mosquitto_passwd
   own "$MOSQUITTO_UID" 0400 secrets/mosquitto_passwd

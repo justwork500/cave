@@ -15,7 +15,8 @@ services:
     environment:
       CAVE_MQTT_PASSWORD_FILE: /run/secrets/mqtt_password
       CAVE_RUNNER_TOKEN_FILE: /run/secrets/runner_token
-    secrets: [mqtt_password, runner_token]
+      CAVE_HOST_KEY_FILE: /run/secrets/host_key
+    secrets: [mqtt_password, runner_token, host_key]
     read_only: true
     tmpfs: [/tmp]
     cap_drop: [ALL]
@@ -64,3 +65,5 @@ secrets:
     file: ./secrets/mqtt_password
   runner_token:
     file: ./secrets/runner_token
+  host_key:
+    file: ./secrets/host_key

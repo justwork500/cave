@@ -127,7 +127,7 @@ There's no backup screen yet. To back up:
 
 2. To restore, unpack those into a fresh `cave` folder and run `deploy/install.sh`. It keeps what it finds.
 
-The backup holds your passwords and tokens: keep it as private as the machine itself.
+The backup holds your passwords and tokens: keep it as private as the machine itself. `secrets/host_key` matters most: it encrypts the device passwords and keys CAVE saves. Without it, those must be entered again.
 
 ## Use your own certificate
 
