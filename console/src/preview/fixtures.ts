@@ -195,7 +195,7 @@ export const kasaScan = {
   signed_in: false,
   login_ok: null,
   devices: [
-    { mac: "aabbccddee01", host: "10.10.1.191", model: "HS103(US)", added: false, name: null },
-    { mac: "aabbccddee02", host: "10.10.1.141", model: "KS225(US)", added: false, name: null },
+    { mac: "aabbccddee01", host: "192.168.1.41", model: "HS103(US)", added: false, name: null },
+    { mac: "aabbccddee02", host: "192.168.1.42", model: "KS225(US)", added: false, name: null },
   ],
 };

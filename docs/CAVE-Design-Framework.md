@@ -474,7 +474,7 @@ automation:
       below: 15
   actions:
     - type: notify
-      targets: [notify.ntfy_admins, notify.smtp_justin]
+      targets: [notify.ntfy_admins, notify.smtp_owner]
       title: "Power outage"
       message: "UPS on battery. {{ states('sensor.ups_battery_runtime_min') }} min left."
     - type: sequence
