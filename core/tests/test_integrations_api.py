@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import time
@@ -137,3 +138,40 @@ def test_load_attaches_stored_devices_and_survives_one_failure(app, fake, caplog
     app.state.integrations.load()
     assert ("attach", "bbbbbbbbbbbb@192.168.1.40") in fake.calls
     assert "aaaaaaaaaaaa" in caplog.text
+
+
+def test_attach_failure_during_add_still_returns_and_audits(app, users, fake, caplog):
+    fake.attach_fails = {"aabbccddeeff"}
+    r = add(admin(app, users))
+    assert r.status_code == 201 and r.json()["device_id"] == "aabbccddeeff"
+    assert audit.list_entries(app.state.db)[0]["action"] == "integration.add"
+    assert "aabbccddeeff" in caplog.text and SECRET not in caplog.text
+
+
+def test_one_crashing_run_does_not_stop_the_others(app, caplog):
+
+    class Crash(FakeIntegration):
+        async def run(self) -> None:
+            raise RuntimeError("kaput")
+
+    class Steady(FakeIntegration):
+        ticks = 0
+
+        async def run(self) -> None:
+            while True:
+                self.ticks += 1
+                await asyncio.sleep(0.01)
+
+    steady = Steady(domain="steady")
+    app.state.integrations.register(Crash(domain="crash"))
+    app.state.integrations.register(steady)
+    async def main():
+        task = asyncio.create_task(app.state.integrations.run())
+        await asyncio.sleep(0.1)
+        assert steady.ticks > 2 and not task.done()
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+
+    asyncio.run(main())
+    assert "crash integration stopped" in caplog.text

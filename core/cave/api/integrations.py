@@ -72,17 +72,12 @@ async def add_device(domain: str, body: AddDevice, request: Request, p: Caller) 
     _require(request, p, "section:devices")
     registry = _registry(request, domain)
     host = _host(request, body.host)
-    before = {d.device_id: d for d in registry.devices(domain)}
     try:
         device, created = await registry.add(domain, host, body.secret, _actor(p))
     except PairingError as e:
         raise HTTPException(422, str(e)) from e
-    target = f"integration:{domain}:{device.device_id}"
     if created:
-        audit.record(get_db(request), _actor(p), "integration.add", target, None, _public(device))
         return _public(device)
-    audit.record(get_db(request), _actor(p), "integration.update", target,
-                 {"host": before[device.device_id].host}, {"host": device.host})
     return JSONResponse(_public(device), status_code=200)
 
 

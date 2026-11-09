@@ -6,6 +6,7 @@ import logging
 from dataclasses import dataclass
 from typing import Any, Literal, Protocol
 
+from cave import audit
 from cave.credentials import Credentials
 from cave.db import Database
 
@@ -80,7 +81,14 @@ class Integrations:
                                   device.device_id)
 
     async def run(self) -> None:
-        await asyncio.gather(*(i.run() for i in self.all()))
+        await asyncio.gather(*(self._run_one(i) for i in self.all()))
+
+    @staticmethod
+    async def _run_one(integration: Integration) -> None:
+        try:
+            await integration.run()
+        except Exception:  # one integration crashing must not stop the others or shutdown
+            log.exception("The %s integration stopped unexpectedly.", integration.domain)
 
     async def probe(self, domain: str, host: str) -> Found | None:
         try:
@@ -100,9 +108,17 @@ class Integrations:
             "INSERT OR REPLACE INTO integration_devices (integration, device_id, host, model, name, settings)"
             " VALUES (?, ?, ?, ?, ?, ?)",
             (domain, device.device_id, host, device.model, device.name, json.dumps(device.settings)))
+        shown = {"device_id": device.device_id, "host": host, "model": device.model, "name": device.name}
+        target = f"integration:{domain}:{device.device_id}"
         if existing:
+            audit.record(self._db, actor, "integration.update", target, {"host": existing.host}, {"host": host})
             integration.detach(device.device_id)
-        integration.attach(device)
+        else:
+            audit.record(self._db, actor, "integration.add", target, None, shown)
+        try:
+            integration.attach(device)
+        except Exception:  # the device is saved; load() retries it at the next start
+            log.exception("Could not attach %s device %s.", domain, device.device_id)
         return device, existing is None
 
     def remove(self, domain: str, device_id: str, actor: str) -> None:
