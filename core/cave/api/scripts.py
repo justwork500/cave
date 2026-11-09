@@ -3,7 +3,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
-from cave.access.evaluate import AccessDenied, evaluate
+from cave.access.evaluate import AccessDenied, can_run_script, evaluate
 from cave.access.items import get_assignments, get_item
 from cave.access.model import Principal
 from cave.api.admin import _require
@@ -53,10 +53,9 @@ def list_scripts(request: Request, p: Caller) -> list[dict[str, Any]]:
     db, ip, ranges = get_db(request), client_ip(request), net(request).local_ranges
     out = []
     for s in scripts(request).list():
-        item = get_item(db, f"script:{s.file}")
-        if item is not None:
-            d = evaluate(db, p, item, ip, ranges)
-            out.append({"file": s.file, "name": s.header.name, "language": s.language, "allowed": d.allowed})
+        if get_item(db, f"script:{s.file}") is not None:
+            allowed = can_run_script(db, p, s.file, ip, ranges)
+            out.append({"file": s.file, "name": s.header.name, "language": s.language, "allowed": allowed})
     return out
 
 
@@ -103,9 +102,7 @@ class RunBody(BaseModel):
 @router.post("/{file}/run")
 async def run_script(file: str, body: RunBody, request: Request, p: Caller) -> dict[str, Any]:
     _name(file)
-    db, ip, ranges = get_db(request), client_ip(request), net(request).local_ranges
-    item, section = get_item(db, f"script:{file}"), get_item(db, "section:scripts")
-    if not any(i is not None and evaluate(db, p, i, ip, ranges).allowed for i in (item, section)):
+    if not can_run_script(get_db(request), p, file, client_ip(request), net(request).local_ranges):
         raise HTTPException(403, "You don't have access to this.")
     service: ScriptService = request.app.state.script_service
     if service.runner is None:
