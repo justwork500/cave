@@ -5,6 +5,7 @@ import type { EntityView } from "../api/types";
 import { expectAccessible } from "../test/axe";
 import { mockApi, renderWith } from "../test/render";
 import { Controls } from "./controls";
+import { Tile } from "./Tile";
 
 const tv = (state: string, attributes: Record<string, unknown> = {}): EntityView => ({
   entity_id: "media_player.living_tv", name: "Living TV", area_id: null, capability: "media_player",
@@ -76,5 +77,37 @@ describe("tile controls", () => {
       </>,
     );
     await expectAccessible(container);
+  });
+});
+
+describe("controls on toggle tiles", () => {
+  it("shows media controls, not a toggle button, on a toggle tile", () => {
+    mockApi({});
+    renderWith(<Tile entity={tv("playing")} tapAction="toggle" />);
+    expect(screen.getByRole("button", { name: "Power" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Pause" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Living TV/ })).toBeNull();
+  });
+
+  it("keeps a switch tile as a toggle button", async () => {
+    const calls = mockApi({ "POST /entities/switch.lamp/commands/toggle": {} });
+    renderWith(
+      <Tile entity={{ entity_id: "switch.lamp", name: "Lamp", area_id: null, capability: "switch", state: "off", attributes: {}, last_changed: null }} tapAction="toggle" />,
+    );
+    await userEvent.click(screen.getByRole("button", { name: /Lamp/ }));
+    await waitFor(() => expect(calls.at(-1)?.path).toBe("/entities/switch.lamp/commands/toggle"));
+  });
+
+  it("sends volume once after a key release", async () => {
+    const calls = mockApi({ "POST /entities/media_player.living_tv/commands/volume_set": {} });
+    renderWith(<Controls entity={tv("on", { volume: 10 })} />);
+    const slider = screen.getByRole("slider", { name: "Volume" });
+    slider.focus();
+    // jsdom doesn't move a range input on arrow keys, so apply the browser's change by hand.
+    fireEvent.change(slider, { target: { value: "11" } });
+    expect(calls).toHaveLength(0);
+    await userEvent.keyboard("{ArrowRight}");
+    await waitFor(() => expect(calls).toHaveLength(1));
+    expect(calls[0]?.body).toEqual({ level: 11 });
   });
 });

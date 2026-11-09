@@ -50,7 +50,7 @@ export function Tile({ entity, tapAction = "none", row = false, section }: {
   const withControls = ["media_player", "number", "select"].includes(entity.capability);
   const on = ACTIVE.has(state ?? "");
   const look = `${cls}${on ? " on" : ""}${state === "unavailable" ? " unavailable" : ""}`;
-  if (tapAction !== "toggle") {
+  if (tapAction !== "toggle" || withControls) {
     return (
       <div className={look}>
         {body}
