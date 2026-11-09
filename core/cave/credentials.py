@@ -48,8 +48,7 @@ class Credentials:
         return f"{integration}:{name}".encode()
 
     def is_set(self, integration: str, name: str) -> bool:
-        return self._db.execute("SELECT 1 FROM credentials WHERE integration = ? AND name = ?",
-                                (integration, name)).fetchone() is not None
+        return self.get(integration, name) is not None
 
     def set(self, integration: str, name: str, value: str, actor: str) -> None:
         old = self.is_set(integration, name)

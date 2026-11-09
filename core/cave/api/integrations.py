@@ -25,7 +25,7 @@ class Probe(BaseModel):
 
 
 class AddDevice(Probe):
-    secret: str | None = Field(default=None, max_length=256)
+    secret: str | None = None
 
 
 def _registry(request: Request, domain: str | None = None) -> Integrations:
@@ -40,7 +40,7 @@ def _host(request: Request, host: str) -> str:
         ip = ip_address(host)
     except ValueError:
         raise HTTPException(422, BAD_HOST) from None
-    if ip.is_loopback or not is_local(ip, net(request).local_ranges):
+    if ip.is_loopback or ip.is_unspecified or ip.is_multicast or not is_local(ip, net(request).local_ranges):
         raise HTTPException(422, BAD_HOST)
     return str(ip)
 
@@ -72,8 +72,10 @@ async def add_device(domain: str, body: AddDevice, request: Request, p: Caller) 
     _require(request, p, "section:devices")
     registry = _registry(request, domain)
     host = _host(request, body.host)
+    if body.secret is not None and len(body.secret) > 256:  # not a model limit: FastAPI's 422 would echo the secret
+        raise HTTPException(422, "That's too long to be a device password or key.")
     try:
-        device, created = await registry.add(domain, host, body.secret, _actor(p))
+        device, created = await registry.add(domain, host, body.secret or None, _actor(p))
     except PairingError as e:
         raise HTTPException(422, str(e)) from e
     if created:

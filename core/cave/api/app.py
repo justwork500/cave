@@ -121,7 +121,6 @@ def create_app(settings: Settings) -> FastAPI:
     app.state.kasa = KasaService(app.state.db, app.state.states)
     app.state.kasa.load()
     app.state.integrations = Integrations(app.state.db, app.state.credentials)
-    app.state.integrations.load()
     app.state.config = ConfigStore(settings.config_dir, app.state.db, app.state.bus)
     app.state.config.load_all()
     app.state.scripts = ScriptStore(settings.config_dir, app.state.db, app.state.bus)

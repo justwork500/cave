@@ -43,6 +43,7 @@ def test_wrong_key_reads_as_not_set(db, creds, caplog):
     other = bytes(32)
     with caplog.at_level(logging.WARNING):
         assert Credentials(db, other).get("hue", "abc:app_key") is None
+        assert not Credentials(db, other).is_set("hue", "abc:app_key")
     assert "hue:abc:app_key" in caplog.text
     assert KEY.hex() not in caplog.text and other.hex() not in caplog.text and VALUE not in caplog.text
 

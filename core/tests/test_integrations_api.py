@@ -6,6 +6,7 @@ import time
 import pytest
 
 from cave import audit
+from cave.access import netconfig
 from cave.integrations import base
 from cave.integrations.base import Found, PairingError
 from tests.conftest import lan_client, sign_in
@@ -91,8 +92,9 @@ def test_pairing_error_is_422_with_message(app, users, fake):
     assert app.state.db.execute("SELECT 1 FROM integration_devices").fetchone() is None
 
 
-@pytest.mark.parametrize("host", ["8.8.8.8", "127.0.0.1", "bridge.local", "192.168.1.40:80"])
+@pytest.mark.parametrize("host", ["8.8.8.8", "127.0.0.1", "bridge.local", "192.168.1.40:80", "0.0.0.0", "224.0.0.1"])
 def test_refuses_non_local_hosts(app, users, fake, host):
+    netconfig.save(app.state.db, "test", ["192.168.1.0/24", "0.0.0.0/32", "224.0.0.0/4"], [])
     c = admin(app, users)
     for path in ("probe", "devices"):
         r = c.post(f"/api/v1/integrations/fake/{path}", json={"host": host})
@@ -101,7 +103,7 @@ def test_refuses_non_local_hosts(app, users, fake, host):
 
 
 def test_refuses_loopback_even_when_a_range_includes_it(app, users, fake):
-    app.state.settings.local_ranges.append("127.0.0.0/8")
+    netconfig.save(app.state.db, "test", ["192.168.1.0/24", "127.0.0.0/8"], [])
     r = admin(app, users).post("/api/v1/integrations/fake/probe", json={"host": "127.0.0.1"})
     assert r.status_code == 422 and r.json()["detail"] == BAD
 
@@ -130,12 +132,13 @@ def test_needs_devices_section(app, users, fake):
     assert c.delete("/api/v1/integrations/fake/devices/aabbccddeeff").status_code == 403
 
 
-def test_load_attaches_stored_devices_and_survives_one_failure(app, fake, caplog):
+def test_register_attaches_stored_devices_and_survives_one_failure(app, caplog):
+    fake = FakeIntegration(domain="fake")
     for did in ("aaaaaaaaaaaa", "bbbbbbbbbbbb"):
         app.state.db.execute("INSERT INTO integration_devices (integration, device_id, host, model, name)"
                              " VALUES ('fake', ?, '192.168.1.40', 'm', 'n')", (did,))
     fake.attach_fails = {"aaaaaaaaaaaa"}
-    app.state.integrations.load()
+    app.state.integrations.register(fake)
     assert ("attach", "bbbbbbbbbbbb@192.168.1.40") in fake.calls
     assert "aaaaaaaaaaaa" in caplog.text
 
@@ -175,3 +178,69 @@ def test_one_crashing_run_does_not_stop_the_others(app, caplog):
 
     asyncio.run(main())
     assert "crash integration stopped" in caplog.text
+
+
+def test_register_attaches_rows_stored_first(app):
+    app.state.db.execute("INSERT INTO integration_devices (integration, device_id, host, model, name)"
+                         " VALUES ('late', 'cccccccccccc', '192.168.1.40', 'm', 'n')")
+    late = FakeIntegration(domain="late")
+    app.state.integrations.register(late)
+    assert ("attach", "cccccccccccc@192.168.1.40") in late.calls
+
+
+def test_probe_oserror_is_404(app, users, fake):
+    fake.probe_error = OSError("refused http://x/?token=abc")
+    r = admin(app, users).post("/api/v1/integrations/fake/probe", json={"host": "192.168.1.40"})
+    assert r.status_code == 404 and r.json()["detail"] == "Nothing CAVE recognizes answered at that address."
+
+
+def test_probe_failure_logs_type_only(app, users, fake, caplog):
+    fake.probe_error = ValueError("secret-in-text")
+    admin(app, users).post("/api/v1/integrations/fake/probe", json={"host": "192.168.1.40"})
+    assert "ValueError" in caplog.text and "secret-in-text" not in caplog.text
+
+
+def test_pair_timeout_is_422(app, users, fake, monkeypatch):
+    monkeypatch.setattr(base, "PAIR_SECONDS", 0.05)
+    fake.pair_delay = 1.0
+    r = add(admin(app, users))
+    assert r.status_code == 422
+    assert r.json()["detail"] == "The device didn't answer. Check it's on and try again."
+
+
+def test_pair_unexpected_error_is_422_without_text(app, users, fake, caplog):
+    fake.pair_error = RuntimeError("secret-in-text")
+    r = add(admin(app, users))
+    assert r.status_code == 422 and r.json()["detail"] == "Pairing failed. Check the device and try again."
+    assert "secret-in-text" not in caplog.text and "secret-in-text" not in r.text
+
+
+def test_failing_detach_does_not_block_remove_or_readd(app, users, fake):
+    c = admin(app, users)
+    add(c)
+    fake.detach_fails = True
+    assert add(c, "192.168.1.42").status_code == 200
+    assert ("attach", "aabbccddeeff@192.168.1.42") in fake.calls
+    assert c.delete("/api/v1/integrations/fake/devices/aabbccddeeff").status_code == 204
+    assert app.state.db.execute("SELECT 1 FROM integration_devices").fetchone() is None
+    assert not app.state.credentials.is_set("fake", "aabbccddeeff:key")
+    assert audit.list_entries(app.state.db)[0]["action"] == "integration.remove"
+
+
+def test_overlong_secret_is_422_without_echo(app, users, fake):
+    secret = "s3cr3t-" * 50
+    r = add(admin(app, users), secret=secret)
+    assert r.status_code == 422 and secret not in r.text
+    assert r.json()["detail"] == "That's too long to be a device password or key."
+
+
+def test_empty_secret_is_passed_as_none(app, users, fake):
+    assert add(admin(app, users), secret="").status_code == 201
+    assert fake.secrets == [None]
+
+
+def test_device_id_with_colon_is_refused(app, users, fake):
+    fake.answers["192.168.1.40"] = Found("aa:bb", "192.168.1.40", "Model X", "Lamp")
+    r = add(admin(app, users))
+    assert r.status_code == 422 and r.json()["detail"] == "This device reported an id CAVE can't use."
+    assert app.state.db.execute("SELECT 1 FROM integration_devices").fetchone() is None
