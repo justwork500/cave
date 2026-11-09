@@ -1,6 +1,6 @@
 # CAVE Phase 2 design: first integrations
 
-Nov 8, 2026 · Status: draft for approval
+Nov 8, 2026 · Status: approved by the owner, Nov 8, 2026
 
 Builds on the [Phase 1 design](2026-10-25-cave-phase1-design.md), which still holds where this document says nothing. Input: [Phase 2 research](../research/2026-11-08-phase2-integrations.md), the list of 30 local integrations ranked by real use.
 
