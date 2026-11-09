@@ -1,3 +1,5 @@
+"""Users: accounts, roles, password and second-factor checks, sign-in throttling, and the last-Admin rule."""
+
 import hashlib
 import secrets
 import sqlite3

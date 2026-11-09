@@ -58,6 +58,7 @@ function Members({ group, users, onClose }: { group: Group; users: User[]; onClo
   );
 }
 
+/** The Groups page: groups of people that items can be assigned to. */
 export function Groups() {
   const client = useQueryClient();
   const groups = useQuery({ queryKey: ["groups"], queryFn: () => api.get<Group[]>("/groups") });

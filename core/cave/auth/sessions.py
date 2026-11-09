@@ -1,3 +1,5 @@
+"""Browser sessions: create, look up and end them."""
+
 import secrets
 from datetime import datetime, timedelta
 

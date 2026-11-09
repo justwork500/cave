@@ -1,3 +1,5 @@
+"""The access model's types: items and their settings, principals (who is asking) and decisions."""
+
 from dataclasses import dataclass
 from typing import Literal
 

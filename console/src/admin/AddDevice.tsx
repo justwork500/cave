@@ -59,6 +59,7 @@ function SignIn({ refused, onDone }: { refused: boolean; onDone: () => void }) {
   );
 }
 
+/** Add a device: scans the LAN for Kasa plugs and switches, and links to the MQTT guide. */
 export function AddDevice({ onClose }: { onClose: () => void }) {
   const client = useQueryClient();
   const scan = useMutation({ mutationFn: () => api.post<Scan>("/kasa/scan") });

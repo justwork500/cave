@@ -1,3 +1,5 @@
+"""Password hashing and checking (Argon2)."""
+
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerificationError
 

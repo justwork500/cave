@@ -1,3 +1,5 @@
+"""Script API: list, read, save, delete and run scripts, and their run history."""
+
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request

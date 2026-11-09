@@ -1,3 +1,5 @@
+"""Access items in the database: their settings, assignments and held entities, and the built-in items."""
+
 import sqlite3
 from dataclasses import asdict, replace
 

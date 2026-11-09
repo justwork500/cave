@@ -1,3 +1,5 @@
+"""The one access decision (evaluate) and the checks built on it: device control and the save guard."""
+
 from collections.abc import Iterable, Sequence
 
 from cave.access.items import get_assignments, get_item, items_containing

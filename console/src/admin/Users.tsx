@@ -97,6 +97,7 @@ function NewUser() {
   );
 }
 
+/** The People page: add people, change their role, and turn accounts on or off. */
 export function Users() {
   const client = useQueryClient();
   const users = useQuery({ queryKey: ["users"], queryFn: () => api.get<User[]>("/users") });

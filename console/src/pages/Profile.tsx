@@ -10,6 +10,7 @@ import type { ThemeName } from "../app/theme";
 
 const MIN_PASSWORD = 12;
 
+/** The viewer's own settings, kept in this browser: theme and which dashboard opens first. */
 export function Profile() {
   const { theme, setTheme } = useTheme();
   const items = useQuery({ queryKey: ["items"], queryFn: () => api.get<Item[]>("/items") });

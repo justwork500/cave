@@ -1,3 +1,5 @@
+"""Admin API: users, groups, access items and their assignments, the audit log and API tokens."""
+
 import uuid
 from dataclasses import asdict, replace
 from datetime import datetime
