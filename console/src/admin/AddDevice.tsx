@@ -1,9 +1,11 @@
 import {
   Button, DrawerBody, DrawerFooter, DrawerHeader, DrawerHeaderTitle, Field, Input, OverlayDrawer, Spinner,
 } from "@fluentui/react-components";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
+import type { IntegrationInfo } from "../api/types";
+import { AddIntegration } from "./AddIntegration";
 import { ErrorBar } from "./Page";
 
 const MQTT_GUIDE = "https://github.com/justwork500/cave/blob/main/docs/integrations/mqtt.md";
@@ -59,6 +61,22 @@ function SignIn({ refused, onDone }: { refused: boolean; onDone: () => void }) {
   );
 }
 
+function IntegrationRow({ integration }: { integration: IntegrationInfo }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <section className="stack">
+      <div className="row" style={{ justifyContent: "space-between" }}>
+        <b>{integration.title}</b>
+        <Button aria-expanded={open} aria-label={open ? `Close ${integration.title}` : `Set up ${integration.title}`}
+                onClick={() => setOpen(!open)}>
+          {open ? "Close" : "Set up"}
+        </Button>
+      </div>
+      {open && <AddIntegration integration={integration} onDone={() => setOpen(false)} />}
+    </section>
+  );
+}
+
 /** Add a device: scans the LAN for Kasa plugs and switches, and links to the MQTT guide. */
 export function AddDevice({ onClose }: { onClose: () => void }) {
   const client = useQueryClient();
@@ -71,6 +89,7 @@ export function AddDevice({ onClose }: { onClose: () => void }) {
   };
   const add = useMutation({ mutationFn: (mac: string) => api.post("/kasa/devices", { mac }), onSuccess: changed });
   const remove = useMutation({ mutationFn: (mac: string) => api.del(`/kasa/devices/${mac}`), onSuccess: changed });
+  const integrations = useQuery({ queryKey: ["integrations"], queryFn: () => api.get<IntegrationInfo[]>("/integrations") });
   const result = scan.data;
   const ready = result?.signed_in && result.login_ok !== false;
 
@@ -112,6 +131,7 @@ export function AddDevice({ onClose }: { onClose: () => void }) {
             })}
           </ul>
         )}
+        {integrations.data?.map((i) => <IntegrationRow key={i.domain} integration={i} />)}
         <p className="muted">
           Zigbee2MQTT, Tasmota, Shelly and ESPHome devices don't need adding: they appear here once they reach
           CAVE's MQTT broker. <a href={MQTT_GUIDE}>How MQTT devices connect</a>
