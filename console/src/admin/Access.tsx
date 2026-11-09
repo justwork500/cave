@@ -157,7 +157,7 @@ export function Access() {
           {
             label: "Item",
             sort: (i) => i.name.toLowerCase(),
-            render: (i) => <>{i.name}<span className="sub">{TYPE[i.kind]}</span></>,
+            render: (i) => <>{i.name}<span className="sub">{TYPE[i.kind]}{i.missing && " · file deleted"}</span></>,
           },
           {
             label: "Who can use it",

@@ -87,6 +87,8 @@ export interface Item {
   kind: "dashboard" | "section" | "action" | "feature";
   name: string;
   allowed: boolean;
+  /** Dashboards only: the file was deleted, but the item and its access settings remain. */
+  missing?: boolean;
   status?: "enabled" | "disabled";
   visibility?: "show" | "hide" | "restrict";
   others_see?: "locked" | "none";

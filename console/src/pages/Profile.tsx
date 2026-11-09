@@ -13,7 +13,7 @@ const MIN_PASSWORD = 12;
 export function Profile() {
   const { theme, setTheme } = useTheme();
   const items = useQuery({ queryKey: ["items"], queryFn: () => api.get<Item[]>("/items") });
-  const dashboards = (items.data ?? []).filter((i) => i.kind === "dashboard" && i.allowed);
+  const dashboards = (items.data ?? []).filter((i) => i.kind === "dashboard" && i.allowed && !i.missing);
   const [home, setHome] = useState(load("defaultDashboard") ?? "");
   const [pw, setPw] = useState({ current: "", new: "" });
   const change = useMutation({
