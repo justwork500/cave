@@ -1,6 +1,6 @@
 """The shared control vocabulary: validates commands for media_player, number and select.
 
-Integrations call `check_command` first in their command handler. A `ValueError`
+`StateMachine.command` calls `check_command` before any handler, so integrations get clean args. A `ValueError`
 carries a sentence a person can read; the API turns it into a 409.
 """
 
