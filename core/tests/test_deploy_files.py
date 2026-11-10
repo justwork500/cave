@@ -40,3 +40,13 @@ def test_runner_has_no_docker_socket_and_checks_pwsh_download():
 def test_dockerignore_keeps_secrets_and_junk_out():
     lines = set((ROOT / ".dockerignore").read_text(encoding="utf-8").split())
     assert {"**/node_modules", "**/.venv", "data", "secrets", ".env", ".git"} <= lines
+
+
+def test_core_gets_host_key_as_a_secret():
+    import yaml
+    services = yaml.safe_load((ROOT / "compose.yaml").read_text(encoding="utf-8"))["services"]
+    cave = services["cave"]
+    assert "host_key" in cave["secrets"]
+    assert cave["environment"]["CAVE_HOST_KEY_FILE"] == "/run/secrets/host_key"
+    for svc in services.values():
+        assert "CAVE_HOST_KEY" not in (svc.get("environment") or {})

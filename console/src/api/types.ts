@@ -137,3 +137,11 @@ export interface Summary {
   failures_24h?: number;
   screens_pending?: number;
 }
+
+export interface IntegrationInfo {
+  domain: string;
+  title: string;
+  pairing: "none" | "password" | "key" | "pin" | "button";
+  pairing_hint: string;
+  devices: { device_id: string; host: string; model: string; name: string }[];
+}

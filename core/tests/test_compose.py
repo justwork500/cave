@@ -28,7 +28,7 @@ def test_no_secret_values_in_environment(compose):
         for key in env:
             if key.endswith(("TOKEN", "PASSWORD")):
                 pytest.fail(f"{name} passes {key} as a value; use a secret file and {key}_FILE")
-    assert set(compose["secrets"]) == {"mqtt_password", "runner_token"}
+    assert set(compose["secrets"]) == {"mqtt_password", "runner_token", "host_key"}
     assert all("file" in s for s in compose["secrets"].values())
 
 

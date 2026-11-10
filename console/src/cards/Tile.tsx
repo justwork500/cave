@@ -2,6 +2,7 @@ import { LockClosedRegular } from "@fluentui/react-icons";
 import { useMutation } from "@tanstack/react-query";
 import { api, message } from "../api/client";
 import type { EntityView } from "../api/types";
+import { Controls } from "./controls";
 import { isFull, roomText, stateText, useLiveState } from "./entity";
 import { CardIcon } from "./look";
 
@@ -51,9 +52,17 @@ export function Tile({ entity, label, icon, tapAction = "none", row = false, sec
       )}
     </>
   );
+  const withControls = ["media_player", "number", "select"].includes(entity.capability);
   const on = ACTIVE.has(state ?? "");
   const look = `${cls}${on ? " on" : ""}${state === "unavailable" ? " unavailable" : ""}`;
-  if (tapAction !== "toggle") return <div className={look}>{body}</div>;
+  if (tapAction !== "toggle" || withControls) {
+    return (
+      <div className={look}>
+        {body}
+        {withControls && <Controls entity={entity} />}
+      </div>
+    );
+  }
   return (
     <button
       type="button"

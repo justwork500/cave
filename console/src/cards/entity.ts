@@ -29,10 +29,14 @@ export const isFull = (e: EntityView): e is FullEntity => !e.restricted && "stat
 export function useLiveState(e: EntityView): { state: string | null; attributes: Record<string, unknown> } {
   const live = useLive();
   const full = isFull(e);
-  const [current, setCurrent] = useState(() => ({
-    state: full ? e.state : null,
-    attributes: full ? e.attributes : {},
-  }));
+  const initial = () => ({ state: full ? e.state : null, attributes: full ? e.attributes : {} });
+  const [current, setCurrent] = useState(initial);
+  // A refetched entity replaces what the live feed last said.
+  const [seen, setSeen] = useState(e);
+  if (seen !== e) {
+    setSeen(e);
+    setCurrent(initial());
+  }
   useEffect(
     () => (full ? live?.onState(e.entity_id, (ev) => setCurrent({ state: ev.new, attributes: ev.attributes })) : undefined),
     [live, full, e.entity_id],
