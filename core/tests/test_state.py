@@ -99,3 +99,20 @@ def test_remove_clears_entity_handler():
     sm.register(Entity("light.kitchen", "Kitchen light", "kitchen", "light"))
     with pytest.raises(KeyError):
         asyncio.run(sm.command("light.kitchen", "turn_on", {}))
+
+
+def test_command_args_are_checked_before_the_handler():
+    sm = StateMachine(EventBus())
+    sm.register(Entity("number.fan_speed", "Fan speed", None, "number"))
+    sm.set("number.fan_speed", "10", {"min": 0, "max": 20, "step": 5})
+    calls = []
+
+    async def handler(entity_id, command, args):
+        calls.append(args)
+
+    sm.set_command_handler("number", handler)
+    asyncio.run(sm.command("number.fan_speed", "set_value", {"value": 12}))
+    assert calls == [{"value": 10}]  # snapped to the step
+    with pytest.raises(ValueError, match="from 0 to 20"):
+        asyncio.run(sm.command("number.fan_speed", "set_value", {"value": 99}))
+    assert len(calls) == 1

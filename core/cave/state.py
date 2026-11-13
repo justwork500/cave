@@ -8,6 +8,8 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 
+from cave.controls import check_command
+
 log = logging.getLogger(__name__)
 
 Event = dict[str, Any]
@@ -140,4 +142,6 @@ class StateMachine:
     async def command(self, entity_id: str, command: str, args: dict[str, Any]) -> None:
         entity = self._entities[entity_id]
         handler = self._entity_handlers.get(entity_id) or self._handlers[entity.capability]
+        state = self._states.get(entity_id)
+        args = check_command(entity.capability, command, args, state.attributes if state else {})
         await handler(entity_id, command, args)
