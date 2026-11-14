@@ -1,84 +1,96 @@
 import asyncio
 import json
-import threading
-import time
-from collections.abc import Iterator
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from typing import Any
+from typing import Any, ClassVar
 
 import pytest
 
 from cave.integrations import http as dev
 
 
-class _Handler(BaseHTTPRequestHandler):
-    def _send(self, status: int, body: bytes, ctype: str = "application/json") -> None:
-        self.send_response(status)
-        self.send_header("Content-Type", ctype)
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
+class FakeConnection:
+    """Stands in for http.client.HTTPConnection: no sockets. Set the class attributes per test."""
 
-    def do_GET(self) -> None:
-        if self.path.startswith("/api/s3cr3t-key"):
-            self._send(500, b"{}")
-        elif self.path == "/html":
-            self._send(200, b"<html>login</html>", "text/html")
-        elif self.path == "/big":
-            self._send(200, json.dumps({"x": "y" * 500}).encode())
-        elif self.path == "/slow":
-            time.sleep(1)
-            self._send(200, b"{}")
-        else:
-            self._send(200, b'{"on": true}')
+    status = 200
+    body = b'{"on": true}'
+    fail_on: str | None = None  # "request" or "getresponse"
+    error: Exception = TimeoutError()
+    built: ClassVar[list[tuple[str, int, float]]] = []
+    sent: ClassVar[list[tuple[str, str, Any, dict[str, str]]]] = []
 
-    def do_POST(self) -> None:
-        body = self.rfile.read(int(self.headers["Content-Length"]))
-        self._send(200, json.dumps({"got": json.loads(body)}).encode())
+    def __init__(self, host: str, port: int, timeout: float) -> None:
+        self.built.append((host, port, timeout))
 
-    def log_message(self, format: str, *args: Any) -> None:
+    def request(self, method: str, path: str, data: Any, headers: dict[str, str]) -> None:
+        self.sent.append((method, path, data, headers))
+        if self.fail_on == "request":
+            raise self.error
+
+    def getresponse(self) -> "FakeConnection":
+        if self.fail_on == "getresponse":
+            raise self.error
+        return self
+
+    def read(self, amt: int) -> bytes:
+        return self.body[:amt]
+
+    def close(self) -> None:
         pass
 
 
-class _Server(ThreadingHTTPServer):
-    allow_reuse_address = False  # on Windows True lets two sockets share a port
-    daemon_threads = True
-
-
 @pytest.fixture()
-def port() -> Iterator[int]:
-    server = _Server(("127.0.0.1", 0), _Handler)
-    threading.Thread(target=server.serve_forever, daemon=True).start()
-    yield server.server_address[1]
-    server.shutdown()
-    server.server_close()
+def conn(monkeypatch: pytest.MonkeyPatch) -> type[FakeConnection]:
+    class Fresh(FakeConnection):
+        built: ClassVar[list[tuple[str, int, float]]] = []
+        sent: ClassVar[list[tuple[str, str, Any, dict[str, str]]]] = []
+
+    monkeypatch.setattr(dev.http.client, "HTTPConnection", Fresh)
+    return Fresh
 
 
-def test_get_and_post_json(port: int) -> None:
-    assert asyncio.run(dev.request("GET", "127.0.0.1", "/x", port=port)) == {"on": True}
-    assert asyncio.run(dev.request("POST", "127.0.0.1", "/x", port=port, body={"a": 1})) == {"got": {"a": 1}}
+def get(path: str = "/x", **kw: Any) -> Any:
+    return asyncio.run(dev.request("GET", "127.0.0.1", path, **kw))
 
 
-def test_errors_never_show_the_path(port: int, caplog: pytest.LogCaptureFixture) -> None:
+def test_get_and_post_json(conn: type[FakeConnection]) -> None:
+    assert get(port=8080) == {"on": True}
+    assert conn.built[0] == ("127.0.0.1", 8080, dev.TIMEOUT_SECONDS)
+    assert conn.sent[0] == ("GET", "/x", None, {})
+    conn.body = b'{"got": {"a": 1}}'
+    assert asyncio.run(dev.request("POST", "127.0.0.1", "/x", body={"a": 1})) == {"got": {"a": 1}}
+    assert conn.sent[1] == ("POST", "/x", json.dumps({"a": 1}), {"Content-Type": "application/json"})
+
+
+def test_errors_never_show_the_path(conn: type[FakeConnection], caplog: pytest.LogCaptureFixture) -> None:
+    conn.status = 500
     with pytest.raises(dev.DeviceError) as e:
-        asyncio.run(dev.request("GET", "127.0.0.1", "/api/s3cr3t-key/lights?password=hunter2", port=port))
+        get("/api/s3cr3t-key/lights?password=hunter2")
     assert str(e.value) == "HTTP 500"
     for secret in ("s3cr3t-key", "hunter2"):
         assert secret not in str(e.value)
         assert secret not in caplog.text
 
 
-def test_not_json_and_too_large(port: int, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_not_json_and_too_large(conn: type[FakeConnection], monkeypatch: pytest.MonkeyPatch) -> None:
+    conn.body = b"<html>login</html>"
     with pytest.raises(dev.DeviceError, match="not JSON"):
-        asyncio.run(dev.request("GET", "127.0.0.1", "/html", port=port))
+        get()
     monkeypatch.setattr(dev, "MAX_BYTES", 100)
+    conn.body = json.dumps({"x": "y" * 500}).encode()
     with pytest.raises(dev.DeviceError, match="too large"):
-        asyncio.run(dev.request("GET", "127.0.0.1", "/big", port=port))
+        get()
 
 
-def test_timeout(port: int, monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.parametrize("error", [TimeoutError(), ConnectionResetError()])
+@pytest.mark.parametrize("stage", ["request", "getresponse"])
+def test_no_answer(conn: type[FakeConnection], error: Exception, stage: str, caplog: pytest.LogCaptureFixture) -> None:
+    conn.fail_on, conn.error = stage, error
+    with pytest.raises(dev.DeviceError) as e:
+        get("/api/s3cr3t-key/lights")
+    assert str(e.value) == "no answer" and "s3cr3t-key" not in caplog.text
+    assert conn.built[0][2] == dev.TIMEOUT_SECONDS
+
+
+def test_timeout_uses_the_module_setting(conn: type[FakeConnection], monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(dev, "TIMEOUT_SECONDS", 0.2)
-    start = time.monotonic()
-    with pytest.raises(dev.DeviceError, match="no answer"):
-        asyncio.run(dev.request("GET", "127.0.0.1", "/slow", port=port))
-    assert time.monotonic() - start < 1
+    get()
+    assert conn.built[0][2] == 0.2
