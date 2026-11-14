@@ -139,6 +139,17 @@ describe("light brightness", () => {
     expect(calls[0]?.body).toEqual({ brightness: 255 });
   });
 
+  it("never sends brightness 0: the lowest setting is 1%", async () => {
+    const calls = mockApi({ "POST /entities/light.desk/commands/turn_on": {} });
+    renderWith(<Tile entity={desk({ brightness: 128 })} tapAction="toggle" />);
+    const slider = screen.getByRole("slider", { name: "Brightness" });
+    expect(slider).toHaveAttribute("min", "1");
+    fireEvent.change(slider, { target: { value: "0" } });
+    fireEvent.pointerUp(slider);
+    await waitFor(() => expect(calls).toHaveLength(1));
+    expect(calls[0]?.body).toEqual({ brightness: 3 });
+  });
+
   it("no slider without brightness", () => {
     mockApi({});
     renderWith(<Tile entity={desk({})} tapAction="toggle" />);
