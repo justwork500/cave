@@ -4,7 +4,7 @@ import asyncio
 import contextlib
 import logging
 import os
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -30,7 +30,7 @@ from cave.config.store import ConfigStore, write_atomic
 from cave.credentials import Credentials, load_host_key
 from cave.db import Database
 from cave.envconfig import env_secret
-from cave.integrations.base import Integrations
+from cave.integrations.base import Integration, Integrations
 from cave.integrations.kasa.service import KasaService
 from cave.integrations.mqtt import config as mqtt_config
 from cave.integrations.mqtt.client import MqttService
@@ -41,6 +41,7 @@ from cave.state import EventBus, StateMachine
 
 WEB = Path(__file__).resolve().parent.parent / "web"
 log = logging.getLogger(__name__)
+INTEGRATIONS: list[Callable[[StateMachine, Credentials], Integration]] = []  # each HTTP-device integration appends its class
 STARTER_HOME = """dashboard:
   title: Home
   icon: home
@@ -121,6 +122,8 @@ def create_app(settings: Settings) -> FastAPI:
     app.state.kasa = KasaService(app.state.db, app.state.states)
     app.state.kasa.load()
     app.state.integrations = Integrations(app.state.db, app.state.credentials)
+    for make in INTEGRATIONS:
+        app.state.integrations.register(make(app.state.states, app.state.credentials))
     app.state.config = ConfigStore(settings.config_dir, app.state.db, app.state.bus)
     app.state.config.load_all()
     app.state.scripts = ScriptStore(settings.config_dir, app.state.db, app.state.bus)
