@@ -89,3 +89,20 @@ def test_detach_removes_entities() -> None:
     wled.detach(MAC)
     wled.detach("unknown")
     assert states.entity(LIGHT) is None and states.entity(PRESET) is None
+
+
+def test_poll_survives_detached_and_failing_devices(caplog: pytest.LogCaptureFixture) -> None:
+    wled, states, fake = make()
+    wled.attach(Device("wled", "112233445566", "192.168.1.51", "esp32", "Other", {}))
+
+    async def flaky(method: str, host: str, path: str, **kw: Any) -> Any:
+        if host == "192.168.1.51":
+            raise RuntimeError("boom")
+        return await fake(method, host, path, **kw)
+
+    wled.fetch = flaky
+    asyncio.run(wled.poll())  # one device's unexpected error must not stop the other
+    light = states.get(LIGHT)
+    assert light and light.value == "on"
+    wled.detach(MAC)
+    asyncio.run(wled._poll_one(MAC))  # detached after poll() listed it: nothing to do, no error

@@ -71,7 +71,9 @@ class WledIntegration:
             self.states.set(entity, value, attributes)
 
     async def _poll_one(self, mac: str) -> None:
-        host = self._hosts[mac]
+        host = self._hosts.get(mac)
+        if host is None:  # detached since poll() listed it
+            return
         try:
             state = await self.fetch("GET", host, "/json/state")
             raw = await self.fetch("GET", host, "/presets.json")
@@ -89,7 +91,12 @@ class WledIntegration:
         self._set(self._select(mac), active, {"options": list(presets)})
 
     async def poll(self) -> None:
-        await asyncio.gather(*(self._poll_one(m) for m in list(self._hosts)))
+        macs = list(self._hosts)
+        # One device's unexpected error is logged and must not stop the others, or run().
+        results = await asyncio.gather(*(self._poll_one(m) for m in macs), return_exceptions=True)
+        for mac, result in zip(macs, results, strict=True):
+            if isinstance(result, Exception):
+                log.error("WLED device %s: polling failed (%s).", mac, type(result).__name__)
 
     async def run(self) -> None:
         while True:
