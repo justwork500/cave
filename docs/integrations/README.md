@@ -21,4 +21,4 @@ A password, key or PIN is saved encrypted in CAVE's database. It is never shown 
 
 ## Integrations
 
-Each integration's page is linked here as it is added. [TP-Link Kasa](kasa.md), [MQTT devices](mqtt.md), [WLED](wled.md), [Shelly](shelly.md) and [Philips Hue](hue.md) work today.
+Each integration's page is linked here as it is added. [TP-Link Kasa](kasa.md), [MQTT devices](mqtt.md), [WLED](wled.md), [Shelly](shelly.md), [Philips Hue](hue.md) and [Fully Kiosk Browser](fully-kiosk.md) work today.
