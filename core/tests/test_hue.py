@@ -18,7 +18,7 @@ FIX = Path(__file__).parent / "fixtures" / "hue"
 HOST = "192.168.1.70"
 BID = "001788fffe123456"
 KEY = "sekrit-key-123"
-SETTINGS = {"lights": ["1", "2"], "motion": ["3"], "temperature": ["4"]}
+SETTINGS = {"lights": {"1": "Hall light", "2": "Desk lamp"}, "motion": {"3": "Hall motion"}, "temperature": {"4": "Hall temperature"}}
 ALL = [f"light.hue_{BID}_1", f"light.hue_{BID}_2", f"binary_sensor.hue_{BID}_3_motion", f"sensor.hue_{BID}_4_temperature"]
 
 
@@ -141,3 +141,14 @@ def test_key_never_logged(db: Database, caplog: pytest.LogCaptureFixture) -> Non
         asyncio.run(states.command(ALL[0], "turn_on", {}))
     assert KEY not in caplog.text and KEY not in str(e.value)
     assert value(states, ALL[0]).value == "unavailable"
+
+
+def test_pairing_names_survive_attach_and_old_shape_falls_back(db: Database) -> None:
+    _, states, _ = make(db)
+    entity = states.entity(ALL[0])
+    assert entity and entity.name == "Hall light"
+    entity = states.entity(ALL[2])
+    assert entity and entity.name == "Hall motion"
+    _, states2, _ = make(db, {"lights": ["1"]})  # an older save: ids without names
+    entity = states2.entity(ALL[0])
+    assert entity and entity.name == "Bridge light 1"

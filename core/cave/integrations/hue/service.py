@@ -19,11 +19,17 @@ BAD_REPLY = (KeyError, TypeError, ValueError, AttributeError, IndexError)  # an 
 Reading = tuple[str, str, dict[str, Any]]  # name, value, attributes
 
 
-def _ids(bridge: str, settings: dict[str, Any]) -> dict[str, str]:
-    """Entity id -> placeholder name, from the light and sensor numbers saved at pairing."""
-    out = {f"light.hue_{bridge}_{n}": f"light {n}" for n in settings.get("lights", [])}
-    out.update({f"binary_sensor.hue_{bridge}_{n}_motion": f"motion {n}" for n in settings.get("motion", [])})
-    out.update({f"sensor.hue_{bridge}_{n}_temperature": f"temperature {n}" for n in settings.get("temperature", [])})
+def _ids(bridge: str, settings: dict[str, Any], default: str) -> dict[str, str]:
+    """Entity id -> name, from the numbers (and names) saved at pairing; an older save is a list without names."""
+    def name(saved: Any, n: str, kind: str) -> str:
+        return str(saved[n]) if isinstance(saved, dict) else f"{default} {kind} {n}"
+
+    out: dict[str, str] = {}
+    for kind, pattern in (("light", "light.hue_{b}_{n}"), ("motion", "binary_sensor.hue_{b}_{n}_motion"),
+                          ("temperature", "sensor.hue_{b}_{n}_temperature")):
+        saved = settings.get("lights" if kind == "light" else kind, [])
+        for n in saved:
+            out[pattern.format(b=bridge, n=n)] = name(saved, n, kind)
     return out
 
 
@@ -44,12 +50,13 @@ def _readings(bridge: str, lights: dict[str, Any], sensors: dict[str, Any]) -> d
     return out
 
 
-def _numbers(lights: dict[str, Any], sensors: dict[str, Any]) -> dict[str, list[str]]:
+def _numbers(lights: dict[str, Any], sensors: dict[str, Any]) -> dict[str, dict[str, str]]:
     kinds = {"ZLLPresence": "motion", "ZLLTemperature": "temperature"}
-    out: dict[str, list[str]] = {"lights": list(lights), "motion": [], "temperature": []}
+    out: dict[str, dict[str, str]] = {"lights": {n: str(v["name"]) for n, v in lights.items()}, "motion": {},
+                                      "temperature": {}}
     for n, sensor in sensors.items():
         if sensor["type"] in kinds:
-            out[kinds[sensor["type"]]].append(n)
+            out[kinds[sensor["type"]]][n] = str(sensor["name"])
     return out
 
 
@@ -92,8 +99,8 @@ class HueIntegration:
         b = device.device_id
         self._hosts[b] = device.host
         self._entities[b] = set()
-        for entity, label in _ids(b, device.settings).items():  # so an offline bridge shows as unavailable
-            self._put(b, entity, f"{device.name} {label}", "unavailable", {})
+        for entity, name in _ids(b, device.settings, device.name).items():  # so an offline bridge shows as unavailable
+            self._put(b, entity, name, "unavailable", {})
 
     def detach(self, device_id: str) -> None:
         self._hosts.pop(device_id, None)

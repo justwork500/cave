@@ -3,7 +3,7 @@ import json
 import threading
 import time
 from collections.abc import Iterator
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 
 import pytest
@@ -40,9 +40,14 @@ class _Handler(BaseHTTPRequestHandler):
         pass
 
 
+class _Server(ThreadingHTTPServer):
+    allow_reuse_address = False  # on Windows True lets two sockets share a port
+    daemon_threads = True
+
+
 @pytest.fixture()
 def port() -> Iterator[int]:
-    server = HTTPServer(("127.0.0.1", 0), _Handler)
+    server = _Server(("127.0.0.1", 0), _Handler)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     yield server.server_address[1]
     server.shutdown()
