@@ -40,8 +40,8 @@ def test_lists_integrations_with_devices(app, users, fake):
     c = admin(app, users)
     assert add(c).status_code == 201
     r = c.get("/api/v1/integrations")
-    body = r.json()
-    assert body[0]["domain"] == "fake" and body[0]["pairing"] == "key"
+    body = [i for i in r.json() if i["domain"] == "fake"]  # real integrations are listed too
+    assert body[0]["pairing"] == "key"
     assert body[0]["devices"][0]["device_id"] == "aabbccddeeff"
     assert "secret" not in r.text and SECRET not in r.text
 

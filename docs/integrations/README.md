@@ -21,4 +21,4 @@ A password, key or PIN is saved encrypted in CAVE's database. It is never shown 
 
 ## Integrations
 
-Each integration's page is linked here as it is added. [TP-Link Kasa](kasa.md) and [MQTT devices](mqtt.md) work today.
+Each integration's page is linked here as it is added. [TP-Link Kasa](kasa.md), [MQTT devices](mqtt.md) and [WLED](wled.md) work today.

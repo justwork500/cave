@@ -34,6 +34,7 @@ from cave.integrations.base import Integration, Integrations
 from cave.integrations.kasa.service import KasaService
 from cave.integrations.mqtt import config as mqtt_config
 from cave.integrations.mqtt.client import MqttService
+from cave.integrations.wled.service import WledIntegration
 from cave.scripts.service import RunnerClient, ScriptService
 from cave.scripts.store import ScriptStore
 from cave.settings import Settings
@@ -41,7 +42,7 @@ from cave.state import EventBus, StateMachine
 
 WEB = Path(__file__).resolve().parent.parent / "web"
 log = logging.getLogger(__name__)
-INTEGRATIONS: list[Callable[[StateMachine, Credentials], Integration]] = []  # each HTTP-device integration appends its class
+INTEGRATIONS: list[Callable[[StateMachine, Credentials], Integration]] = [WledIntegration]  # each HTTP-device integration adds its class
 STARTER_HOME = """dashboard:
   title: Home
   icon: home
