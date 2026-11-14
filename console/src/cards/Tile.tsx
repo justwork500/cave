@@ -53,6 +53,7 @@ export function Tile({ entity, label, icon, tapAction = "none", row = false, sec
     </>
   );
   const withControls = ["media_player", "number", "select"].includes(entity.capability);
+  const dimmable = entity.capability === "light" && typeof attributes.brightness === "number";
   const on = ACTIVE.has(state ?? "");
   const look = `${cls}${on ? " on" : ""}${state === "unavailable" ? " unavailable" : ""}`;
   if (tapAction !== "toggle" || withControls) {
@@ -63,7 +64,7 @@ export function Tile({ entity, label, icon, tapAction = "none", row = false, sec
       </div>
     );
   }
-  return (
+  const button = (
     <button
       type="button"
       className={look}
@@ -75,6 +76,9 @@ export function Tile({ entity, label, icon, tapAction = "none", row = false, sec
       <span className="switch" aria-hidden="true" />
     </button>
   );
+  // A slider never sits inside the toggle button: it goes beneath it.
+  if (dimmable) return <div className="tile-stack">{button}<Controls entity={entity} /></div>;
+  return button;
 }
 
 export function Entities({ entities, label, icon }: {
