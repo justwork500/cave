@@ -43,12 +43,16 @@ def _channels(gen: int, status: Any) -> dict[int, dict[str, Any]]:
     else:
         for key, sw in status.items():
             if key.startswith("switch:"):
-                ch = {"on": bool(sw["output"])}
-                if "apower" in sw:
-                    ch["power"] = float(sw["apower"])
-                if "total" in sw.get("aenergy", {}):
-                    ch["energy"] = round(float(sw["aenergy"]["total"]) / 1000, 3)  # Wh
-                out[int(key[7:])] = ch
+                try:
+                    ch = {"on": bool(sw["output"])}
+                    if "apower" in sw:
+                        ch["power"] = float(sw["apower"])
+                    if "total" in sw.get("aenergy", {}):
+                        ch["energy"] = round(float(sw["aenergy"]["total"]) / 1000, 3)  # Wh
+                    out[int(key[7:])] = ch
+                except BAD_REPLY:  # one bad channel must not blank the others: {} reads unavailable
+                    if key[7:].isdigit():
+                        out[int(key[7:])] = {}
     return out
 
 
@@ -154,8 +158,11 @@ class ShellyIntegration:
         self._gen[mac] = gen
         seen = self._seen.setdefault(mac, set())
         seen.update(channels)
-        self._unavailable(mac, seen - channels.keys())  # a channel the device stopped reporting
-        for n, ch in channels.items():
+        good = {n: ch for n, ch in channels.items() if ch}
+        self._unavailable(mac, seen - good.keys())  # a channel the device stopped reporting, or reported badly
+        for n in channels.keys() - good.keys():  # a bad channel still shows, as unavailable
+            self._put(mac, self._entities(mac, n)[0], self._label(mac, n), "unavailable", {})
+        for n, ch in good.items():
             switch, power, energy = self._entities(mac, n)
             label = self._label(mac, n)
             self._put(mac, switch, label, "on" if ch["on"] else "off", {})

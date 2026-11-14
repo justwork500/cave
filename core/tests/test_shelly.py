@@ -95,6 +95,16 @@ def test_gen2_two_channels() -> None:
     assert fake.calls[-1][2] == "/rpc/Switch.Set?id=0&on=false"
 
 
+def test_gen2_channel_without_output_leaves_the_others() -> None:
+    shelly, states, fake = make(2)
+    status = fixture("gen2_status")
+    del status["switch:1"]["output"]
+    fake.routes[("GET", "/rpc/Shelly.GetStatus")] = status
+    asyncio.run(shelly.poll())
+    assert value(states, f"switch.shelly_{G2}_0").value == "on"
+    assert value(states, f"switch.shelly_{G2}_1").value == "unavailable"
+
+
 def test_unexpected_reply_reads_unavailable() -> None:
     shelly, states, fake = make(2)
     asyncio.run(shelly.poll())

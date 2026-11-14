@@ -75,6 +75,19 @@ def test_poll_lights_and_sensors(db: Database) -> None:
     assert sorted(e.entity_id for e in states.entities()) == sorted(ALL)  # nothing for Daylight
 
 
+def test_sensor_without_a_reading_does_not_blank_the_bridge(db: Database) -> None:
+    for sensor, kind, state_key in (("4", "ZLLTemperature", "temperature"), ("3", "ZLLPresence", "presence")):
+        hue, states, fake = make(db)
+        sensors = fixture("sensors")
+        assert sensors[sensor]["type"] == kind
+        sensors[sensor]["state"][state_key] = None
+        fake.routes[("GET", f"/api/{KEY}/sensors")] = sensors
+        asyncio.run(hue.poll())
+        assert value(states, ALL[0]).value == "on"
+        assert value(states, ALL[3 if sensor == "4" else 2]).value == "unavailable"
+        assert value(states, ALL[2 if sensor == "4" else 3]).value != "unavailable"
+
+
 def test_new_and_missing_lights_follow_the_bridge(db: Database) -> None:
     hue, states, fake = make(db)
     asyncio.run(hue.poll())

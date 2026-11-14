@@ -36,17 +36,25 @@ def _ids(bridge: str, settings: dict[str, Any], default: str) -> dict[str, str]:
 def _readings(bridge: str, lights: dict[str, Any], sensors: dict[str, Any]) -> dict[str, Reading]:
     out: dict[str, Reading] = {}
     for n, light in lights.items():
-        st = light["state"]
-        bri = {"brightness": round(int(st["bri"]) * 255 / 254)} if "bri" in st else {}
-        value = ("on" if st["on"] else "off") if st["reachable"] else "unavailable"
-        out[f"light.hue_{bridge}_{n}"] = (str(light["name"]), value, bri)
+        try:  # one bad light must not blank the bridge: it is skipped and reads unavailable
+            st = light["state"]
+            bri = {"brightness": round(int(st["bri"]) * 255 / 254)} if "bri" in st else {}
+            value = ("on" if st["on"] else "off") if st["reachable"] else "unavailable"
+            out[f"light.hue_{bridge}_{n}"] = (str(light["name"]), value, bri)
+        except BAD_REPLY:
+            continue
     for n, sensor in sensors.items():
-        if sensor["type"] == "ZLLPresence":
-            out[f"binary_sensor.hue_{bridge}_{n}_motion"] = (
-                str(sensor["name"]), "on" if sensor["state"]["presence"] else "off", {})
-        elif sensor["type"] == "ZLLTemperature":
-            temp = f"{int(sensor['state']['temperature']) / 100:.1f}"
-            out[f"sensor.hue_{bridge}_{n}_temperature"] = (str(sensor["name"]), temp, {"unit": "°C"})
+        try:  # a sensor reports null until its first reading
+            if sensor["type"] == "ZLLPresence":
+                presence = sensor["state"]["presence"]
+                if presence is None:
+                    raise ValueError("no reading yet")
+                out[f"binary_sensor.hue_{bridge}_{n}_motion"] = (str(sensor["name"]), "on" if presence else "off", {})
+            elif sensor["type"] == "ZLLTemperature":
+                temp = f"{int(sensor['state']['temperature']) / 100:.1f}"
+                out[f"sensor.hue_{bridge}_{n}_temperature"] = (str(sensor["name"]), temp, {"unit": "°C"})
+        except BAD_REPLY:
+            continue
     return out
 
 
