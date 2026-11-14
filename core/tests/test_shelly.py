@@ -49,7 +49,8 @@ def test_pair_refuses_password_and_dimmers() -> None:
     s1, _, f1 = make(1)
     s2, _, f2 = make(2)
     found, creds = asyncio.run(s1.pair(HOST, None))
-    assert found.device_id == G1 and creds == {}
+    assert found.device_id == G1 and creds == {} and found.settings == {"gen": 1, "channels": 1}
+    assert asyncio.run(s2.pair(HOST, None))[0].settings == {"gen": 2, "channels": 2}
     f1.routes[("GET", "/shelly")] = {**fixture("gen1_shelly"), "auth": True}
     f2.routes[("GET", "/shelly")] = {**fixture("gen2_shelly"), "auth_en": True}
     for s in (s1, s2):
@@ -137,3 +138,23 @@ def test_detach_and_failing_device(caplog: pytest.LogCaptureFixture) -> None:
     shelly.detach("unknown")
     assert states.entity(f"switch.shelly_{G1}_0") is None
     asyncio.run(shelly._poll_one(G1))  # detached after poll() listed it: nothing to do
+
+
+def test_restart_while_offline_then_recovery() -> None:
+    _, _, fake = make(2)
+    found, _ = asyncio.run(ShellyIntegration(StateMachine(EventBus()), None, fake).pair(HOST, None))  # type: ignore[arg-type]
+    states = StateMachine(EventBus())
+    shelly = ShellyIntegration(states, None, fake)  # type: ignore[arg-type]
+    fake.offline = True  # CAVE restarts while the device is off
+    shelly.attach(Device("shelly", found.device_id, HOST, found.model, found.name, found.settings))
+    asyncio.run(shelly.poll())
+    for n in (0, 1):
+        assert value(states, f"switch.shelly_{G2}_{n}").value == "unavailable"
+    assert not any(c[2] == "/shelly" for c in fake.calls[-2:])  # the saved generation is used
+    fake.offline = False
+    asyncio.run(shelly.poll())
+    assert value(states, f"switch.shelly_{G2}_0").value == "on"
+    assert value(states, f"sensor.shelly_{G2}_0_power").value == "40.2"
+    fake.offline = True
+    asyncio.run(shelly.poll())
+    assert value(states, f"sensor.shelly_{G2}_0_power").value == "unavailable"

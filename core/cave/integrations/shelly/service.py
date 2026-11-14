@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+from dataclasses import replace
 from typing import Any
 
 from cave.credentials import Credentials
@@ -61,7 +62,7 @@ class ShellyIntegration:
         self.states, self.fetch = states, fetch
         self._hosts: dict[str, str] = {}  # MAC -> address
         self._names: dict[str, str] = {}  # MAC -> device name
-        self._gen: dict[str, int] = {}  # MAC -> generation, from the last poll
+        self._gen: dict[str, int] = {}  # MAC -> generation, saved at pairing, or read on the first poll
         self._seen: dict[str, set[int]] = {}  # MAC -> channels reported so far, so they can read unavailable
 
     async def probe(self, host: str) -> Found | None:
@@ -73,7 +74,6 @@ class ShellyIntegration:
         return Found(str(info["mac"]).lower(), host, model, str(info.get("name") or model) if gen >= 2 else model)
 
     async def pair(self, host: str, secret: str | None) -> tuple[Found, dict[str, str]]:
-        # The generation and channel count are re-read on every poll, so nothing needs saving in `settings`.
         try:
             info = await self.fetch("GET", host, "/shelly")
             found = await self.probe(host)
@@ -82,16 +82,23 @@ class ShellyIntegration:
             gen = _generation(info)
             if info.get("auth_en" if gen >= 2 else "auth"):
                 raise PairingError("This Shelly has a password set. CAVE can't use password-protected Shelly devices yet.")
-            if not _channels(gen, await self.fetch("GET", host, _status_path(gen))):
+            channels = _channels(gen, await self.fetch("GET", host, _status_path(gen)))
+            if not channels:
                 raise PairingError("CAVE supports Shelly relays for now, not dimmers or colour lights.")
         except (DeviceError, *BAD_REPLY):
             raise PairingError("This doesn't look like a Shelly device.") from None
-        return found, {}
+        return replace(found, settings={"gen": 1 if gen < 2 else 2, "channels": len(channels)}), {}
 
     def attach(self, device: Device) -> None:
-        # Entities appear on the first poll, once the channels are known.
-        self._hosts[device.device_id] = device.host
-        self._names[device.device_id] = device.name
+        mac = device.device_id
+        self._hosts[mac] = device.host
+        self._names[mac] = device.name
+        channels = int(device.settings.get("channels", 0))  # an older save has none: found on the first poll
+        if "gen" in device.settings:
+            self._gen[mac] = int(device.settings["gen"])
+        self._seen[mac] = set(range(channels))
+        for n in range(channels):  # so an offline device shows as unavailable; sensors appear once reported
+            self._put(mac, self._entities(mac, n)[0], self._label(mac, n), "unavailable", {})
 
     def detach(self, device_id: str) -> None:
         self._hosts.pop(device_id, None)
@@ -120,6 +127,9 @@ class ShellyIntegration:
                 self.states.set_entity_handler(entity, self._handler)
         self._set(entity, value, attributes)
 
+    def _label(self, mac: str, n: int) -> str:
+        return f" {n + 1}" if len(self._seen[mac]) > 1 else ""
+
     def _unavailable(self, mac: str, channels: set[int]) -> None:
         for n in channels:
             for entity in self._entities(mac, n):
@@ -131,7 +141,7 @@ class ShellyIntegration:
             return
         seen = self._seen.get(mac, set())
         try:
-            gen = _generation(await self.fetch("GET", host, "/shelly"))
+            gen = self._gen.get(mac) or _generation(await self.fetch("GET", host, "/shelly"))
             if gen == 0:
                 raise ValueError("not a Shelly reply")
             channels = _channels(gen, await self.fetch("GET", host, _status_path(gen)))
@@ -147,7 +157,7 @@ class ShellyIntegration:
         self._unavailable(mac, seen - channels.keys())  # a channel the device stopped reporting
         for n, ch in channels.items():
             switch, power, energy = self._entities(mac, n)
-            label = f" {n + 1}" if len(channels) > 1 else ""
+            label = self._label(mac, n)
             self._put(mac, switch, label, "on" if ch["on"] else "off", {})
             if "power" in ch:
                 self._put(mac, power, f"{label} power", str(ch["power"]), {"unit": "W"})

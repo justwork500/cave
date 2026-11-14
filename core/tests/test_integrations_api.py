@@ -244,3 +244,15 @@ def test_device_id_with_colon_is_refused(app, users, fake):
     r = add(admin(app, users))
     assert r.status_code == 422 and r.json()["detail"] == "This device reported an id CAVE can't use."
     assert app.state.db.execute("SELECT 1 FROM integration_devices").fetchone() is None
+
+
+def test_found_settings_are_saved_and_merged(app, users, fake):
+    c = admin(app, users)
+    fake.answers["192.168.1.40"] = Found("aabbccddeeff", "192.168.1.40", "Model X", "Lamp", {"x": 1, "y": 1})
+    assert add(c).status_code == 201
+    [d] = app.state.integrations.devices("fake")
+    assert d.settings == {"x": 1, "y": 1}
+    fake.answers["192.168.1.40"] = Found("aabbccddeeff", "192.168.1.40", "Model X", "Lamp", {"y": 2})
+    assert add(c).status_code == 200
+    [d] = app.state.integrations.devices("fake")
+    assert d.settings == {"x": 1, "y": 2}
