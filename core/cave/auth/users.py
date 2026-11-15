@@ -9,6 +9,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Literal
 
 import pyotp
+from pyotp.totp import TOTP
 
 from cave import audit
 from cave.auth.passwords import DUMMY_HASH, hash_password, verify_password
@@ -133,21 +134,21 @@ def setup_totp(db: Database, user_id: str) -> tuple[str, list[str]]:
             [(user_id, _hash_code(c)) for c in codes],
         )
     audit.record(db, f"user:{user_id}", "user.mfa_setup", f"user:{user_id}")
-    return pyotp.TOTP(secret).provisioning_uri(name=user.username, issuer_name="CAVE"), codes
+    return TOTP(secret).provisioning_uri(name=user.username, issuer_name="CAVE"), codes
 
 
 def verify_second_factor(db: Database, user_id: str, code: str) -> bool:
     row = db.execute("SELECT totp_secret, totp_pending FROM users WHERE id=?", (user_id,)).fetchone()
     if row and not row["totp_secret"] and row["totp_pending"]:
         # first code after enrollment: only the app's code proves it; recovery codes wait until then
-        if not (code.isdigit() and pyotp.TOTP(row["totp_pending"]).verify(code, valid_window=1)):
+        if not (code.isdigit() and TOTP(row["totp_pending"]).verify(code, valid_window=1)):
             return False
         db.execute("UPDATE users SET totp_secret=totp_pending, totp_pending=NULL WHERE id=?", (user_id,))
         audit.record(db, f"user:{user_id}", "user.mfa_confirmed", f"user:{user_id}")
         return True
     if not row or not row["totp_secret"]:
         return False
-    if code.isdigit() and pyotp.TOTP(row["totp_secret"]).verify(code, valid_window=1):
+    if code.isdigit() and TOTP(row["totp_secret"]).verify(code, valid_window=1):
         return True
     cur = db.execute(
         "UPDATE recovery_codes SET used_at=? WHERE user_id=? AND code_hash=? AND used_at IS NULL",

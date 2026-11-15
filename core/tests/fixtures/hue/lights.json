@@ -1,0 +1,4 @@
+{
+  "1": {"name": "Hall light", "state": {"on": true, "bri": 127, "reachable": true}},
+  "2": {"name": "Desk lamp", "state": {"on": false, "bri": 1, "reachable": false}}
+}

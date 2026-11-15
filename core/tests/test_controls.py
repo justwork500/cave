@@ -46,7 +46,7 @@ def test_select_option_must_exist() -> None:
 
 def test_other_capabilities_unchanged() -> None:
     assert check_command("switch", "turn_on", {}, {}) == {}
-    assert check_command("light", "anything", {"x": 1}, {}) == {"x": 1}
+    assert check_command("sensor", "anything", {"x": 1}, {}) == {"x": 1}
 
 
 @pytest.mark.parametrize("level", ["inf", "nan", "1e999", float("inf")])
@@ -58,3 +58,14 @@ def test_non_finite_volume_refused(level: object) -> None:
 def test_non_finite_number_refused() -> None:
     with pytest.raises(ValueError, match="must be a number"):
         check_command("number", "set_value", {"value": float("nan")}, {"min": 0, "max": 10})
+
+
+def test_light_brightness() -> None:
+    assert check_command("light", "turn_on", {"brightness": 127.6}, {}) == {"brightness": 128}
+    with pytest.raises(ValueError, match="0 to 255"):
+        check_command("light", "turn_on", {"brightness": 300}, {})
+    assert check_command("light", "turn_on", {}, {}) == {}
+    assert check_command("light", "turn_off", {}, {}) == {}
+    assert check_command("light", "toggle", {}, {}) == {}
+    with pytest.raises(ValueError):
+        check_command("light", "blink", {}, {})

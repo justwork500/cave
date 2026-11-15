@@ -94,6 +94,14 @@ export function Controls({ entity }: { entity: EntityView }) {
         )}
       </>
     );
+  } else if (entity.capability === "light") {
+    if (typeof attributes.brightness !== "number") return null;
+    // Devices speak 0-255; people see a percentage.
+    controls = (
+      <Level label="Brightness" min={1} max={100} step={1} unit="%"
+             start={Math.round(attributes.brightness * 100 / 255)}
+             send={(percent, revert) => run("turn_on", { brightness: Math.round(percent * 255 / 100) }, revert)} />
+    );
   } else if (entity.capability === "number") {
     controls = (
       <Level label={entity.name} min={num(attributes.min, 0)} max={num(attributes.max, 100)}
