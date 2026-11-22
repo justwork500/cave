@@ -3,7 +3,7 @@
 import asyncio
 import json
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Literal, Protocol
 
 from cave import audit
@@ -22,6 +22,7 @@ class Found:
     host: str
     model: str
     name: str
+    settings: dict[str, Any] = field(default_factory=dict)  # saved with the device; merged over older ones
 
 
 @dataclass(frozen=True)
@@ -124,7 +125,7 @@ class Integrations:
             self._credentials.set(domain, f"{found.device_id}:{key}", value, actor)
         existing = next((d for d in self.devices(domain) if d.device_id == found.device_id), None)
         device = Device(domain, found.device_id, host, found.model, found.name,
-                        existing.settings if existing else {})
+                        {**existing.settings, **found.settings} if existing else dict(found.settings))
         self._db.execute(
             "INSERT OR REPLACE INTO integration_devices (integration, device_id, host, model, name, settings)"
             " VALUES (?, ?, ?, ?, ?, ?)",

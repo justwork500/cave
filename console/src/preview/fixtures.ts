@@ -26,7 +26,7 @@ const e = (entity_id: string, name: string, area_id: string | null, state: strin
 });
 
 export const states = [
-  e("light.living_room", "Ceiling light", "living_room", "on"),
+  e("light.living_room", "Ceiling light", "living_room", "on", { brightness: 180 }),
   e("light.reading_lamp", "Reading lamp", "living_room", "off"),
   e("switch.kitchen_kettle", "Kettle", "kitchen", "off"),
   e("sensor.kitchen_temperature", "Temperature", "kitchen", "21.4", { unit: "°C" }),

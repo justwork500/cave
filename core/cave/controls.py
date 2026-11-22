@@ -1,4 +1,4 @@
-"""The shared control vocabulary: validates commands for media_player, number and select.
+"""The shared control vocabulary: validates commands for media_player, light, number and select.
 
 `StateMachine.command` calls `check_command` before any handler, so integrations get clean args. A `ValueError`
 carries a sentence a person can read; the API turns it into a 409.
@@ -62,6 +62,15 @@ def _set_value(args: Mapping[str, Any], attrs: Mapping[str, Any]) -> dict[str, A
     return {"value": int(snapped) if snapped == int(snapped) else round(snapped, 10)}
 
 
+def _turn_on(args: Mapping[str, Any], _attrs: Mapping[str, Any]) -> dict[str, Any]:
+    if args.get("brightness") is None:
+        return {}
+    level = _num(args["brightness"])
+    if level is None or not 0 <= level <= 255:
+        raise ValueError("The brightness must be a number from 0 to 255.")
+    return {"brightness": round(level)}
+
+
 _Check = Callable[[Mapping[str, Any], Mapping[str, Any]], dict[str, Any]]
 
 _COMMANDS: dict[str, dict[str, _Check]] = {
@@ -71,6 +80,7 @@ _COMMANDS: dict[str, dict[str, _Check]] = {
         "volume_mute": _volume_mute,
         "select_source": _pick("source", "sources", "source"),
     },
+    "light": {"turn_on": _turn_on, "turn_off": lambda _a, _t: {}, "toggle": lambda _a, _t: {}},
     "number": {"set_value": _set_value},
     "select": {"select_option": _pick("option", "options", "option")},
 }

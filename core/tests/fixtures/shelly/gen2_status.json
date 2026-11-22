@@ -1,0 +1,1 @@
+{"switch:0": {"id": 0, "output": true, "apower": 40.2, "aenergy": {"total": 1500.5}}, "switch:1": {"id": 1, "output": false, "apower": 0.0, "aenergy": {"total": 20.0}}, "sys": {}}

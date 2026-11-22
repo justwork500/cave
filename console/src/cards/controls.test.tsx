@@ -113,6 +113,51 @@ describe("controls on toggle tiles", () => {
   });
 });
 
+describe("light brightness", () => {
+  const desk = (attributes: Record<string, unknown>): EntityView => ({
+    entity_id: "light.desk", name: "Desk", area_id: null, capability: "light",
+    state: "on", attributes, last_changed: null,
+  });
+
+  it("light tiles get a brightness slider", () => {
+    mockApi({});
+    renderWith(<Tile entity={desk({ brightness: 128 })} tapAction="toggle" />);
+    expect(screen.getByRole("slider", { name: "Brightness" })).toHaveValue("50");
+    const toggle = screen.getByRole("button", { name: /Desk/ });
+    expect(toggle).toHaveAttribute("aria-pressed", "true");
+    expect(toggle).not.toContainElement(screen.getByRole("slider", { name: "Brightness" }));
+  });
+
+  it("moving it sends brightness on 0-255", async () => {
+    const calls = mockApi({ "POST /entities/light.desk/commands/turn_on": {} });
+    renderWith(<Tile entity={desk({ brightness: 128 })} tapAction="toggle" />);
+    const slider = screen.getByRole("slider", { name: "Brightness" });
+    fireEvent.change(slider, { target: { value: "100" } });
+    fireEvent.pointerUp(slider);
+    await waitFor(() => expect(calls).toHaveLength(1));
+    expect(calls[0]?.path).toBe("/entities/light.desk/commands/turn_on");
+    expect(calls[0]?.body).toEqual({ brightness: 255 });
+  });
+
+  it("never sends brightness 0: the lowest setting is 1%", async () => {
+    const calls = mockApi({ "POST /entities/light.desk/commands/turn_on": {} });
+    renderWith(<Tile entity={desk({ brightness: 128 })} tapAction="toggle" />);
+    const slider = screen.getByRole("slider", { name: "Brightness" });
+    expect(slider).toHaveAttribute("min", "1");
+    fireEvent.change(slider, { target: { value: "0" } });
+    fireEvent.pointerUp(slider);
+    await waitFor(() => expect(calls).toHaveLength(1));
+    expect(calls[0]?.body).toEqual({ brightness: 3 });
+  });
+
+  it("no slider without brightness", () => {
+    mockApi({});
+    renderWith(<Tile entity={desk({})} tapAction="toggle" />);
+    expect(screen.queryByRole("slider")).toBeNull();
+    expect(screen.getByRole("button", { name: /Desk/ })).toBeInTheDocument();
+  });
+});
+
 describe("slider follows the device", () => {
   it("moves when the entity's volume changes", () => {
     mockApi({});

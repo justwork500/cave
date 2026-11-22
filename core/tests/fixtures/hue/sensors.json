@@ -1,0 +1,5 @@
+{
+  "3": {"name": "Hall motion", "type": "ZLLPresence", "state": {"presence": true}},
+  "4": {"name": "Hall temperature", "type": "ZLLTemperature", "state": {"temperature": 2150}},
+  "5": {"name": "Daylight", "type": "Daylight", "state": {"daylight": true}}
+}
